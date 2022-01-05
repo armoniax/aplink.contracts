@@ -1,5 +1,5 @@
-# MGP-Contracts
-MGP Core Business Contracts
+# Contracts
+Core Business Contracts
 
 # CDT Tool version
 Both system and business contracts shall be build with EOS.CDT ```v1.6.3```
