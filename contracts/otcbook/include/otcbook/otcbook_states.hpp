@@ -94,6 +94,11 @@ enum UserType: uint8_t {
     ARBITER        = 2
 };
 
+enum order_side_t: uint8_t {
+    BUY         = 0,
+    SELL        = 1
+}
+
 /**
  * Generic order struct for buyers/sellers
  * when the owner decides to close it before complete fulfillment, it just get erased
@@ -104,6 +109,7 @@ struct CONTRACT_TBL order_t {
 
     name owner;                 //order maker's account
     set<uint8_t> accepted_payments;
+    order_side_t side;          // order side, buy or sell
     asset price;                // MGP price the buyer willing to buy, symbol CNY
     asset price_usd;            // MGP price the buyer willing to buy, symbol USD
     asset quantity;
@@ -126,6 +132,7 @@ struct CONTRACT_TBL order_t {
         return closed || (frozen_quantity + fulfilled_quantity >= quantity) ? -1 : price.amount; 
     } 
     
+    // TODO: should add index by side and price
     //to sort buyers orders: bigger-price order first
     uint64_t by_invprice() const { return closed ? 0 : std::numeric_limits<uint64_t>::max() - price.amount; } 
 
@@ -157,15 +164,16 @@ struct CONTRACT_TBL deal_t {
     uint64_t id;                //PK: available_primary_key
 
     uint64_t order_id;
+    // TODO: order_side
     asset order_price;
     asset order_price_usd;
     asset deal_quantity;
 
-    name order_maker;
+    name order_maker; // merchant 
     bool maker_passed;
     time_point_sec maker_passed_at;
 
-    name order_taker;
+    name order_taker; // user
     bool taker_passed;
     time_point_sec taker_passed_at;
 

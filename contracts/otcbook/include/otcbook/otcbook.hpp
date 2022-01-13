@@ -77,7 +77,7 @@ public:
      * merchant to open sell order
      */
     [[eosio::action]]
-    void openorder(const name& owner, const asset& quantity, const asset& price, const asset& min_accept_quantity);
+    void openorder(const name& owner, uint8_t side, const asset& quantity, const asset& price, const asset& min_accept_quantity);
 
     [[eosio::action]]
     void closeorder(const name& owner, const uint64_t& order_id);

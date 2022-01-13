@@ -139,10 +139,12 @@ void otcbook::setarbiter(const name& arbiter, const bool to_add) {
 /**
  * only merchant allowed to open orders
  */
-void otcbook::openorder(const name& owner, const asset& quantity, const asset& price, const asset& min_accept_quantity) {
+void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, const asset& price, const asset& min_accept_quantity) {
 	require_auth( owner );
 	
 	// check( _gstate.usd_exchange_rate > asset(0, USD_SYMBOL), "The exchange rate is incorrect");
+	// TODO: support BUY order
+	check( side == SELL, "Invalid order side" );
 	check( quantity.symbol.is_valid(), "Invalid quantity symbol name" );
 	check( quantity.is_valid(), "Invalid quantity");
 	check( quantity.symbol == SYS_SYMBOL, "Token Symbol not allowed" );
