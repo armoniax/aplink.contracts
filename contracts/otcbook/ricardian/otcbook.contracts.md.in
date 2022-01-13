@@ -8,16 +8,16 @@ icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 ---
 Initialize otcbook
 
-<h1 class="contract">setseller</h1>
+<h1 class="contract">setmerchant</h1>
 
 ---
 spec_version: "0.1.0"
-title: Set seller info
-summary: 'Set seller's info'
+title: Set merchant info
+summary: 'Set merchant's info'
 icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 ---
 
-Seller to set one's info including selling conditions/memo
+Merchant to set one's info including selling conditions/memo
 
 <h1 class="contract">openorder</h1>
 
@@ -28,7 +28,7 @@ summary: 'Open an OTC order'
 icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 ---
 
-Open an OTC order. Currently only seller orders are allowed to open.
+Open an OTC order. Currently only merchant orders are allowed to open.
 
 <h1 class="contract">closeorder</h1>
 
@@ -90,8 +90,8 @@ If one accept and the other denies, an arbiter will be invovled to tackle the st
 ---
 spec_version: "0.1.0"
 title: withdraw balance amount
-summary: 'Seller to withdraw balance amount from the otcstore contract'
+summary: 'Merchant to withdraw balance amount from the otcbook contract'
 icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 ---
-Afer a seller wants to stop making orders, remaining amount must be withdrawn in order to reach
-seller's personnal account
+After a merchant wants to stop making orders, remaining amount must be withdrawn in order to reach
+merchant's personal account
