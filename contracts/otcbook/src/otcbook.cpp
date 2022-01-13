@@ -163,13 +163,14 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
 	merchant.available_quantity -= quantity;
 	_dbc.set( merchant );
 
-	if (_gstate.min_pos_stake_quantity.amount > 0) {
-		auto staking_con = _gstate.pos_staking_contract;
-		balances bal(staking_con, staking_con.value);
-		auto itr = bal.find(owner.value);
-		check( itr != bal.end(), "POS staking not found for: " + owner.to_string() );
-		check( itr->remaining >= _gstate.min_pos_stake_quantity, "POS Staking requirement not met" );
-	}
+	// TODO: check pos_staking_contract
+	// if (_gstate.min_pos_stake_quantity.amount > 0) {
+	// 	auto staking_con = _gstate.pos_staking_contract;
+	// 	balances bal(staking_con, staking_con.value);
+	// 	auto itr = bal.find(owner.value);
+	// 	check( itr != bal.end(), "POS staking not found for: " + owner.to_string() );
+	// 	check( itr->remaining >= _gstate.min_pos_stake_quantity, "POS Staking requirement not met" );
+	// }
 
 	sell_order_t orders(_self, _self.value);
 	auto order_id = orders.available_primary_key();

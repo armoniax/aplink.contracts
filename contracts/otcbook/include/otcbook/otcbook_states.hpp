@@ -97,7 +97,7 @@ enum UserType: uint8_t {
 enum order_side_t: uint8_t {
     BUY         = 0,
     SELL        = 1
-}
+};
 
 /**
  * Generic order struct for buyers/sellers
