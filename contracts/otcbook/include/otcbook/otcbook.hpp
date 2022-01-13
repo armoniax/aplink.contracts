@@ -68,13 +68,13 @@ public:
     void init();
 
     [[eosio::action]]
-    void setseller(const name& owner, const set<uint8_t>pay_methods, const string& email, const string& memo_to_buyer);
+    void setmerchant(const name& owner, const set<uint8_t>pay_methods, const string& email, const string& memo_to_buyer);
     
     [[eosio::action]]
     void setarbiter(const name& arbiter, const bool to_add); //true: to add; false: to remove
     
     /**
-     * seller to open sell order
+     * merchant to open sell order
      */
     [[eosio::action]]
     void openorder(const name& owner, const asset& quantity, const asset& price, const asset& min_accept_quantity);
@@ -89,7 +89,7 @@ public:
     void closedeal(const name& taker, const uint64_t& deal_id);
     
     /**
-     *  @param: user_type -> 0: buyer, 1: seller, 2: otc-arbiter
+     *  @param: user_type -> 0: merchant, 1: user, 2: otc-arbiter
      *  @param: pass: 0: NO pass, 1: pass; two agreed passes means a decision! 
      */
     [[eosio::action]]

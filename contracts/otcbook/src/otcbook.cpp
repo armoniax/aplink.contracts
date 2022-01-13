@@ -95,27 +95,27 @@ void otcbook::init() {
 
 }
 
-void otcbook::setseller(const name& owner, const set<uint8_t>pay_methods, const string& email, const string& memo_to_buyer) {
+void otcbook::setmerchant(const name& owner, const set<uint8_t>pay_methods, const string& email, const string& memo) {
 	require_auth( owner );
 
 	check(email.size() < 64, "email size too large: " + to_string(email.size()) );
-	check(memo_to_buyer.size() < max_memo_size, "memo size too large: " + to_string(memo_to_buyer.size()) );
+	check(memo.size() < max_memo_size, "memo size too large: " + to_string(memo.size()) );
 
-	seller_t seller(owner);
-	//check( _dbc.get(seller), "seller not found: " + owner.to_string() );
-	_dbc.get(seller);
-	seller.accepted_payments.clear();
+	merchant_t merchant(owner);
+	//check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
+	_dbc.get(merchant);
+	merchant.accepted_payments.clear();
 	for (auto& method : pay_methods) {
 		check( (PayType) method < PayType::PAYMAX, "pay method illegal: " + to_string(method) );
 		check( (PayType) method > PayType::PAYMIN, "pay method illegal: " + to_string(method) );
 
-		seller.accepted_payments.insert( method );
+		merchant.accepted_payments.insert( method );
 	}
 
-	seller.email = email;
-	seller.memo = memo_to_buyer;
+	merchant.email = email;
+	merchant.memo = memo;
 
-	_dbc.set( seller );
+	_dbc.set( merchant );
 
 }
 
@@ -137,7 +137,7 @@ void otcbook::setarbiter(const name& arbiter, const bool to_add) {
 }
 
 /**
- * only seller allowed to open orders
+ * only merchant allowed to open orders
  */
 void otcbook::openorder(const name& owner, const asset& quantity, const asset& price, const asset& min_accept_quantity) {
 	require_auth( owner );
@@ -155,11 +155,11 @@ void otcbook::openorder(const name& owner, const asset& quantity, const asset& p
 
 	check( min_accept_quantity.symbol == price.symbol, "min accept symbol not equal to price symbol" );
 
-	seller_t seller(owner);
-	check( _dbc.get(seller), "seller not found: " + owner.to_string() );
-	check( seller.available_quantity >= quantity, "seller insufficient quantitiy to sell" );
-	seller.available_quantity -= quantity;
-	_dbc.set( seller );
+	merchant_t merchant(owner);
+	check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
+	check( merchant.available_quantity >= quantity, "merchant insufficient quantitiy to sell" );
+	merchant.available_quantity -= quantity;
+	_dbc.set( merchant );
 
 	if (_gstate.min_pos_stake_quantity.amount > 0) {
 		auto staking_con = _gstate.pos_staking_contract;
@@ -182,15 +182,15 @@ void otcbook::openorder(const name& owner, const asset& quantity, const asset& p
 		row.created_at			= time_point_sec(current_time_point());
 		row.frozen_quantity.symbol = SYS_SYMBOL;
 		row.fulfilled_quantity.symbol = SYS_SYMBOL;
-		row.accepted_payments = seller.accepted_payments;
+		row.accepted_payments = merchant.accepted_payments;
 	});
 }
 
 void otcbook::closeorder(const name& owner, const uint64_t& order_id) {
 	require_auth( owner );
 
-	seller_t seller(owner);
-	check( _dbc.get(seller), "seller not found: " + owner.to_string() );
+	merchant_t merchant(owner);
+	check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
 
 	sell_order_t orders(_self, _self.value);
 	auto itr = orders.find(order_id);
@@ -200,8 +200,8 @@ void otcbook::closeorder(const name& owner, const uint64_t& order_id) {
 	check( itr->quantity >= itr->fulfilled_quantity, "Err: insufficient quanitty" );
 
 	// 撤单后币未交易完成的币退回
-	seller.available_quantity += itr->quantity - itr->fulfilled_quantity;
-	_dbc.set( seller );
+	merchant.available_quantity += itr->quantity - itr->fulfilled_quantity;
+	_dbc.set( merchant );
 
 	orders.modify( *itr, _self, [&]( auto& row ) {
 		row.closed = true;
@@ -314,7 +314,7 @@ void otcbook::passdeal(const name& owner, const uint8_t& user_type, const uint64
 	auto now = time_point_sec(current_time_point());
 
 	switch ((UserType) user_type) {
-		case MAKER:
+		case MERCHANT:
 		{
 			check( deal_itr->order_maker == owner, "no permission");
 			check( deal_itr->maker_passed_at == time_point_sec() , "No operation required" );
@@ -325,7 +325,7 @@ void otcbook::passdeal(const name& owner, const uint8_t& user_type, const uint64
 			});
 			break;
 		}
-		case TAKER:
+		case USER:
 		{
 			// deal_expiry_tbl exp_time(_self,_self.value);
 			// auto exp_itr = exp_time.find(deal_id);
@@ -420,11 +420,11 @@ void otcbook::passdeal(const name& owner, const uint8_t& user_type, const uint64
 			}
 		});
 
-		seller_t seller(deal_itr->order_maker);
-		check( _dbc.get(seller), "Err: seller not found: " + deal_itr->order_maker.to_string() );
+		merchant_t merchant(deal_itr->order_maker);
+		check( _dbc.get(merchant), "Err: merchant not found: " + deal_itr->order_maker.to_string() );
 
-		seller.processed_deals++;
-		_dbc.set( seller );
+		merchant.processed_deals++;
+		_dbc.set( merchant );
 	}
 
 }
@@ -488,11 +488,11 @@ void otcbook::withdraw(const name& owner, asset quantity){
 	check( quantity.symbol.is_valid(), "Invalid quantity symbol name" );
 	check( quantity.symbol == SYS_SYMBOL, "Token Symbol not allowed" );
 
-	seller_t seller(owner);
-	check( _dbc.get(seller), "seller not found: " + owner.to_string() );
-	check( seller.available_quantity >= quantity, "The withdrawl amount must be less than the balance" );
-	seller.available_quantity -= quantity;
-	_dbc.set(seller);
+	merchant_t merchant(owner);
+	check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
+	check( merchant.available_quantity >= quantity, "The withdrawl amount must be less than the balance" );
+	merchant.available_quantity -= quantity;
+	_dbc.set(merchant);
 
 	TRANSFER( SYS_BANK, owner, quantity, "withdraw" )
 
@@ -572,7 +572,7 @@ void otcbook::restart(const name& owner,const uint64_t& deal_id,const uint8_t& u
 	auto now = time_point_sec(current_time_point());
 
 	switch ((UserType) user_type) {
-		case MAKER:
+		case MERCHANT:
 		{
 			check( deal_itr -> restart_maker_num == 0 , "It has been rebooted more than 1 time.");
 			check( deal_itr -> maker_expired_at <= now ,"Did not time out.");
@@ -586,7 +586,7 @@ void otcbook::restart(const name& owner,const uint64_t& deal_id,const uint8_t& u
 
 			break;
 		}
-		case TAKER:
+		case USER:
 		{
 
 			check( deal_itr -> restart_taker_num == 0 , "It has been rebooted more than 1 time.");
@@ -631,19 +631,19 @@ void otcbook::setrate(const name& owner, const asset& mgp_price, const asset& us
 
 /*************** Begin of eosio.token transfer trigger function ******************/
 /**
- * This happens when a seller decides to open sell orders
+ * This happens when a merchant decides to open sell orders
  */
 void otcbook::deposit(name from, name to, asset quantity, string memo) {
 	if (to != _self) return;
 
-	seller_t seller(from);
-	_dbc.get( seller );
+	merchant_t merchant(from);
+	_dbc.get( merchant );
 
 	if (quantity.symbol == SYS_SYMBOL){
-		seller.available_quantity += quantity;
+		merchant.available_quantity += quantity;
 	}
 
-	_dbc.set( seller );
+	_dbc.set( merchant );
 
 
 }
@@ -666,10 +666,10 @@ void otcbook::deltable(){
 		itr1 = deals.erase(itr1);
 	}
 
-	seller_t::idx_t sellers(_self,_self.value);
-	auto itr2 = sellers.begin();
-	while(itr2 != sellers.end()){
-		itr2 = sellers.erase(itr2);
+	merchant_t::idx_t merchants(_self,_self.value);
+	auto itr2 = merchants.begin();
+	while(itr2 != merchants.end()){
+		itr2 = merchants.erase(itr2);
 	}
 
 	deal_expiry_tbl exp(_self,_self.value);

@@ -89,9 +89,9 @@ enum PayType: uint8_t {
 };
 
 enum UserType: uint8_t {
-    MAKER       = 0,    //seller
-    TAKER       = 1,    //buyer
-    ARBITER     = 2
+    MERCHANT       = 0,    // merchant
+    USER           = 1,    // user
+    ARBITER        = 2
 };
 
 /**
@@ -218,7 +218,7 @@ struct CONTRACT_TBL deal_t {
                                 (restart_taker_num)(restart_maker_num))
 };
 
-struct CONTRACT_TBL seller_t {
+struct CONTRACT_TBL merchant_t {
     name owner;
     asset available_quantity = asset(0, SYS_SYMBOL);
     set<uint8_t> accepted_payments; //accepted payments
@@ -226,15 +226,15 @@ struct CONTRACT_TBL seller_t {
     string email;
     string memo;
 
-    seller_t() {}
-    seller_t(const name& o): owner(o) {}
+    merchant_t() {}
+    merchant_t(const name& o): owner(o) {}
 
     uint64_t primary_key()const { return owner.value; }
     uint64_t scope()const { return 0; }
 
-    typedef eosio::multi_index<"sellers"_n, seller_t> idx_t;
+    typedef eosio::multi_index<"merchants"_n, merchant_t> idx_t;
 
-    EOSLIB_SERIALIZE(seller_t,  (owner)(available_quantity)(accepted_payments)
+    EOSLIB_SERIALIZE(merchant_t,  (owner)(available_quantity)(accepted_payments)
                                 (processed_deals)(email)(memo) )
 };
 
