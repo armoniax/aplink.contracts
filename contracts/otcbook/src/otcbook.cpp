@@ -282,7 +282,7 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
  * actively close the deal by order taker
  */
 void otcbook::closedeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& memo) {
-    require_auth( taker );
+    require_auth( account );
     
     deal_t::idx_t deals(_self, _self.value);
     auto deal_itr = deals.find(deal_id);
@@ -307,10 +307,11 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( order_itr != orders.end(), "sell order not found: " + to_string(order_id) );
     check( !order_itr->closed, "order already closed" );
 
-    if (limited_status != deal_status_t::NONE)
-        check(deal_status_t::CREATED == deal_itr->status || deal_status_t::TAKER_RECEIVE == deal_itr->status, 
-            "can not process deal action:" + to_string((uint8_t)action) 
-             + " at status: " + to_string((uint8_t)status) );
+    auto action = deal_action_t::CLOSE;
+    deal_status_t status = deal_itr->status;
+    check(deal_status_t::CREATED == deal_itr->status || deal_status_t::TAKER_RECEIVED == deal_itr->status, 
+        "can not process deal action:" + to_string((uint8_t)action) 
+            + " at status: " + to_string((uint8_t)status) );
 
     auto deal_quantity = deal_itr->deal_quantity;
     check( order_itr->frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
@@ -319,11 +320,10 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         row.frozen_quantity -= deal_quantity;
     });
 
-    deal_status_t status = deal_itr->status;
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
         row.status = deal_status_t::CLOSED;
         row.closed_at = time_point_sec(current_time_point());
-        row.memos.push_back({account, status, deal_action_t::CLOSE, memo});
+        row.memos.push_back({account, status, action, memo});
     });
 
 }
@@ -472,6 +472,8 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
  *
  */
 void otcbook::reversedeal(const name& arbiter,const uint64_t& deal_id){
+
+    #ifdef __comment
     require_auth( arbiter );
 
     check( _gstate.otc_arbiters.count(arbiter), "not an arbiter: " + arbiter.to_string() );
@@ -511,6 +513,7 @@ void otcbook::reversedeal(const name& arbiter,const uint64_t& deal_id){
             row.expired_at = expired_at;
            });
     }
+    #endif
 }
 
 
@@ -555,7 +558,8 @@ void otcbook::timeoutdeal() {
             auto deal_itr = deals.find(itr -> deal_id);
 
              // 订单处于买家未操作状态进行关闭
-            if (deal_itr != deals.end() && !deal_itr->closed &&  !deal_itr->taker_passed ) {
+            if (deal_itr != deals.end() && 
+                (deal_itr->status == deal_status_t::CREATED ||  deal_itr->status == deal_status_t::MAKER_ACCEPTED) ) {
 
                 auto order_id = deal_itr->order_id;
                 order_table_t orders(_self, _self.value);
@@ -591,6 +595,7 @@ void otcbook::timeoutdeal() {
  * 超时重启
  */
 void otcbook::restart(const name& owner,const uint64_t& deal_id,const uint8_t& user_type){
+    #ifdef __comment
     require_auth( owner );
 
     check( _gstate.otc_arbiters.count(owner), "not an arbiter: " + owner.to_string() );
@@ -650,6 +655,7 @@ void otcbook::restart(const name& owner,const uint64_t& deal_id,const uint8_t& u
         default:
             break;
     }
+    #endif
 }
 
 /**

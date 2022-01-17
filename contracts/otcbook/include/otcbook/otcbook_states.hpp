@@ -240,16 +240,16 @@ struct CONTRACT_TBL deal_t {
     asset deal_quantity;
 
     name order_maker; // merchant 
-    bool maker_passed;
-    time_point_sec maker_passed_at;
+    // bool maker_passed;
+    // time_point_sec maker_passed_at;
 
     name order_taker; // user
-    bool taker_passed;
-    time_point_sec taker_passed_at;
+    // bool taker_passed;
+    // time_point_sec taker_passed_at;
 
     name arbiter;
-    bool arbiter_passed;
-    time_point_sec arbiter_passed_at;
+    // bool arbiter_passed;
+    // time_point_sec arbiter_passed_at;
 
     bool closed;
     deal_status_t status;
@@ -290,9 +290,9 @@ struct CONTRACT_TBL deal_t {
     > idx_t;
 
     EOSLIB_SERIALIZE(deal_t,    (id)(order_id)(order_price)(order_price_usd)(deal_quantity)
-                                (order_maker)(maker_passed)(maker_passed_at)
-                                (order_taker)(taker_passed)(taker_passed_at)
-                                (arbiter)(arbiter_passed)(arbiter_passed_at)
+                                (order_maker)//(maker_passed)(maker_passed_at)
+                                (order_taker)//(taker_passed)(taker_passed_at)
+                                (arbiter)//(arbiter_passed)(arbiter_passed_at)
                                 (closed)(status)(created_at)(closed_at)(order_sn)(pay_type)
                                 (expired_at)(maker_expired_at)
                                 (restart_taker_num)(restart_maker_num)(memos))

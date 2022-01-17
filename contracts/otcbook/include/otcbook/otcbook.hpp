@@ -88,7 +88,7 @@ public:
         const string& memo);
 
     [[eosio::action]]
-    void closedeal(const name& taker, const uint64_t& deal_id, const string& memo);
+    void closedeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& memo);
     
     /**
      *  @param: user_type -> 1: merchant, 2: user, 3: otc-arbiter
