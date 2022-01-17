@@ -96,9 +96,10 @@ enum PayType: uint8_t {
 
 enum account_type_t: uint8_t {
     NONE           = 0,
-    MERCHANT       = 1,    // merchant
-    USER           = 2,    // user
-    ARBITER        = 3
+    OWNER          = 1,
+    MERCHANT       = 2,    // merchant
+    USER           = 3,    // user
+    ARBITER        = 4
 };
 
 enum class deal_action_t: uint8_t {

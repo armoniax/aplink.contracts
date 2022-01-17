@@ -281,20 +281,36 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
 /**
  * actively close the deal by order taker
  */
-void otcbook::closedeal(const name& taker, const uint64_t& deal_id, const string& memo) {
+void otcbook::closedeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& memo) {
     require_auth( taker );
     
     deal_t::idx_t deals(_self, _self.value);
     auto deal_itr = deals.find(deal_id);
     check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
     check( !deal_itr->closed, "deal already closed: " + to_string(deal_id) );
-    check( deal_itr -> order_taker == taker, "no permission");
+
+    switch ((account_type_t) account_type) {
+    case MERCHANT: 
+        check( deal_itr->order_maker == account, "maker account mismatched");
+        break;
+    case USER:
+        check( deal_itr->order_taker == account, "taker account mismatched");
+        break;
+    default:
+        check(false, "account type not supported: " + to_string(account_type));
+        break;
+    }
 
     auto order_id = deal_itr->order_id;
     order_table_t orders(_self, _self.value);
     auto order_itr = orders.find(order_id);
     check( order_itr != orders.end(), "sell order not found: " + to_string(order_id) );
     check( !order_itr->closed, "order already closed" );
+
+    if (limited_status != deal_status_t::NONE)
+        check(deal_status_t::CREATED == deal_itr->status || deal_status_t::TAKER_RECEIVE == deal_itr->status, 
+            "can not process deal action:" + to_string((uint8_t)action) 
+             + " at status: " + to_string((uint8_t)status) );
 
     auto deal_quantity = deal_itr->deal_quantity;
     check( order_itr->frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
@@ -303,9 +319,11 @@ void otcbook::closedeal(const name& taker, const uint64_t& deal_id, const string
         row.frozen_quantity -= deal_quantity;
     });
 
+    deal_status_t status = deal_itr->status;
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
-        row.closed = true;
+        row.status = deal_status_t::CLOSED;
         row.closed_at = time_point_sec(current_time_point());
+        row.memos.push_back({account, status, deal_action_t::CLOSE, memo});
     });
 
 }
