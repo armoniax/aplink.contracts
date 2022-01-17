@@ -69,7 +69,7 @@ icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 A deal creator can actively close a deal such that either the correspondig order locked funds
 has been either settled or unfrozen.
 
-<h1 class="contract">passdeal</h1>
+<h1 class="contract">processdeal</h1>
 
 ---
 spec_version: "0.1.0"

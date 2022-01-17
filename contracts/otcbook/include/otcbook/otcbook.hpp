@@ -77,23 +77,26 @@ public:
      * merchant to open sell order
      */
     [[eosio::action]]
-    void openorder(const name& owner, uint8_t side, const asset& quantity, const asset& price, const asset& min_accept_quantity);
+    void openorder(const name& owner, uint8_t side, const asset& quantity, const asset& price, 
+        const asset& min_accept_quantity, const string &memo);
 
     [[eosio::action]]
     void closeorder(const name& owner, const uint64_t& order_id);
 
     [[eosio::action]]
-    void opendeal(const name& taker, const uint64_t& order_id, const asset& deal_quantity,const uint64_t& order_sn);
+    void opendeal(const name& taker, const uint64_t& order_id, const asset& deal_quantity,const uint64_t& order_sn, 
+        const string& memo);
 
     [[eosio::action]]
-    void closedeal(const name& taker, const uint64_t& deal_id);
+    void closedeal(const name& taker, const uint64_t& deal_id, const string& memo);
     
     /**
-     *  @param: user_type -> 0: merchant, 1: user, 2: otc-arbiter
+     *  @param: user_type -> 1: merchant, 2: user, 3: otc-arbiter
      *  @param: pass: 0: NO pass, 1: pass; two agreed passes means a decision! 
      */
     [[eosio::action]]
-    void passdeal(const name& owner, const uint8_t& user_type, const uint64_t& deal_id, const bool& pass,const uint8_t& pay_type);
+    void processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
+        deal_action_t action, const string& memo);
 
     [[eosio::on_notify("eosio.token::transfer")]]
     void deposit(name from, name to, asset quantity, string memo);

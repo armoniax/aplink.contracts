@@ -19,9 +19,15 @@ using namespace eosio;
 static constexpr eosio::name active_perm{"active"_n};
 static constexpr eosio::name SYS_BANK{"eosio.token"_n};
 
+// crypto assets
 static constexpr symbol   SYS_SYMBOL            = symbol(symbol_code("MGP"), 4);
+static constexpr symbol   CNYD_SYMBOL            = symbol(symbol_code("CNYD"), 6);
+static constexpr symbol   USDT_SYMBOL            = symbol(symbol_code("USDT"), 6);
+
+// fiat currency symbols
 static constexpr symbol   CNY_SYMBOL            = symbol(symbol_code("CNY"), 2);
 static constexpr symbol   USD_SYMBOL            = symbol(symbol_code("USD"), 4);
+
 static constexpr uint32_t seconds_per_year      = 24 * 3600 * 7 * 52;
 static constexpr uint32_t seconds_per_month     = 24 * 3600 * 30;
 static constexpr uint32_t seconds_per_week      = 24 * 3600 * 7;
@@ -33,31 +39,32 @@ static constexpr uint32_t max_memo_size         = 1024;
 #define CONTRACT_TBL [[eosio::table, eosio::contract("otcbook")]]
 
 struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
-    asset min_buy_order_quantity;
-    asset min_sell_order_quantity;
-    asset min_pos_stake_quantity;
-    name pos_staking_contract;
+    // asset min_buy_order_quantity;
+    // asset min_sell_order_quantity;
+    // asset min_pos_stake_quantity;
+    // name pos_staking_contract;
     uint64_t withhold_expire_sec;   // the amount hold will be unfrozen upon expiry
     name transaction_fee_receiver;  // receiver account to transaction fees
     uint64_t transaction_fee_ratio; // fee ratio boosted by 10000
     set<name> otc_arbiters;
-    string cs_contact_title;
-    string cs_contact;
+    // string cs_contact_title;
+    // string cs_contact;
 
     global_t() {
-        min_buy_order_quantity      = asset(10, SYS_SYMBOL);
-        min_sell_order_quantity     = asset(10, SYS_SYMBOL);
-        min_pos_stake_quantity      = asset(0, SYS_SYMBOL);
+        // min_buy_order_quantity      = asset(10, SYS_SYMBOL);
+        // min_sell_order_quantity     = asset(10, SYS_SYMBOL);
+        // min_pos_stake_quantity      = asset(0, SYS_SYMBOL);
         withhold_expire_sec         = 600; //10 mins
         transaction_fee_ratio       = 0;
         
     }
 
-    EOSLIB_SERIALIZE( global_t, (min_buy_order_quantity)(min_sell_order_quantity)
-                                (min_pos_stake_quantity)(pos_staking_contract)
+    EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
+                                /*(min_pos_stake_quantity)(pos_staking_contract)*/
                                 (withhold_expire_sec)(transaction_fee_receiver)
                                 (transaction_fee_ratio)(otc_arbiters)
-                                (cs_contact_title)(cs_contact) )
+                                /*(cs_contact_title)(cs_contact)*/ 
+    )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
@@ -76,27 +83,75 @@ struct [[eosio::table("global2"), eosio::contract("otcbook")]] global2_t {
 typedef eosio::singleton< "global2"_n, global2_t > global2_singleton;
 
 enum PayType: uint8_t {
-    PAYMIN      = 0,
-    BANK        = 1,
-    WECAHAT     = 2,
-    ALIPAY      = 3,
-    USDT_ERC20  = 4,
-    USDT_TRC20  = 5,
-    MASTER      = 6,
-    VISA        = 7,
-    PAYPAL      = 8,
-    PAYMAX      = 9
+    PAYMIN      = 1,
+    BANK        = 2,
+    WECAHAT     = 3,
+    ALIPAY      = 4,
+    MASTER      = 5,
+    VISA        = 6,
+    PAYPAL      = 7,
+    PAYMAX      = 8
 };
 
-enum UserType: uint8_t {
-    MERCHANT       = 0,    // merchant
-    USER           = 1,    // user
-    ARBITER        = 2
+enum account_type_t: uint8_t {
+    MERCHANT       = 1,    // merchant
+    USER           = 2,    // user
+    ARBITER        = 3
+};
+
+enum class deal_action_t: uint8_t {
+    CREATE          = 1,
+    MAKER_ACCEPT    = 2,
+    TAKER_SEND,
+    MAKER_RECEIVE,
+    MAKER_SEND,
+    TAKER_RECEIVE,
+    CLOSE,
+    ADD_MEMO
+};
+
+static const set<deal_action_t> deal_process_actions = {
+    deal_action_t::MAKER_ACCEPT,
+    deal_action_t::TAKER_SEND,
+    deal_action_t::MAKER_RECEIVE,
+    deal_action_t::MAKER_SEND,
+    deal_action_t::TAKER_RECEIVE
+};
+
+enum class deal_status_t: uint8_t {
+    CREATED = 1,
+    MAKER_ACCEPTED,
+    TAKER_SENT,
+    MAKER_RECEIVED,
+    MAKER_SENT,
+    TAKER_RECEIVED,
+    CLOSED
 };
 
 enum order_side_t: uint8_t {
-    BUY         = 0,
-    SELL        = 1
+    BUY         = 1,
+    SELL        = 2
+};
+
+struct CONTRACT_TBL merchant_t {
+    name owner;
+    asset available_quantity = asset(0, SYS_SYMBOL);
+    set<uint8_t> accepted_payments; //accepted payments
+    string email;
+    string memo;
+
+    uint32_t processed_deals = 0;
+
+    merchant_t() {}
+    merchant_t(const name& o): owner(o) {}
+
+    uint64_t primary_key()const { return owner.value; }
+    uint64_t scope()const { return 0; }
+
+    typedef eosio::multi_index<"merchants"_n, merchant_t> idx_t;
+
+    EOSLIB_SERIALIZE(merchant_t,  (owner)(available_quantity)(accepted_payments)
+                                (processed_deals)(email)(memo) )
 };
 
 /**
@@ -107,13 +162,14 @@ enum order_side_t: uint8_t {
 struct CONTRACT_TBL order_t {
     uint64_t id;                //PK: available_primary_key
 
-    name owner;                 //order maker's account
+    name owner;                 //order maker's account, merchant
     set<uint8_t> accepted_payments;
     order_side_t side;          // order side, buy or sell
     asset price;                // MGP price the buyer willing to buy, symbol CNY
     asset price_usd;            // MGP price the buyer willing to buy, symbol USD
     asset quantity;
     asset min_accept_quantity;
+    string memo;
     asset frozen_quantity;
     asset fulfilled_quantity;    //support partial fulfillment
     bool closed;
@@ -126,35 +182,52 @@ struct CONTRACT_TBL order_t {
     uint64_t primary_key() const { return id; }
     // uint64_t scope() const { return price.symbol.code().raw(); } //not in use actually
 
-    //to sort sellers orders: smaller-price order first
-    uint64_t by_price() const { 
-        
-        return closed || (frozen_quantity + fulfilled_quantity >= quantity) ? -1 : price.amount; 
+    //to sort orders by price: 1. buy order: higher first; 2. sell order: lower first
+    uint128_t by_price() const {
+        uint128_t option = side;
+        uint64_t price_factor = price.amount;
+        price_factor = (side == order_side_t::BUY) ? std::numeric_limits<uint64_t>::max() - price_factor : price_factor;
+        return (option << 64) | (uint128_t)price_factor; 
     } 
     
     // TODO: should add index by side and price
     //to sort buyers orders: bigger-price order first
-    uint64_t by_invprice() const { return closed ? 0 : std::numeric_limits<uint64_t>::max() - price.amount; } 
+    // uint64_t by_invprice() const { return closed ? 0 : std::numeric_limits<uint64_t>::max() - price.amount; } 
 
     //to sort by order makers account
     uint64_t by_maker() const { return owner.value; }
   
-    EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(price)(price_usd)(quantity)(min_accept_quantity)
+    EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(price)(price_usd)(quantity)(min_accept_quantity)(memo)
                                     (frozen_quantity)(fulfilled_quantity)
                                     (closed)(created_at)(closed_at))
 };
 
 typedef eosio::multi_index
-< "buyorders"_n,  order_t,
-    indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_invprice> >,
+< "orders"_n,  order_t,
+    indexed_by<"price"_n, const_mem_fun<order_t, uint128_t, &order_t::by_price> >,
     indexed_by<"maker"_n, const_mem_fun<order_t, uint64_t, &order_t::by_maker> >
-> buy_order_t;
+> order_table_t;
 
-typedef eosio::multi_index
-< "selorders"_n, order_t,
-    indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_price> >,
-    indexed_by<"maker"_n, const_mem_fun<order_t, uint64_t, &order_t::by_maker> >
-> sell_order_t;
+// typedef eosio::multi_index
+// < "buyorders"_n,  order_t,
+//     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_invprice> >,
+//     indexed_by<"maker"_n, const_mem_fun<order_t, uint64_t, &order_t::by_maker> >
+// > buy_order_t;
+
+// typedef eosio::multi_index
+// < "selorders"_n, order_t,
+//     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_price> >,
+//     indexed_by<"maker"_n, const_mem_fun<order_t, uint64_t, &order_t::by_maker> >
+// > sell_order_t;
+
+struct deal_memo_t {
+    name account;
+    deal_status_t status;
+    deal_action_t action;
+    string memo;
+
+    EOSLIB_SERIALIZE(deal_memo_t,    (account)(status)(action)(memo) )
+};
 
 /**
  * buy/sell deal
@@ -182,6 +255,7 @@ struct CONTRACT_TBL deal_t {
     time_point_sec arbiter_passed_at;
 
     bool closed;
+    deal_status_t status;
     time_point_sec created_at;
     time_point_sec closed_at;
 
@@ -192,6 +266,7 @@ struct CONTRACT_TBL deal_t {
     time_point_sec maker_expired_at; // 卖家操作到期时间
     uint8_t restart_taker_num; // 重启买家超时次数
     uint8_t restart_maker_num; // 重启卖家超时次数
+    vector<deal_memo_t> memos;
 
     deal_t() {}
     deal_t(uint64_t i): id(i) {}
@@ -221,29 +296,9 @@ struct CONTRACT_TBL deal_t {
                                 (order_maker)(maker_passed)(maker_passed_at)
                                 (order_taker)(taker_passed)(taker_passed_at)
                                 (arbiter)(arbiter_passed)(arbiter_passed_at)
-                                (closed)(created_at)(closed_at)(order_sn)(pay_type)
+                                (closed)(status)(created_at)(closed_at)(order_sn)(pay_type)
                                 (expired_at)(maker_expired_at)
-                                (restart_taker_num)(restart_maker_num))
-};
-
-struct CONTRACT_TBL merchant_t {
-    name owner;
-    asset available_quantity = asset(0, SYS_SYMBOL);
-    set<uint8_t> accepted_payments; //accepted payments
-    uint32_t processed_deals = 0;
-    string email;
-    string memo;
-
-    merchant_t() {}
-    merchant_t(const name& o): owner(o) {}
-
-    uint64_t primary_key()const { return owner.value; }
-    uint64_t scope()const { return 0; }
-
-    typedef eosio::multi_index<"merchants"_n, merchant_t> idx_t;
-
-    EOSLIB_SERIALIZE(merchant_t,  (owner)(available_quantity)(accepted_payments)
-                                (processed_deals)(email)(memo) )
+                                (restart_taker_num)(restart_maker_num)(memos))
 };
 
 /**
