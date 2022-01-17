@@ -9,6 +9,7 @@
 #include <deque>
 #include <optional>
 #include <string>
+#include <map>
 #include <type_traits>
 
 namespace mgp {
@@ -94,6 +95,7 @@ enum PayType: uint8_t {
 };
 
 enum account_type_t: uint8_t {
+    NONE           = 0,
     MERCHANT       = 1,    // merchant
     USER           = 2,    // user
     ARBITER        = 3
@@ -110,15 +112,9 @@ enum class deal_action_t: uint8_t {
     ADD_MEMO
 };
 
-static const set<deal_action_t> deal_process_actions = {
-    deal_action_t::MAKER_ACCEPT,
-    deal_action_t::TAKER_SEND,
-    deal_action_t::MAKER_RECEIVE,
-    deal_action_t::MAKER_SEND,
-    deal_action_t::TAKER_RECEIVE
-};
 
 enum class deal_status_t: uint8_t {
+    NONE = 0,
     CREATED = 1,
     MAKER_ACCEPTED,
     TAKER_SENT,

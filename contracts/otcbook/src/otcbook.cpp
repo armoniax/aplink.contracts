@@ -318,7 +318,6 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     deal_t::idx_t deals(_self, _self.value);
     auto deal_itr = deals.find(deal_id);
     check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
-    check( !deal_itr->closed, "deal already closed: " + to_string(deal_id) ); // TODO:...
 
     order_table_t orders(_self, _self.value);
     auto order_itr = orders.find(deal_itr->order_id);
@@ -328,57 +327,62 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     auto now = time_point_sec(current_time_point());
 
     switch ((account_type_t) account_type) {
-        case MERCHANT:
-        {
-            check( deal_itr->order_maker == account, "no permission");
-            check( deal_itr->maker_passed_at == time_point_sec() , "No operation required" );
-
-            deals.modify( *deal_itr, _self, [&]( auto& row ) {
-                //row.maker_passed = pass; TODO:...
-                row.maker_passed_at = now;
-            });
-            break;
-        }
-        case USER:
-        {
-            // deal_expiry_tbl exp_time(_self,_self.value);
-            // auto exp_itr = exp_time.find(deal_id);
-            // // 超时表中没有数据表示已经超时
-            // check( exp_itr != exp_time.end() ,"the order has timed out");
-            // // 有数据可能是没有及时删除，进行时间检测
-            // check( exp_itr -> expired_at > now,"the order has timed out");
-            check( deal_itr->order_taker == account, "no permission");
-            check( deal_itr->expired_at > now,"the order has timed out");
-            check( deal_itr->taker_passed_at == time_point_sec() , "No operation required" );
-
-            deals.modify( *deal_itr, _self, [&]( auto& row ) {
-                // row.taker_passed = pass;
-                row.taker_passed_at = now;
-                // row.pay_type = pay_type;
-                row.maker_expired_at = time_point_sec(current_time_point().sec_since_epoch() + _gstate.withhold_expire_sec);
-            });
-            break;
-        }
-        // case ARBITER:
-        // {
-        // 	//verify if truly ariter
-        // 	check( deal_itr -> arbiter_passed_at == time_point_sec() , "No operation required" );
-        // 	check( _gstate.otc_arbiters.count(owner), "not an arbiter: " + owner.to_string() );
-
-        // 	deals.modify( *deal_itr, _self, [&]( auto& row ) {
-        // 		row.arbiter = owner;
-        // 		row.arbiter_passed = pass;
-        // 		row.arbiter_passed_at = now;
-        // 	});
-        // 	break;
-        // }
-        default:
-        {
-            check(false, "account type not supported: " + to_string(account_type));
-            break;
-        }
+    case MERCHANT: 
+        check( deal_itr->order_maker == account, "maker account mismatched");
+        break;
+    case USER:
+        check( deal_itr->order_taker == account, "taker account mismatched");
+        break;
+    default:
+        check(false, "account type not supported: " + to_string(account_type));
+        break;
     }
 
+    deal_status_t status = deal_itr->status;
+    deal_status_t limited_status = deal_status_t::NONE;
+    account_type_t limited_account_type = account_type_t::NONE;
+    deal_status_t next_status = deal_status_t::NONE;
+    check( status != deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) ); // TODO:...
+
+#define DEAL_ACTION_CASE(_action, _limited_account_type, _limited_status, _next_status) \
+    case deal_action_t::_action:                                                        \
+        limited_account_type = _limited_account_type;                                   \
+        limited_status = deal_status_t::_limited_status;                                \
+        next_status = deal_status_t::_next_status;                                      \
+        break;
+
+    switch ((deal_action_t)action)
+    {
+    // /*               action      account_type  limited_status   next_status  */
+    DEAL_ACTION_CASE(MAKER_ACCEPT,  MERCHANT,     CREATED,         MAKER_ACCEPTED)
+    DEAL_ACTION_CASE(TAKER_SEND,    USER,         MAKER_ACCEPTED,  TAKER_SENT)
+    DEAL_ACTION_CASE(MAKER_RECEIVE, MERCHANT,     TAKER_SENT,      MAKER_RECEIVED)
+    DEAL_ACTION_CASE(MAKER_SEND,    USER,         MAKER_RECEIVED,  MAKER_SENT)
+    DEAL_ACTION_CASE(TAKER_RECEIVE, MERCHANT,     MAKER_SENT,      TAKER_RECEIVED) 
+    DEAL_ACTION_CASE(ADD_MEMO,      NONE,         NONE,            NONE) 
+    default: 
+        check(false, "unsupported process deal action:" + to_string((uint8_t)action));
+        break;
+    }
+
+    if (limited_status != deal_status_t::NONE)
+        check(limited_status == deal_itr->status, "can not process deal action:" + to_string((uint8_t)action) 
+             + " at status: " + to_string((uint8_t)status) );
+    if (limited_account_type != account_type_t::NONE)
+        check(limited_account_type == (account_type_t)account_type, 
+            "can not process deal action:" + to_string((uint8_t)action) 
+             + " by account_type: " + to_string((uint8_t)account_type) );
+
+
+    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+        if (next_status != deal_status_t::NONE) {
+            row.status = next_status;
+        }
+        row.memos.push_back({account, status, (deal_action_t)action, memo});
+    });
+
+
+    #ifdef __comment
     int count = 0;
     if (deal_itr->maker_passed_at != time_point_sec())
         count++;
@@ -440,6 +444,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
         merchant.processed_deals++;
         _dbc.set( merchant );
     }
+    #endif
 
 }
 
