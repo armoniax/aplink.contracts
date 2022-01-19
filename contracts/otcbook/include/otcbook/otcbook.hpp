@@ -96,7 +96,7 @@ public:
      */
     [[eosio::action]]
     void processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
-        deal_action_t action, const string& memo);
+        uint8_t action, const string& memo);
 
     [[eosio::on_notify("eosio.token::transfer")]]
     void deposit(name from, name to, asset quantity, string memo);

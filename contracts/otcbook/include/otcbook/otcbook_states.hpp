@@ -219,8 +219,8 @@ typedef eosio::multi_index
 
 struct deal_memo_t {
     name account;
-    deal_status_t status;
-    deal_action_t action;
+    uint8_t status;
+    uint8_t action;
     string memo;
 
     EOSLIB_SERIALIZE(deal_memo_t,    (account)(status)(action)(memo) )
@@ -252,7 +252,7 @@ struct CONTRACT_TBL deal_t {
     // time_point_sec arbiter_passed_at;
 
     bool closed;
-    deal_status_t status;
+    uint8_t status;
     time_point_sec created_at;
     time_point_sec closed_at;
 

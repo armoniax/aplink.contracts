@@ -257,13 +257,13 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
         row.order_maker			= order_maker;
         row.order_taker			= taker;
         row.closed				= false;
-        row.status				= deal_status_t::CREATED;
+        row.status				= (uint8_t)deal_status_t::CREATED;
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
         row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
         row.restart_taker_num 	= 0;
         row.restart_maker_num 	= 0;
-        row.memos.push_back({taker, row.status, deal_action_t::CREATE, memo});
+        row.memos.push_back({taker, row.status, (uint8_t)deal_action_t::CREATE, memo});
     });
 
     // 添加交易到期表数据
@@ -308,8 +308,8 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( !order_itr->closed, "order already closed" );
 
     auto action = deal_action_t::CLOSE;
-    deal_status_t status = deal_itr->status;
-    check(deal_status_t::CREATED == deal_itr->status || deal_status_t::TAKER_RECEIVED == deal_itr->status, 
+    auto status = (deal_status_t)deal_itr->status;
+    check(deal_status_t::CREATED == status || deal_status_t::TAKER_RECEIVED == status, 
         "can not process deal action:" + to_string((uint8_t)action) 
             + " at status: " + to_string((uint8_t)status) );
 
@@ -321,15 +321,15 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     });
 
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
-        row.status = deal_status_t::CLOSED;
+        row.status = (uint8_t)deal_status_t::CLOSED;
         row.closed_at = time_point_sec(current_time_point());
-        row.memos.push_back({account, status, action, memo});
+        row.memos.push_back({account, (uint8_t)status, (uint8_t)action, memo});
     });
 
 }
 
 void otcbook::processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
-    deal_action_t action, const string& memo
+    uint8_t action, const string& memo
 ) {
     require_auth( account );
 
@@ -356,7 +356,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
         break;
     }
 
-    deal_status_t status = deal_itr->status;
+    auto status = (deal_status_t)deal_itr->status;
     deal_status_t limited_status = deal_status_t::NONE;
     account_type_t limited_account_type = account_type_t::NONE;
     deal_status_t next_status = deal_status_t::NONE;
@@ -384,7 +384,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     }
 
     if (limited_status != deal_status_t::NONE)
-        check(limited_status == deal_itr->status, "can not process deal action:" + to_string((uint8_t)action) 
+        check(limited_status == status, "can not process deal action:" + to_string((uint8_t)action) 
              + " at status: " + to_string((uint8_t)status) );
     if (limited_account_type != account_type_t::NONE)
         check(limited_account_type == (account_type_t)account_type, 
@@ -394,9 +394,9 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
 
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
         if (next_status != deal_status_t::NONE) {
-            row.status = next_status;
+            row.status = (uint8_t)next_status;
         }
-        row.memos.push_back({account, status, (deal_action_t)action, memo});
+        row.memos.push_back({account, (uint8_t)status, action, memo});
     });
 
 
@@ -559,7 +559,8 @@ void otcbook::timeoutdeal() {
 
              // 订单处于买家未操作状态进行关闭
             if (deal_itr != deals.end() && 
-                (deal_itr->status == deal_status_t::CREATED ||  deal_itr->status == deal_status_t::MAKER_ACCEPTED) ) {
+                ((deal_status_t)deal_itr->status == deal_status_t::CREATED 
+                    ||  (deal_status_t)deal_itr->status == deal_status_t::MAKER_ACCEPTED) ) {
 
                 auto order_id = deal_itr->order_id;
                 order_table_t orders(_self, _self.value);
