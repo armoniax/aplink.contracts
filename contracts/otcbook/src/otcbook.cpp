@@ -155,10 +155,9 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
 
     check( price.symbol.is_valid(), "Invalid quantity symbol name" );
     check( price.is_valid(), "Invalid quantity");
+    // only support CNY
     check( price.symbol == CNY_SYMBOL, "Price Symbol not allowed" );
     check( price.amount > 0, "price must be positive" );
-
-    check( min_accept_quantity.symbol == price.symbol, "min accept symbol not equal to price symbol" );
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );

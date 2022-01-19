@@ -149,7 +149,7 @@ struct CONTRACT_TBL merchant_t {
     typedef eosio::multi_index<"merchants"_n, merchant_t> idx_t;
 
     EOSLIB_SERIALIZE(merchant_t,  (owner)(stake_quantity)(accepted_payments)
-                                (processed_deals)(email)(memo) )
+                                (email)(memo)(processed_deals))
 };
 
 /**
