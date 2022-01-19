@@ -196,9 +196,10 @@ struct CONTRACT_TBL order_t {
     //to sort by order makers account
     uint64_t by_maker() const { return owner.value; }
   
-    EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(price)/*(price_usd)*/(quantity)(min_accept_quantity)(memo)
-                                    (frozen_quantity)(fulfilled_quantity)
-                                    (closed)(created_at)(closed_at))
+    EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(side)(price)/*(price_usd)*/
+                                (quantity)(min_accept_quantity)(memo)
+                                (frozen_quantity)(fulfilled_quantity)
+                                (closed)(created_at)(closed_at))
 };
 
 typedef eosio::multi_index
