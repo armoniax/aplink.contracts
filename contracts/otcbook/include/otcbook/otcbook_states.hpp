@@ -235,9 +235,7 @@ struct deal_memo_t {
  */
 struct CONTRACT_TBL deal_t {
     uint64_t id;                //PK: available_primary_key
-
     uint64_t order_id;
-    // TODO: order_side
     asset order_price;
     // asset order_price_usd;
     asset deal_quantity;
@@ -260,12 +258,12 @@ struct CONTRACT_TBL deal_t {
     time_point_sec closed_at;
 
     uint64_t order_sn; // 订单号（前端生成）
-    uint8_t pay_type; // 选择的支付类型
+    // uint8_t pay_type; // 选择的支付类型
     time_point_sec expired_at; // 订单到期时间
 
     time_point_sec maker_expired_at; // 卖家操作到期时间
-    uint8_t restart_taker_num; // 重启买家超时次数
-    uint8_t restart_maker_num; // 重启卖家超时次数
+    // uint8_t restart_taker_num; // 重启买家超时次数
+    // uint8_t restart_maker_num; // 重启卖家超时次数
     vector<deal_memo_t> memos;
 
     deal_t() {}
@@ -296,9 +294,10 @@ struct CONTRACT_TBL deal_t {
                                 (order_maker)//(maker_passed)(maker_passed_at)
                                 (order_taker)//(taker_passed)(taker_passed_at)
                                 (arbiter)//(arbiter_passed)(arbiter_passed_at)
-                                (closed)(status)(created_at)(closed_at)(order_sn)(pay_type)
+                                (closed)(status)(created_at)(closed_at)(order_sn)//(pay_type)
                                 (expired_at)(maker_expired_at)
-                                (restart_taker_num)(restart_maker_num)(memos))
+                                // (restart_taker_num)(restart_maker_num)
+                                (memos))
 };
 
 /**
