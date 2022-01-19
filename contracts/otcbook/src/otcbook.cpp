@@ -260,13 +260,13 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
         row.order_maker			= order_maker;
         row.order_taker			= taker;
         row.closed				= false;
-        row.status				= (uint8_t)deal_status_t::NONE;
+        row.status				= (uint8_t)deal_status_t::CREATED;
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
         row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
         // row.restart_taker_num 	= 0;
         // row.restart_maker_num 	= 0;
-        row.memos.push_back({taker, row.status, (uint8_t)deal_action_t::CREATE, memo});
+        row.memos.push_back({taker, (uint8_t)deal_status_t::NONE, (uint8_t)deal_action_t::CREATE, memo});
     });
 
     // 添加交易到期表数据
