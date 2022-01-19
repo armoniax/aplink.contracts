@@ -233,8 +233,6 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
     check( itr->owner != taker, "taker can not be equal to maker");
     check( deal_quantity.symbol == itr->quantity.symbol, "Token Symbol mismatch" );
     check( !itr->closed, "Order already closed" );
-    // check( itr->quantity > itr->frozen_quantity, "Remaining quantity insufficient" );
-    // check( itr->quantity - itr->frozen_quantity > itr->fulfilled_quantity, "Err: Remaining quantity insufficient" );
     check( itr->quantity >= itr->frozen_quantity + itr->fulfilled_quantity + deal_quantity, 
         "Order's quantity insufficient" );
     // check( itr->price.amount * deal_quantity.amount >= itr->min_accept_quantity.amount * 10000, "Order's min accept quantity not met!" );
@@ -262,7 +260,7 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
         row.order_maker			= order_maker;
         row.order_taker			= taker;
         row.closed				= false;
-        row.status				= (uint8_t)deal_status_t::CREATED;
+        row.status				= (uint8_t)deal_status_t::NONE;
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
         row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
@@ -380,8 +378,8 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     DEAL_ACTION_CASE(MAKER_ACCEPT,  MERCHANT,     CREATED,         MAKER_ACCEPTED)
     DEAL_ACTION_CASE(TAKER_SEND,    USER,         MAKER_ACCEPTED,  TAKER_SENT)
     DEAL_ACTION_CASE(MAKER_RECEIVE, MERCHANT,     TAKER_SENT,      MAKER_RECEIVED)
-    DEAL_ACTION_CASE(MAKER_SEND,    USER,         MAKER_RECEIVED,  MAKER_SENT)
-    DEAL_ACTION_CASE(TAKER_RECEIVE, MERCHANT,     MAKER_SENT,      TAKER_RECEIVED) 
+    DEAL_ACTION_CASE(MAKER_SEND,    MERCHANT,     MAKER_RECEIVED,  MAKER_SENT)
+    DEAL_ACTION_CASE(TAKER_RECEIVE, USER,         MAKER_SENT,      TAKER_RECEIVED) 
     DEAL_ACTION_CASE(ADD_MEMO,      NONE,         NONE,            NONE) 
     default: 
         check(false, "unsupported process deal action:" + to_string((uint8_t)action));
