@@ -225,18 +225,20 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
 ) {
     require_auth( taker );
 
-    check( deal_quantity.symbol == SYS_SYMBOL, "Token Symbol not allowed" );
     // check( deal_quantity >= _gstate.min_buy_order_quantity, "min buy order quantity not met: " +  _gstate.min_buy_order_quantity.to_string() );
 
     order_table_t orders(_self, _self.value);
     auto itr = orders.find(order_id);
     check( itr != orders.end(), "Order not found: " + to_string(order_id) );
     check( itr->owner != taker, "taker can not be equal to maker");
+    check( deal_quantity.symbol == itr->quantity.symbol, "Token Symbol mismatch" );
     check( !itr->closed, "Order already closed" );
-    check( itr->quantity > itr->frozen_quantity, "Err: Remaining quantity insufficient" );
-    check( itr->quantity - itr->frozen_quantity > itr->fulfilled_quantity, "Err: Remaining quantity insufficient" );
-    check( itr->quantity - itr->frozen_quantity - itr->fulfilled_quantity >= deal_quantity, "Insufficient amount to make a deal" );
-    check( itr->price.amount * deal_quantity.amount >= itr->min_accept_quantity.amount * 10000, "Order's min accept quantity not met!" );
+    // check( itr->quantity > itr->frozen_quantity, "Remaining quantity insufficient" );
+    // check( itr->quantity - itr->frozen_quantity > itr->fulfilled_quantity, "Err: Remaining quantity insufficient" );
+    check( itr->quantity >= itr->frozen_quantity + itr->fulfilled_quantity + deal_quantity, 
+        "Order's quantity insufficient" );
+    // check( itr->price.amount * deal_quantity.amount >= itr->min_accept_quantity.amount * 10000, "Order's min accept quantity not met!" );
+    check( deal_quantity >= itr->min_accept_quantity, "Order's min accept quantity not met!" );
     
     asset order_price = itr->price;
     // asset order_price_usd = itr->price_usd;

@@ -84,7 +84,7 @@ public:
     void closeorder(const name& owner, const uint64_t& order_id);
 
     [[eosio::action]]
-    void opendeal(const name& taker, const uint64_t& order_id, const asset& deal_quantity,const uint64_t& order_sn, 
+    void opendeal(const name& taker, const uint64_t& order_id, const asset& deal_quantity, const uint64_t& order_sn, 
         const string& memo);
 
     [[eosio::action]]
