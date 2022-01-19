@@ -198,7 +198,7 @@ struct CONTRACT_TBL order_t {
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(side)(price)/*(price_usd)*/
                                 (quantity)(min_accept_quantity)(memo)
-                                (frozen_quantity)(fulfilled_quantity)
+                                (stake_quantity)(frozen_quantity)(fulfilled_quantity)
                                 (closed)(created_at)(closed_at))
 };
 
