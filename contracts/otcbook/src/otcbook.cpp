@@ -321,6 +321,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
 
     orders.modify( *order_itr, _self, [&]( auto& row ) {
         row.frozen_quantity -= deal_quantity;
+        row.fulfilled_quantity += deal_quantity;
     });
 
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
