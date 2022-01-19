@@ -106,8 +106,8 @@ void otcbook::setmerchant(const name& owner, const set<uint8_t>pay_methods, cons
     _dbc.get(merchant);
     merchant.accepted_payments.clear();
     for (auto& method : pay_methods) {
-        check( (PayType) method < PayType::PAYMAX, "pay method illegal: " + to_string(method) );
-        check( (PayType) method > PayType::PAYMIN, "pay method illegal: " + to_string(method) );
+        check( (pay_type_t) method < pay_type_t::PAYMAX, "pay method illegal: " + to_string(method) );
+        check( (pay_type_t) method > pay_type_t::PAYMIN, "pay method illegal: " + to_string(method) );
 
         merchant.accepted_payments.insert( method );
     }

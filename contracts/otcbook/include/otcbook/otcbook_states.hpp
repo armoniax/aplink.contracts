@@ -83,15 +83,15 @@ struct [[eosio::table("global2"), eosio::contract("otcbook")]] global2_t {
 };
 typedef eosio::singleton< "global2"_n, global2_t > global2_singleton;
 
-enum PayType: uint8_t {
-    PAYMIN      = 1,
-    BANK        = 2,
-    WECAHAT     = 3,
-    ALIPAY      = 4,
-    MASTER      = 5,
-    VISA        = 6,
-    PAYPAL      = 7,
-    PAYMAX      = 8
+enum pay_type_t: uint8_t {
+    PAYMIN      = 0,
+    BANK        = 1,
+    WECAHAT     = 2,
+    ALIPAY      = 3,
+    MASTER      = 4,
+    VISA        = 5,
+    PAYPAL      = 6,
+    PAYMAX      = 7
 };
 
 enum account_type_t: uint8_t {
