@@ -179,7 +179,7 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
     orders.emplace( _self, [&]( auto& row ) {
         row.id 					= order_id;
         row.owner 				= owner;
-        row.side				= (order_side_t)side;
+        row.side				= side;
         row.price				= price;
         row.price_usd			= asset( price.amount * 10000 / _gstate2.usd_exchange_rate.amount , USD_SYMBOL);
         row.quantity			= quantity;

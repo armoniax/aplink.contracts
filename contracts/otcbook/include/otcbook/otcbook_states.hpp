@@ -161,7 +161,7 @@ struct CONTRACT_TBL order_t {
 
     name owner;                 //order maker's account, merchant
     set<uint8_t> accepted_payments;
-    order_side_t side;          // order side, buy or sell
+    uint8_t side;          // order side, buy or sell
     asset price;                // MGP price the buyer willing to buy, symbol CNY
     asset price_usd;            // MGP price the buyer willing to buy, symbol USD
     asset quantity;
