@@ -145,12 +145,13 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
     require_auth( owner );
     
     // check( _gstate.usd_exchange_rate > asset(0, USD_SYMBOL), "The exchange rate is incorrect");
-    // TODO: support BUY order
     check( side == SELL, "Invalid order side" );
     check( quantity.symbol.is_valid(), "Invalid quantity symbol name" );
     check( quantity.is_valid(), "Invalid quantity");
-    check( quantity.symbol == SYS_SYMBOL, "Token Symbol not allowed" );
-    // check( quantity >= _gstate.min_sell_order_quantity, "min sell order quanity not met: " + _gstate.min_sell_order_quantity.to_string() );
+    // only support CNYD at now
+    check( quantity.symbol == CNYD_SYMBOL, "Token Symbol not allowed" );
+    check( min_accept_quantity.symbol == quantity.symbol, "min_accept_quantity Symbol mismatch with quantity" );
+    // check( quantity >= _gstate.min_sell_order_quantity, "min sell order quantity not met: " + _gstate.min_sell_order_quantity.to_string() );
 
     check( price.symbol.is_valid(), "Invalid quantity symbol name" );
     check( price.is_valid(), "Invalid quantity");
@@ -161,8 +162,10 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
-    check( merchant.available_quantity >= quantity, "merchant insufficient quantitiy to sell" );
-    merchant.available_quantity -= quantity;
+    // only support CNYD asset
+    auto stake_quantity = quantity; // TODO: process 70% used-rate of stake
+    check( merchant.stake_quantity >= stake_quantity, "merchant stake quantity insufficient" );
+    merchant.stake_quantity -= stake_quantity;
     _dbc.set( merchant );
 
     // TODO: check pos_staking_contract
@@ -183,6 +186,7 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
         row.price				= price;
         row.price_usd			= asset( price.amount * 10000 / _gstate2.usd_exchange_rate.amount , USD_SYMBOL);
         row.quantity			= quantity;
+        row.stake_quantity      = stake_quantity;
         row.min_accept_quantity = min_accept_quantity;
         row.memo = memo;
         row.closed				= false;
@@ -207,7 +211,7 @@ void otcbook::closeorder(const name& owner, const uint64_t& order_id) {
     check( itr->quantity >= itr->fulfilled_quantity, "Err: insufficient quanitty" );
 
     // 撤单后币未交易完成的币退回
-    merchant.available_quantity += itr->quantity - itr->fulfilled_quantity;
+    merchant.stake_quantity += itr->stake_quantity;
     _dbc.set( merchant );
 
     orders.modify( *itr, _self, [&]( auto& row ) {
@@ -530,8 +534,8 @@ void otcbook::withdraw(const name& owner, asset quantity){
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
-    check( merchant.available_quantity >= quantity, "The withdrawl amount must be less than the balance" );
-    merchant.available_quantity -= quantity;
+    check( merchant.stake_quantity >= quantity, "The withdrawl amount must be less than the balance" );
+    merchant.stake_quantity -= quantity;
     _dbc.set(merchant);
 
     TRANSFER( SYS_BANK, owner, quantity, "withdraw" )
@@ -683,8 +687,8 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
     merchant_t merchant(from);
     _dbc.get( merchant );
 
-    if (quantity.symbol == SYS_SYMBOL){
-        merchant.available_quantity += quantity;
+    if (quantity.symbol == CNYD_SYMBOL){
+        merchant.stake_quantity += quantity;
     }
 
     _dbc.set( merchant );

@@ -22,8 +22,9 @@ static constexpr eosio::name SYS_BANK{"eosio.token"_n};
 
 // crypto assets
 static constexpr symbol   SYS_SYMBOL            = symbol(symbol_code("MGP"), 4);
-static constexpr symbol   CNYD_SYMBOL            = symbol(symbol_code("CNYD"), 6);
-static constexpr symbol   USDT_SYMBOL            = symbol(symbol_code("USDT"), 6);
+static constexpr symbol   CNYD_SYMBOL           = symbol(symbol_code("CNYD"), 6);
+static constexpr symbol   USDT_SYMBOL           = symbol(symbol_code("USDT"), 6);
+static constexpr symbol   STAKE_SYMBOL          = CNYD_SYMBOL;
 
 // fiat currency symbols
 static constexpr symbol   CNY_SYMBOL            = symbol(symbol_code("CNY"), 2);
@@ -132,7 +133,7 @@ enum order_side_t: uint8_t {
 
 struct CONTRACT_TBL merchant_t {
     name owner;
-    asset available_quantity = asset(0, SYS_SYMBOL);
+    asset stake_quantity = asset(0, STAKE_SYMBOL);
     set<uint8_t> accepted_payments; //accepted payments
     string email;
     string memo;
@@ -147,7 +148,7 @@ struct CONTRACT_TBL merchant_t {
 
     typedef eosio::multi_index<"merchants"_n, merchant_t> idx_t;
 
-    EOSLIB_SERIALIZE(merchant_t,  (owner)(available_quantity)(accepted_payments)
+    EOSLIB_SERIALIZE(merchant_t,  (owner)(stake_quantity)(accepted_payments)
                                 (processed_deals)(email)(memo) )
 };
 
@@ -167,6 +168,7 @@ struct CONTRACT_TBL order_t {
     asset quantity;
     asset min_accept_quantity;
     string memo;
+    asset stake_quantity;
     asset frozen_quantity;
     asset fulfilled_quantity;    //support partial fulfillment
     bool closed;
