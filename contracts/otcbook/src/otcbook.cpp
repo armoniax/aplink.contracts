@@ -183,7 +183,7 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
         row.owner 				= owner;
         row.side				= side;
         row.price				= price;
-        row.price_usd			= asset( price.amount * 10000 / _gstate2.usd_exchange_rate.amount , USD_SYMBOL);
+        // row.price_usd			= asset( price.amount * 10000 / _gstate2.usd_exchange_rate.amount , USD_SYMBOL);
         row.quantity			= quantity;
         row.stake_quantity      = stake_quantity;
         row.min_accept_quantity = min_accept_quantity;
@@ -239,7 +239,7 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
     check( itr->price.amount * deal_quantity.amount >= itr->min_accept_quantity.amount * 10000, "Order's min accept quantity not met!" );
     
     asset order_price = itr->price;
-    asset order_price_usd = itr->price_usd;
+    // asset order_price_usd = itr->price_usd;
     name order_maker = itr->owner;
 
     deal_t::idx_t deals(_self, _self.value);
@@ -255,7 +255,7 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
         row.id 					= deal_id;
         row.order_id 			= order_id;
         row.order_price			= order_price;
-        row.order_price_usd		= order_price_usd;
+        // row.order_price_usd		= order_price_usd;
         row.deal_quantity		= deal_quantity;
         row.order_maker			= order_maker;
         row.order_taker			= taker;

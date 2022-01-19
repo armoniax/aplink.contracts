@@ -164,7 +164,7 @@ struct CONTRACT_TBL order_t {
     set<uint8_t> accepted_payments;
     uint8_t side;          // order side, buy or sell
     asset price;                // MGP price the buyer willing to buy, symbol CNY
-    asset price_usd;            // MGP price the buyer willing to buy, symbol USD
+    // asset price_usd;            // MGP price the buyer willing to buy, symbol USD
     asset quantity;
     asset min_accept_quantity;
     string memo;
@@ -196,7 +196,7 @@ struct CONTRACT_TBL order_t {
     //to sort by order makers account
     uint64_t by_maker() const { return owner.value; }
   
-    EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(price)(price_usd)(quantity)(min_accept_quantity)(memo)
+    EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(price)/*(price_usd)*/(quantity)(min_accept_quantity)(memo)
                                     (frozen_quantity)(fulfilled_quantity)
                                     (closed)(created_at)(closed_at))
 };
@@ -238,7 +238,7 @@ struct CONTRACT_TBL deal_t {
     uint64_t order_id;
     // TODO: order_side
     asset order_price;
-    asset order_price_usd;
+    // asset order_price_usd;
     asset deal_quantity;
 
     name order_maker; // merchant 
@@ -291,7 +291,7 @@ struct CONTRACT_TBL deal_t {
         indexed_by<"expiry"_n,  const_mem_fun<deal_t, uint64_t, &deal_t::by_expired_at> >
     > idx_t;
 
-    EOSLIB_SERIALIZE(deal_t,    (id)(order_id)(order_price)(order_price_usd)(deal_quantity)
+    EOSLIB_SERIALIZE(deal_t,    (id)(order_id)(order_price)/*(order_price_usd)*/(deal_quantity)
                                 (order_maker)//(maker_passed)(maker_passed_at)
                                 (order_taker)//(taker_passed)(taker_passed_at)
                                 (arbiter)//(arbiter_passed)(arbiter_passed_at)
