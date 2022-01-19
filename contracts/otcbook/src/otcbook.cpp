@@ -190,8 +190,8 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
         row.memo = memo;
         row.closed				= false;
         row.created_at			= time_point_sec(current_time_point());
-        row.frozen_quantity.symbol = SYS_SYMBOL;
-        row.fulfilled_quantity.symbol = SYS_SYMBOL;
+        row.frozen_quantity = asset(0, quantity.symbol);
+        row.fulfilled_quantity = asset(0, quantity.symbol);
         row.accepted_payments = merchant.accepted_payments;
     });
 }
@@ -531,7 +531,7 @@ void otcbook::withdraw(const name& owner, asset quantity){
 
     check( quantity.amount > 0, "quanity must be positive" );
     check( quantity.symbol.is_valid(), "Invalid quantity symbol name" );
-    check( quantity.symbol == SYS_SYMBOL, "Token Symbol not allowed" );
+    check( quantity.symbol == STAKE_SYMBOL, "Token Symbol not allowed" );
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
@@ -688,7 +688,7 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
     merchant_t merchant(from);
     _dbc.get( merchant );
 
-    if (quantity.symbol == CNYD_SYMBOL){
+    if (get_first_receiver() == SYS_BANK && quantity.symbol == CNYD_SYMBOL){
         merchant.stake_quantity += quantity;
     }
 
