@@ -67,7 +67,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     map<string, float> coin_price = {
         "USDT_CNY": 6.3,
         "CNYD_CNY": 1
-    }
+    };
 
     global_t() {
         
