@@ -5,10 +5,11 @@
 #include <eosio/singleton.hpp>
 #include <eosio/system.hpp>
 #include <eosio/time.hpp>
+#include <eosio/name.hpp>
 
-#include <deque>
 #include <optional>
 #include <string>
+#include <vector>
 #include <map>
 #include <type_traits>
 
