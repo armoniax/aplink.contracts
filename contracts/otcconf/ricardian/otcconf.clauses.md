@@ -1,0 +1,6 @@
+<h1 class="clause">UserAgreement</h1>
+
+User agreement for the decentralized OTC (over-the-counter) can go here.
+
+<h1 class="clause">OTC_Conf_Agreement</h1>
+This is to provide a decentralized configuration for OTC environment
