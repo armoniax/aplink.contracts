@@ -1,7 +1,7 @@
 #include <eosio.token/eosio.token.hpp>
-#include <otcbook/safemath.hpp>
-#include <otcbook/otcconf.hpp>
-#include <otcbook/utils.h>
+#include <otcconf/safemath.hpp>
+#include <otcconf/otcconf.hpp>
+#include <otcconf/utils.h>
 
 
 using namespace eosio;
@@ -14,7 +14,7 @@ using namespace std;
 using namespace eosio;
 using namespace wasm::safemath;
 
-void otcbook::init() {
+void otcconf::init() {
 }
 
 
