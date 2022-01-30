@@ -60,7 +60,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
             "USDT_ERC20", 
             "USDT_BEP20",
             "BTC",
-            "ETH"}
+            "ETH"
         }
     };
 
