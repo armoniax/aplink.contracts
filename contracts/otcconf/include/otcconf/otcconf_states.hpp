@@ -37,17 +37,24 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
         false 
     };
 
-    vector<name> coin_type = {"USDT_ERC20"_n, "USDT_TRC20"_n, "USDT_BEP20"_n, "CNYD_BEP20"_n, "CNYD_ARC20"_n};
-    vector<name> fiat_type = {"CNY"_n, "USD"_n, "EUR"_n, "INR"_n};
+    name USDT_ERC20 = "USDT_ERC20"_n;
+    name USDT_TRC20 = "USDT_TRC20"_n;
+    name USDT_BEP20 = "USDT_BEP20"_n;
+    name CNYD_BEP20 = "CNYD_BEP20"_n;
+    name CNYD_ARC20 = "CNYD_ARC20"_n;
+    name CNY        = "CNY"_n;
+
+    vector<name> coin_type = { USDT_ERC20, USDT_TRC20, USDT_BEP20, CNYD_BEP20, CNYD_ARC20 };
+    vector<name> fiat_type = { CNY, USD, EUR, INR };
 
     /** 
      * OTC merchants to make sell orders with cypto
      */
     map<name, vector<name>> coin_to_fiat_conf = {
-        {"CNYD_BEP20"_n:  {"CNY"_n} },
-        {"CNYD_ARC20"_n:  {"CNY"_n} },
-        {"BTC"_n:         {"CNY"_n} },
-        {"ETH"_n:         {"CNY"_n} }
+        { CNYD_BEP20:  { CNY } },
+        { CNYD_ARC20:  { CNY } },
+        { BTC:         { CNY } },
+        { ETH:         { CNY } }
     };
     
     /** 
