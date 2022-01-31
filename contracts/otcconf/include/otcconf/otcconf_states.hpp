@@ -20,12 +20,15 @@ using namespace eosio;
 
 #define CONTRACT_TBL [[eosio::table, eosio::contract("otcconf")]]
 
-constexpr name USDT_ERC20 = "USDT.ERC20"_n;
-constexpr name USDT_TRC20 = "USDT.TRC20"_n;
-constexpr name USDT_BEP20 = "USDT.BEP20"_n;
-constexpr name CNYD_BEP20 = "CNYD.BEP20"_n;
-constexpr name CNYD_ARC20 = "CNYD.ARC20"_n;
-constexpr name CNY        = "CNY"_n;
+constexpr name USDT_ERC20 = "usdt.erc"_n;
+constexpr name USDT_TRC20 = "usdt.trc"_n;
+constexpr name USDT_BEP20 = "usdt.bep"_n;
+constexpr name CNYD_BEP20 = "cnyd.bep"_n;
+constexpr name CNYD_ARC20 = "cnyd.arc"_n;
+constexpr name CNY        = "cny"_n;
+constexpr name USD        = "usd"_n;
+constexpr name EUR        = "eur"_n;
+constexpr name INR        = "inr"_n;
 
 
 /** 
