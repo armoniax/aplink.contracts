@@ -41,7 +41,7 @@ if ( debug ) {                               \
    eosio::print(str);                                                             \
    eosio::print( __VA_ARGS__ ); }}
 
-class [[eosio::contract("otcconf")]] otcbook: public eosio::contract {
+class [[eosio::contract("otcconf")]] otcconf: public eosio::contract {
 private:
     global_singleton    _global;
     global_t            _gstate;

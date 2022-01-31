@@ -25,6 +25,10 @@ constexpr name USDT_TRC20 = "usdt.trc"_n;
 constexpr name USDT_BEP20 = "usdt.bep"_n;
 constexpr name CNYD_BEP20 = "cnyd.bep"_n;
 constexpr name CNYD_ARC20 = "cnyd.arc"_n;
+constexpr name USDT_CNY   = "usdt.cny"_n;
+constexpr name CNYD_CNY   = "cnyd.cny"_n;
+constexpr name BTC        = "btc"_n;
+constexpr name ETH        = "eth"_n;
 constexpr name CNY        = "cny"_n;
 constexpr name USD        = "usd"_n;
 constexpr name EUR        = "eur"_n;
@@ -66,17 +70,18 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
      * OTC merchants to make buy orders with fiat
      */
     map<name, vector<name>> fiat_to_coin_conf = {
-        CNY, {
+        { CNY, {
             CNYD_BEP20, 
             CNYD_ARC20,  
             USDT_ERC20, 
             USDT_BEP20,
             BTC,
             ETH }
+        }
     };
 
     map<name, float> coin_price = {
-        { USDT_CNY. 6.3 },
+        { USDT_CNY, 6.3 },
         { CNYD_CNY, 1   }
     };
 

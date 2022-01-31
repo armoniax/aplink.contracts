@@ -1,8 +1,11 @@
 #pragma once
 
 #include <eosio/eosio.hpp>
+#include <vector>
 
 namespace wasm {
+
+using namespace std;
 
 uint64_t char_to_symbol( char c );
 uint64_t string_to_name( const char* str );

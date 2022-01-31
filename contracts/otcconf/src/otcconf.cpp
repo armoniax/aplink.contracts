@@ -18,7 +18,4 @@ void otcconf::init() {
 }
 
 
-}
-
-
-}  //end of namespace:: mgpbpvoting
+}  //end of namespace:: otc
