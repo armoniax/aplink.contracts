@@ -48,6 +48,7 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     uint64_t withhold_expire_sec;   // the amount hold will be unfrozen upon expiry
     name transaction_fee_receiver;  // receiver account to transaction fees
     uint64_t transaction_fee_ratio; // fee ratio boosted by 10000
+    name admin;
     set<name> otc_arbiters;
     // string cs_contact_title;
     // string cs_contact;
@@ -64,7 +65,7 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
                                 /*(min_pos_stake_quantity)(pos_staking_contract)*/
                                 (withhold_expire_sec)(transaction_fee_receiver)
-                                (transaction_fee_ratio)(otc_arbiters)
+                                (transaction_fee_ratio)(admin)(otc_arbiters)
                                 /*(cs_contact_title)(cs_contact)*/ 
     )
 };

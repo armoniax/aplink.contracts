@@ -95,6 +95,11 @@ void otcbook::init() {
 
 }
 
+void otcbook::setadmin(const name& admin) {
+    require_auth( _self );
+    _gstate.admin = admin;
+}
+
 void otcbook::setmerchant(const name& owner, const set<uint8_t>pay_methods, const string& email, const string& memo) {
     require_auth( owner );
 

@@ -55,7 +55,12 @@ public:
         _dbc(_self), contract(receiver, code, ds), 
         _global(_self, _self.value), _global2(_self, _self.value)
     {
-        _gstate = _global.exists() ? _global.get() : global_t{};
+        if (_global.exists()) {
+            _gstate = _global.get();
+        } else { // first init
+            _gstate = global_t{};
+            _gstate.admin = _self;
+        }
         _gstate2 = _global2.exists() ? _global2.get() : global2_t{};
     }
 
@@ -66,6 +71,9 @@ public:
 
     [[eosio::action]] //only code maintainer can init
     void init();
+
+    [[eosio::action]] //only code maintainer can init
+    void setadmin(const name& admin);
 
     [[eosio::action]]
     void setmerchant(const name& owner, const set<uint8_t>pay_methods, const string& email, const string& memo_to_buyer);
