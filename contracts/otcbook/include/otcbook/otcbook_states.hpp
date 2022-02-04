@@ -127,9 +127,16 @@ enum class deal_status_t: uint8_t {
     CLOSED
 };
 
-enum order_side_t: uint8_t {
+enum class order_side_t: uint8_t {
     BUY         = 1,
     SELL        = 2
+};
+
+enum  class merchant_status_t: uint8_t {
+    NONE = 0,
+    REGISTERED = 1,
+    ENABLED = 2,
+    DISABLED = 3
 };
 
 struct CONTRACT_TBL merchant_t {
@@ -138,8 +145,9 @@ struct CONTRACT_TBL merchant_t {
     set<uint8_t> accepted_payments; //accepted payments
     string email;
     string memo;
+    uint8_t status;
 
-    uint32_t processed_deals = 0;
+    // uint32_t processed_deals = 0;
 
     merchant_t() {}
     merchant_t(const name& o): owner(o) {}
@@ -150,7 +158,7 @@ struct CONTRACT_TBL merchant_t {
     typedef eosio::multi_index<"merchants"_n, merchant_t> idx_t;
 
     EOSLIB_SERIALIZE(merchant_t,  (owner)(stake_quantity)(accepted_payments)
-                                (email)(memo)(processed_deals))
+                                (email)(memo)/*(processed_deals)*/ (status))
 };
 
 /**
@@ -186,7 +194,7 @@ struct CONTRACT_TBL order_t {
     uint128_t by_price() const {
         uint128_t option = side;
         uint64_t price_factor = price.amount;
-        price_factor = (side == order_side_t::BUY) ? std::numeric_limits<uint64_t>::max() - price_factor : price_factor;
+        price_factor = ((order_side_t)side == order_side_t::BUY) ? std::numeric_limits<uint64_t>::max() - price_factor : price_factor;
         return (option << 64) | (uint128_t)price_factor; 
     } 
     

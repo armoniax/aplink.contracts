@@ -100,25 +100,26 @@ void otcbook::setadmin(const name& admin) {
     _gstate.admin = admin;
 }
 
-void otcbook::setmerchant(const name& owner, const set<uint8_t>pay_methods, const string& email, const string& memo) {
+void otcbook::setmerchant(const name& owner, const set<uint8_t> &pay_methods, const string& email, const string& memo) {
     require_auth( owner );
 
     check(email.size() < 64, "email size too large: " + to_string(email.size()) );
     check(memo.size() < max_memo_size, "memo size too large: " + to_string(memo.size()) );
 
-    merchant_t merchant(owner);
-    //check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
-    _dbc.get(merchant);
-    merchant.accepted_payments.clear();
     for (auto& method : pay_methods) {
         check( (pay_type_t) method < pay_type_t::PAYMAX, "pay method illegal: " + to_string(method) );
         check( (pay_type_t) method > pay_type_t::PAYMIN, "pay method illegal: " + to_string(method) );
+    }
 
-        merchant.accepted_payments.insert( method );
+    merchant_t merchant(owner);
+    if (!_dbc.get(merchant)) {
+        // first register, init
+        merchant.status = (uint8_t)merchant_status_t::REGISTERED;
     }
 
     merchant.email = email;
     merchant.memo = memo;
+    merchant.accepted_payments = pay_methods;
 
     _dbc.set( merchant );
 
@@ -150,7 +151,7 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
     require_auth( owner );
     
     // check( _gstate.usd_exchange_rate > asset(0, USD_SYMBOL), "The exchange rate is incorrect");
-    check( side == SELL, "Invalid order side" );
+    check( (order_side_t)side == order_side_t::BUY || (order_side_t)side == order_side_t::SELL, "Invalid order side" );
     check( quantity.symbol.is_valid(), "Invalid quantity symbol name" );
     check( quantity.is_valid(), "Invalid quantity");
     // only support CNYD at now
