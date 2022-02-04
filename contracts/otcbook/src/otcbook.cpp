@@ -705,16 +705,13 @@ void otcbook::setrate(const name& owner, const asset& mgp_price, const asset& us
 void otcbook::deposit(name from, name to, asset quantity, string memo) {
     if (to != _self) return;
 
-    merchant_t merchant(from);
-    _dbc.get( merchant );
-
     if (get_first_receiver() == SYS_BANK && quantity.symbol == CNYD_SYMBOL){
-        merchant.stake_quantity += quantity;
+        merchant_t merchant(from);
+        if (_dbc.get( merchant )) {
+            merchant.stake_quantity += quantity;
+            _dbc.set( merchant );
+        }
     }
-
-    _dbc.set( merchant );
-
-
 }
 
 /**
