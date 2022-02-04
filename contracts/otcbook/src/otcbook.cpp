@@ -125,6 +125,21 @@ void otcbook::setmerchant(const name& owner, const set<uint8_t> &pay_methods, co
 
 }
 
+void otcbook::enablemer(const name& owner, bool is_enabled) {
+    merchant_t merchant(owner);
+    check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
+    if (is_enabled) {
+        check((merchant_status_t)merchant.status != merchant_status_t::ENABLED,
+            "merchant has been enabled");
+        merchant.status = (uint8_t)merchant_status_t::ENABLED;
+    } else {
+        check((merchant_status_t)merchant.status != merchant_status_t::DISABLED,
+            "merchant has been disabled");
+        merchant.status = (uint8_t)merchant_status_t::DISABLED;
+    }
+    _dbc.set( merchant );
+}
+
 /// to_add: true: to add; false: to remove
 void otcbook::setarbiter(const name& arbiter, const bool to_add) {
     require_auth( _self );

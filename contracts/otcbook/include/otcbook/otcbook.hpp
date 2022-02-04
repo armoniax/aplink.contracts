@@ -77,6 +77,12 @@ public:
 
     [[eosio::action]]
     void setmerchant(const name& owner, const set<uint8_t> &pay_methods, const string& email, const string& memo_to_buyer);
+
+    /**
+     * enable merchant
+     */
+    [[eosio::action]]
+    void enablemer(const name& owner, bool is_enabled);
     
     [[eosio::action]]
     void setarbiter(const name& arbiter, const bool to_add); //true: to add; false: to remove
