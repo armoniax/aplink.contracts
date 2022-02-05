@@ -182,6 +182,9 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
+    check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
+        "merchant not enabled");
+
     // only support CNYD asset
     auto stake_quantity = quantity; // TODO: process 70% used-rate of stake
     check( merchant.stake_quantity >= stake_quantity, "merchant stake quantity insufficient" );
@@ -555,6 +558,8 @@ void otcbook::withdraw(const name& owner, asset quantity){
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
+    check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
+    "merchant not enabled");
     check( merchant.stake_quantity >= quantity, "The withdrawl amount must be less than the balance" );
     merchant.stake_quantity -= quantity;
     _dbc.set(merchant);
@@ -708,6 +713,8 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
     if (get_first_receiver() == SYS_BANK && quantity.symbol == CNYD_SYMBOL){
         merchant_t merchant(from);
         if (_dbc.get( merchant )) {
+            check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
+                "merchant not enabled");
             merchant.stake_quantity += quantity;
             _dbc.set( merchant );
         }
