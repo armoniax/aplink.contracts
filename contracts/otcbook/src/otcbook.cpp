@@ -24,67 +24,9 @@ void otcbook::_init() {
     // _gstate.cs_contact_title				= "Custom Service Contact";
     // _gstate.cs_contact						= "cs_contact";
 
-    // _gstate.otc_arbiters.insert( "mangoma23523"_n );
-    // _gstate.otc_arbiters.insert( "mwalletadmin"_n );
-    // _gstate.otc_arbiters.insert( "prodchenhang"_n );
-
     // _gstate2.admin = "mwalletadmin"_n;
 }
 
-void otcbook::_data_migrate() {
-    // order_table_t orders(_self, _self.value);
-    // for (auto itr = orders.begin(); itr != orders.end(); ) {
-    // 	new_order_t order(_self, _self.value);
-
-    // 	order.emplace( _self, [&]( auto& row ) {
-    // 		row.id 					= itr->id;
-    // 		row.owner 				= itr->owner;
-    // 		row.price				= itr->price;
-    // 		row.price_usd			= itr->price_usd;
-    // 		row.quantity			= itr->quantity;
-    // 		row.min_accept_quantity = itr->min_accept_quantity;
-    // 		row.closed				= itr->closed;
-    // 		row.created_at			= itr->created_at;
-    // 		row.frozen_quantity.symbol = SYS_SYMBOL;
-    // 		row.fulfilled_quantity.symbol = SYS_SYMBOL;
-    // 		row.accepted_payments = itr->accepted_payments;
-    // 	});
-
-    // 	itr = orders.erase(itr);
-    // }
-
-    // deal_t::idx_t deals(_self, _self.value);
-    // for (auto itr = deals.begin(); itr != deals.end(); ) {
-    // 	deal_t::new_idx_t newdeal(_self, _self.value);
-    // 	newdeal.emplace( _self, [&]( auto& row ) {
-    // 		row.id 					= itr->id;
-    // 		row.order_id 			= itr->order_id;
-    // 		row.order_price			= itr->order_price;
-    // 		row.order_price_usd		= itr->order_price_usd;
-    // 		row.deal_quantity		= itr->deal_quantity;
-    // 		row.order_maker			= itr->order_maker;
-    // 		row.maker_passed		= itr->maker_passed;
-    // 		row.maker_passed_at		= itr->maker_passed_at;
-    // 		row.order_taker			= itr->order_taker;
-    // 		row.taker_passed		= itr->taker_passed;
-    // 		row.taker_passed_at		= itr->taker_passed_at;
-    // 		row.arbiter				= itr->arbiter;
-    // 		row.arbiter_passed		= itr->arbiter_passed;
-    // 		row.arbiter_passed_at	= itr->arbiter_passed_at;
-    // 		row.closed				= itr->closed;
-    // 		row.created_at			= itr->created_at;
-    // 		row.closed_at			= itr->closed_at;
-    // 		row.order_sn 			= itr->order_sn;
-    // 		row.pay_type			= itr->pay_type;
-    // 		row.expired_at 			= itr->expired_at;
-    // 		row.maker_expired_at	= itr->maker_expired_at;
-    // 		row.restart_taker_num 	= itr->restart_taker_num;
-    // 		row.restart_maker_num 	= itr->restart_maker_num;
-    // 	});
-
-    // 	itr = deals.erase(itr);
-    // }
-}
 
 void otcbook::init() {
     // _global.remove();
@@ -138,23 +80,6 @@ void otcbook::enablemer(const name& owner, bool is_enabled) {
         merchant.status = (uint8_t)merchant_status_t::DISABLED;
     }
     _dbc.set( merchant );
-}
-
-/// to_add: true: to add; false: to remove
-void otcbook::setarbiter(const name& arbiter, const bool to_add) {
-    require_auth( _self );
-
-    auto arbiter_existing = (_gstate.otc_arbiters.count(arbiter) == 1);
-    if (to_add) {
-        check( !arbiter_existing, "arbiter already added: " + arbiter.to_string() );
-
-        _gstate.otc_arbiters.insert( arbiter );
-    } else { //to remove
-        check( arbiter_existing, "arbiter not found: " + arbiter.to_string() );
-
-        _gstate.otc_arbiters.erase( arbiter );
-    }
-
 }
 
 /**
@@ -426,71 +351,6 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
         }
         row.memos.push_back({account, (uint8_t)status, action, memo});
     });
-
-
-    #ifdef __comment
-    int count = 0;
-    if (deal_itr->maker_passed_at != time_point_sec())
-        count++;
-
-    if (deal_itr->taker_passed_at != time_point_sec())
-        count++;
-
-    if (deal_itr->arbiter_passed_at != time_point_sec())
-        count++;
-
-    if (count < 2) return;	//at least 2 persons must have responded
-
-    int maker 	= deal_itr->maker_passed ? 1 : 0;
-    int taker 	= deal_itr->taker_passed ? 1 : 0;
-    int arbiter = deal_itr->arbiter_passed ? 1 : 0;
-    int sum 	= maker + taker + arbiter;
-
-    if (count == 2 && sum == 1) return;	//need arbiter
-
-    if (sum < 2) {	//at least two parties disagreed, deal must be canceled/closed!
-        deals.modify( *deal_itr, _self, [&]( auto& row ) {
-            row.closed = true;
-            row.closed_at = now;
-        });
-
-        check( order_itr->frozen_quantity >= deal_itr->deal_quantity, "oversize deal quantity vs fronzen one" );
-        orders.modify( *order_itr, _self, [&]( auto& row ) {
-            row.frozen_quantity 	-= deal_itr->deal_quantity;
-        });
-
-    } else { //at least two parties agreed, hence we can settle now!
-
-        TRANSFER( SYS_BANK, deal_itr->order_taker, deal_itr->deal_quantity, "Transaction completed" )
-        // action(
-        // 	permission_level{ _self, "active"_n }, SYS_BANK, "transfer"_n,
-        // 	std::make_tuple( _self, deal_itr->order_taker, deal_itr->deal_quantity,
-        // 				std::string("") )
-        // ).send();
-
-        deals.modify( *deal_itr, _self, [&]( auto& row ) {
-            row.closed = true;
-            row.closed_at = now;
-        });
-
-        check( order_itr->frozen_quantity >= deal_itr->deal_quantity, "oversize deal quantity vs fronzen one" );
-        orders.modify( *order_itr, _self, [&]( auto& row ) {
-            row.frozen_quantity 	-= deal_itr->deal_quantity;
-            row.fulfilled_quantity 	+= deal_itr->deal_quantity;
-
-            if (row.fulfilled_quantity == row.quantity) {
-                row.closed = true;
-                row.closed_at = now;
-            }
-        });
-
-        merchant_t merchant(deal_itr->order_maker);
-        check( _dbc.get(merchant), "Err: merchant not found: " + deal_itr->order_maker.to_string() );
-
-        merchant.processed_deals++;
-        _dbc.set( merchant );
-    }
-    #endif
 
 }
 

@@ -48,8 +48,7 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     uint64_t withhold_expire_sec;   // the amount hold will be unfrozen upon expiry
     name transaction_fee_receiver;  // receiver account to transaction fees
     uint64_t transaction_fee_ratio; // fee ratio boosted by 10000
-    name admin;
-    set<name> otc_arbiters;
+    name admin;     // default is contract self
     // string cs_contact_title;
     // string cs_contact;
 
@@ -65,7 +64,7 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
                                 /*(min_pos_stake_quantity)(pos_staking_contract)*/
                                 (withhold_expire_sec)(transaction_fee_receiver)
-                                (transaction_fee_ratio)(admin)(otc_arbiters)
+                                (transaction_fee_ratio)(admin)
                                 /*(cs_contact_title)(cs_contact)*/ 
     )
 };
@@ -98,7 +97,7 @@ enum pay_type_t: uint8_t {
 
 enum account_type_t: uint8_t {
     NONE           = 0,
-    OWNER          = 1,
+    ADMIN          = 1,
     MERCHANT       = 2,    // merchant
     USER           = 3,    // user
     ARBITER        = 4
@@ -257,10 +256,6 @@ struct CONTRACT_TBL deal_t {
     // bool taker_passed;
     // time_point_sec taker_passed_at;
 
-    name arbiter;
-    // bool arbiter_passed;
-    // time_point_sec arbiter_passed_at;
-
     bool closed;
     uint8_t status;
     time_point_sec created_at;
@@ -284,7 +279,6 @@ struct CONTRACT_TBL deal_t {
     uint64_t by_order()     const { return order_id; }
     uint64_t by_maker()     const { return order_maker.value; }
     uint64_t by_taker()     const { return order_taker.value; }
-    uint64_t by_arbiter()   const { return arbiter.value; }
     uint64_t by_ordersn()   const { return order_sn;}
     uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
     uint64_t by_maker_expired_at() const    { return uint64_t(maker_expired_at.sec_since_epoch()); }
@@ -294,7 +288,6 @@ struct CONTRACT_TBL deal_t {
         indexed_by<"order"_n,   const_mem_fun<deal_t, uint64_t, &deal_t::by_order> >,
         indexed_by<"maker"_n,   const_mem_fun<deal_t, uint64_t, &deal_t::by_maker> >,
         indexed_by<"taker"_n,   const_mem_fun<deal_t, uint64_t, &deal_t::by_taker> >,
-        indexed_by<"arbiter"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_arbiter> >,
         indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >,
         indexed_by<"expiry"_n,  const_mem_fun<deal_t, uint64_t, &deal_t::by_expired_at> >
     > idx_t;
@@ -302,7 +295,6 @@ struct CONTRACT_TBL deal_t {
     EOSLIB_SERIALIZE(deal_t,    (id)(order_id)(order_price)/*(order_price_usd)*/(deal_quantity)
                                 (order_maker)//(maker_passed)(maker_passed_at)
                                 (order_taker)//(taker_passed)(taker_passed_at)
-                                (arbiter)//(arbiter_passed)(arbiter_passed_at)
                                 (closed)(status)(created_at)(closed_at)(order_sn)//(pay_type)
                                 (expired_at)(maker_expired_at)
                                 // (restart_taker_num)(restart_maker_num)

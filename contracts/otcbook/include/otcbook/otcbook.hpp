@@ -84,11 +84,8 @@ public:
     [[eosio::action]]
     void enablemer(const name& owner, bool is_enabled);
     
-    [[eosio::action]]
-    void setarbiter(const name& arbiter, const bool to_add); //true: to add; false: to remove
-    
     /**
-     * merchant to open sell order
+     * merchant open order
      */
     [[eosio::action]]
     void openorder(const name& owner, uint8_t side, const asset& quantity, const asset& price, 
@@ -105,8 +102,7 @@ public:
     void closedeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& memo);
     
     /**
-     *  @param: user_type -> 1: merchant, 2: user, 3: otc-arbiter
-     *  @param: pass: 0: NO pass, 1: pass; two agreed passes means a decision! 
+     *  @param: user_type -> 1: admin, 2: merchant, 3: user
      */
     [[eosio::action]]
     void processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
@@ -135,7 +131,6 @@ public:
 
 private:
     void _init();
-    void _data_migrate();
 };
 
 inline vector <string> string_split(string str, char delimiter) {

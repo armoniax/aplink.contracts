@@ -78,12 +78,7 @@ summary: 'Pass a deal to an order'
 icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 ---
 
-A deal that is passed by a maker/taker or an arbiter of the order of interest.
-As long as two of them pass with the same result (true or false) it means a common agreement.
-If two of them accept the deal, it will be immediately settled. 
-If two of them deny the deal, it will be thus canceled and funds get unfrozen.
-If only one passes the deal, it will be pending until the other ones come to pass.
-If one accept and the other denies, an arbiter will be invovled to tackle the stalemate.
+A deal that is processed by a maker/taker or admin.
 
 <h1 class="contract">withdraw</h1>
 
