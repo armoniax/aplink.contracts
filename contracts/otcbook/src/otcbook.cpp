@@ -92,18 +92,18 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
     
     // check( _gstate.usd_exchange_rate > asset(0, USD_SYMBOL), "The exchange rate is incorrect");
     check( (order_side_t)side == order_side_t::BUY || (order_side_t)side == order_side_t::SELL, "Invalid order side" );
-    check( quantity.symbol.is_valid(), "Invalid quantity symbol name" );
     check( quantity.is_valid(), "Invalid quantity");
     // only support CNYD at now
-    check( quantity.symbol == CNYD_SYMBOL, "Token Symbol not allowed" );
+    check( quantity.symbol == CNYD_SYMBOL, "quantity symbol not allowed" );
+    check( quantity.amount > 0, "Invalid quantity amount");
     check( min_accept_quantity.symbol == quantity.symbol, "min_accept_quantity Symbol mismatch with quantity" );
-    // check( quantity >= _gstate.min_sell_order_quantity, "min sell order quantity not met: " + _gstate.min_sell_order_quantity.to_string() );
-
-    check( price.symbol.is_valid(), "Invalid quantity symbol name" );
-    check( price.is_valid(), "Invalid quantity");
+    check( min_accept_quantity.amount >= 0 && min_accept_quantity.amount <= quantity.amount, 
+        "invalid min_accept_quantity amount" );
     // only support CNY
-    check( price.symbol == CNY_SYMBOL, "Price Symbol not allowed" );
+    check( quantity.is_valid(), "Invalid price");
+    check( price.symbol == CNY_SYMBOL, "price symbol not allowed" );
     check( price.amount > 0, "price must be positive" );
+    // TODO: price range
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
