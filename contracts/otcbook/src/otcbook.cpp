@@ -101,7 +101,7 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
         "invalid min_accept_quantity amount" );
     // only support CNY
     check( quantity.is_valid(), "Invalid price");
-    check( price.symbol == CNY_SYMBOL, "price symbol not allowed" );
+    check( price.symbol == CNY, "price symbol not allowed" );
     check( price.amount > 0, "price must be positive" );
     // TODO: price range
 
@@ -559,14 +559,14 @@ void otcbook::restart(const name& owner,const uint64_t& deal_id,const uint8_t& u
  * 更新汇率及mgp价格
  */ 
 void otcbook::setrate(const name& owner, const asset& mgp_price, const asset& usd_exchange_rate){
-    require_auth( owner );
+    // require_auth( owner );
     
-    check( owner == _gstate.admin || owner == _self, "None-admin access denied" );
-    check( mgp_price.symbol == USD_SYMBOL , "MGP price is must be in USD" );
-    check( usd_exchange_rate.symbol == CNY_SYMBOL , "The exchange rate is CNY" );
+    // check( owner == _gstate.admin || owner == _self, "None-admin access denied" );
+    // check( mgp_price.symbol == USD_SYMBOL , "MGP price is must be in USD" );
+    // check( usd_exchange_rate.symbol == CNY_SYMBOL , "The exchange rate is CNY" );
 
-    _gstate2.mgp_price = mgp_price;
-    _gstate2.usd_exchange_rate = usd_exchange_rate;
+    // _gstate2.mgp_price = mgp_price;
+    // _gstate2.usd_exchange_rate = usd_exchange_rate;
 }
 
 /*************** Begin of eosio.token transfer trigger function ******************/

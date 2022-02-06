@@ -10,6 +10,7 @@
 #include <optional>
 #include <string>
 #include <map>
+#include <set>
 #include <type_traits>
 
 namespace mgp {
@@ -17,18 +18,34 @@ namespace mgp {
 using namespace std;
 using namespace eosio;
 
+#define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
+
 static constexpr eosio::name active_perm{"active"_n};
 static constexpr eosio::name SYS_BANK{"eosio.token"_n};
 
+
+
 // crypto assets
-static constexpr symbol   SYS_SYMBOL            = symbol(symbol_code("MGP"), 4);
-static constexpr symbol   CNYD_SYMBOL           = symbol(symbol_code("CNYD"), 6);
-static constexpr symbol   USDT_SYMBOL           = symbol(symbol_code("USDT"), 6);
+static constexpr symbol   SYS_SYMBOL            = SYMBOL("MGP", 4);
+static constexpr symbol   CNYD_SYMBOL           = SYMBOL("CNYD", 6);
+static constexpr symbol   USDT_SYMBOL           = SYMBOL("USDT", 6);
 static constexpr symbol   STAKE_SYMBOL          = CNYD_SYMBOL;
 
+// crypto coins for trading
+constexpr symbol USDT_ERC20 = SYMBOL("USDTERC", 6);
+constexpr symbol USDT_TRC20 = SYMBOL("USDTTRC", 6);
+constexpr symbol USDT_BEP20 = SYMBOL("USDTBEP", 6);
+constexpr symbol CNYD_BEP20 = SYMBOL("CNYDBEP", 6);
+constexpr symbol CNYD_ARC20 = SYMBOL("CNYDARC", 6);
+constexpr symbol BTC        = SYMBOL("BTC", 8);
+constexpr symbol ETH        = SYMBOL("ETH", 18);
+
+
 // fiat currency symbols
-static constexpr symbol   CNY_SYMBOL            = symbol(symbol_code("CNY"), 2);
-static constexpr symbol   USD_SYMBOL            = symbol(symbol_code("USD"), 4);
+static constexpr symbol   CNY    = symbol(symbol_code("CNY"), 2);
+static constexpr symbol   USD    = symbol(symbol_code("USD"), 4);
+static constexpr symbol   EUR    = symbol(symbol_code("EUR"), 4);
+static constexpr symbol   INR    = symbol(symbol_code("INR"), 4);
 
 static constexpr uint32_t seconds_per_year      = 24 * 3600 * 7 * 52;
 static constexpr uint32_t seconds_per_month     = 24 * 3600 * 30;
@@ -44,39 +61,66 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     // asset min_buy_order_quantity;
     // asset min_sell_order_quantity;
     // asset min_pos_stake_quantity;
-    uint64_t withhold_expire_sec;   // the amount hold will be unfrozen upon expiry
+    uint64_t withhold_expire_sec = 600;   // the amount hold will be unfrozen upon expiry
     name transaction_fee_receiver;  // receiver account to transaction fees
-    uint64_t transaction_fee_ratio; // fee ratio boosted by 10000
+    uint64_t transaction_fee_ratio = 0; // fee ratio boosted by 10000
     name admin;     // default is contract self
+
+    set<symbol> coin_type = { USDT_ERC20, USDT_TRC20, USDT_BEP20, CNYD_BEP20, CNYD_ARC20 };
+    set<symbol> fiat_type = { CNY, USD, EUR, INR };
+
+    /** 
+     * OTC merchants to make sell orders with cypto
+     */
+    map<symbol, set<symbol>> coin_to_fiat_list = {
+        { CNYD_BEP20,  { CNY } },
+        { CNYD_ARC20,  { CNY } },
+        { BTC,         { CNY } },
+        { ETH,         { CNY } }
+    };
+    
+    /** 
+     * OTC merchants to make buy orders with fiat
+     */
+    map<symbol, set<symbol>> fiat_to_coin_list = {
+        { CNY, {
+            CNYD_BEP20, 
+            CNYD_ARC20,  
+            USDT_ERC20, 
+            USDT_BEP20,
+            BTC,
+            ETH }
+        }
+    };    
 
     global_t() {
         // min_buy_order_quantity      = asset(10, SYS_SYMBOL);
         // min_sell_order_quantity     = asset(10, SYS_SYMBOL);
         // min_pos_stake_quantity      = asset(0, SYS_SYMBOL);
-        withhold_expire_sec         = 600; //10 mins
-        transaction_fee_ratio       = 0;
-        
     }
 
     EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
                                 (withhold_expire_sec)(transaction_fee_receiver)
                                 (transaction_fee_ratio)(admin)
+                                (coin_type)(fiat_type)
+                                (coin_to_fiat_list)(fiat_to_coin_list)
     )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
-struct [[eosio::table("global2"), eosio::contract("otcbook")]] global2_t {
-    asset mgp_price; // mgp 价格
-    asset usd_exchange_rate; // usd汇率
+// struct [[eosio::table("global2"), eosio::contract("otcbook")]] global2_t {
+//     asset mgp_price; // mgp 价格
+//     asset usd_exchange_rate; // usd汇率
 
-    global2_t() {
-        mgp_price  = asset(0, USD_SYMBOL);
-        usd_exchange_rate = asset(0, CNY_SYMBOL);
-    }
+//     global2_t() {
+//         mgp_price  = asset(0, USD_SYMBOL);
+//         usd_exchange_rate = asset(0, CNY_SYMBOL);
+//     }
 
-    EOSLIB_SERIALIZE( global2_t, (mgp_price)(usd_exchange_rate) )
-};
-typedef eosio::singleton< "global2"_n, global2_t > global2_singleton;
+//     EOSLIB_SERIALIZE( global2_t, (mgp_price)(usd_exchange_rate) )
+// };
+
+// typedef eosio::singleton< "global2"_n, global2_t > global2_singleton;
 
 enum pay_type_t: uint8_t {
     PAYMIN      = 0,

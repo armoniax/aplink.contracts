@@ -46,14 +46,14 @@ private:
     dbc                 _dbc;
     global_singleton    _global;
     global_t            _gstate;
-    global2_singleton   _global2;
-    global2_t           _gstate2;
+    // global2_singleton   _global2;
+    // global2_t           _gstate2;
     
 public:
     using contract::contract;
     otcbook(eosio::name receiver, eosio::name code, datastream<const char*> ds):
         _dbc(_self), contract(receiver, code, ds), 
-        _global(_self, _self.value), _global2(_self, _self.value)
+        _global(_self, _self.value)/*, _global2(_self, _self.value) */
     {
         if (_global.exists()) {
             _gstate = _global.get();
@@ -61,12 +61,12 @@ public:
             _gstate = global_t{};
             _gstate.admin = _self;
         }
-        _gstate2 = _global2.exists() ? _global2.get() : global2_t{};
+        // _gstate2 = _global2.exists() ? _global2.get() : global2_t{};
     }
 
     ~otcbook() {
         _global.set( _gstate, get_self() );
-        _global2.set( _gstate2, get_self() );
+        // _global2.set( _gstate2, get_self() );
     }
 
     [[eosio::action]] //only code maintainer can init
