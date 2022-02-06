@@ -18,7 +18,20 @@ namespace mgp {
 using namespace std;
 using namespace eosio;
 
+
+constexpr uint64_t get_precision(uint8_t decimals) {
+    // static constexpr uint8_t max_precision = 18;
+    // if (decimals > max_precision) throw std::invalid_argument("decimals out of range");
+    uint64_t p10 = 1;
+    uint64_t p = decimals;
+    while( p > 0  ) {
+        p10 *= 10; --p;
+    }
+    return p10;
+}
+
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
+#define ASSET(quantity, sym) asset(quantity * get_precision(sym.precision()), sym)
 
 static constexpr eosio::name active_perm{"active"_n};
 static constexpr eosio::name SYS_BANK{"eosio.token"_n};
@@ -47,12 +60,15 @@ static constexpr symbol   USD    = symbol(symbol_code("USD"), 4);
 static constexpr symbol   EUR    = symbol(symbol_code("EUR"), 4);
 static constexpr symbol   INR    = symbol(symbol_code("INR"), 4);
 
-static constexpr uint32_t seconds_per_year      = 24 * 3600 * 7 * 52;
-static constexpr uint32_t seconds_per_month     = 24 * 3600 * 30;
-static constexpr uint32_t seconds_per_week      = 24 * 3600 * 7;
-static constexpr uint32_t seconds_per_day       = 24 * 3600;
-static constexpr uint32_t seconds_per_hour      = 3600;
-static constexpr uint32_t max_memo_size         = 1024;
+static constexpr uint64_t seconds_per_year      = 24 * 3600 * 7 * 52;
+static constexpr uint64_t seconds_per_month     = 24 * 3600 * 30;
+static constexpr uint64_t seconds_per_week      = 24 * 3600 * 7;
+static constexpr uint64_t seconds_per_day       = 24 * 3600;
+static constexpr uint64_t seconds_per_hour      = 3600;
+static constexpr uint64_t max_memo_size         = 1024;
+
+static constexpr uint64_t percent_boost = 10000;
+static constexpr uint64_t order_stake_pct = 7000; // 70%
 
 
 #define CONTRACT_TBL [[eosio::table, eosio::contract("otcbook")]]
@@ -108,19 +124,13 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
-// struct [[eosio::table("global2"), eosio::contract("otcbook")]] global2_t {
-//     asset mgp_price; // mgp 价格
-//     asset usd_exchange_rate; // usd汇率
+struct [[eosio::table("price"), eosio::contract("otcbook")]] price_map_t {
+    
+    map<symbol, asset> price_quote_cny;
+    EOSLIB_SERIALIZE( price_map_t, (price_quote_cny ) )
+};
 
-//     global2_t() {
-//         mgp_price  = asset(0, USD_SYMBOL);
-//         usd_exchange_rate = asset(0, CNY_SYMBOL);
-//     }
-
-//     EOSLIB_SERIALIZE( global2_t, (mgp_price)(usd_exchange_rate) )
-// };
-
-// typedef eosio::singleton< "global2"_n, global2_t > global2_singleton;
+typedef eosio::singleton< "price"_n, price_map_t > price_table_t;
 
 enum pay_type_t: uint8_t {
     PAYMIN      = 0,

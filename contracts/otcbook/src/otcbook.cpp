@@ -118,6 +118,11 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
         "merchant not enabled");
 
     // only support CNYD asset
+    // if (/* condition */)
+    // {
+    //     /* code */
+    // }
+    
     auto stake_quantity = quantity; // TODO: process 70% used-rate of stake
     check( merchant.stake_quantity >= stake_quantity, "merchant stake quantity insufficient" );
     merchant.stake_quantity -= stake_quantity;
