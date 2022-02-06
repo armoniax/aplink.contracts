@@ -561,7 +561,7 @@ void otcbook::restart(const name& owner,const uint64_t& deal_id,const uint8_t& u
 void otcbook::setrate(const name& owner, const asset& mgp_price, const asset& usd_exchange_rate){
     require_auth( owner );
     
-    check( owner == _gstate2.admin || owner == _self, "None-admin access denied" );
+    check( owner == _gstate.admin || owner == _self, "None-admin access denied" );
     check( mgp_price.symbol == USD_SYMBOL , "MGP price is must be in USD" );
     check( usd_exchange_rate.symbol == CNY_SYMBOL , "The exchange rate is CNY" );
 

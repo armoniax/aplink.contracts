@@ -44,13 +44,10 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     // asset min_buy_order_quantity;
     // asset min_sell_order_quantity;
     // asset min_pos_stake_quantity;
-    // name pos_staking_contract;
     uint64_t withhold_expire_sec;   // the amount hold will be unfrozen upon expiry
     name transaction_fee_receiver;  // receiver account to transaction fees
     uint64_t transaction_fee_ratio; // fee ratio boosted by 10000
     name admin;     // default is contract self
-    // string cs_contact_title;
-    // string cs_contact;
 
     global_t() {
         // min_buy_order_quantity      = asset(10, SYS_SYMBOL);
@@ -62,10 +59,8 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     }
 
     EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
-                                /*(min_pos_stake_quantity)(pos_staking_contract)*/
                                 (withhold_expire_sec)(transaction_fee_receiver)
                                 (transaction_fee_ratio)(admin)
-                                /*(cs_contact_title)(cs_contact)*/ 
     )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
@@ -73,14 +68,13 @@ typedef eosio::singleton< "global"_n, global_t > global_singleton;
 struct [[eosio::table("global2"), eosio::contract("otcbook")]] global2_t {
     asset mgp_price; // mgp 价格
     asset usd_exchange_rate; // usd汇率
-    name admin; // action 调用员
 
     global2_t() {
         mgp_price  = asset(0, USD_SYMBOL);
         usd_exchange_rate = asset(0, CNY_SYMBOL);
     }
 
-    EOSLIB_SERIALIZE( global2_t, (mgp_price)(usd_exchange_rate)(admin) )
+    EOSLIB_SERIALIZE( global2_t, (mgp_price)(usd_exchange_rate) )
 };
 typedef eosio::singleton< "global2"_n, global2_t > global2_singleton;
 
@@ -161,9 +155,9 @@ struct CONTRACT_TBL merchant_t {
 };
 
 /**
- * Generic order struct for buyers/sellers
+ * Generic order struct for maker(merchant)
  * when the owner decides to close it before complete fulfillment, it just get erased
- * if it is truly fufilled, it also get deleted.
+ * if it is truly fulfilled, it also get deleted.
  */
 struct CONTRACT_TBL order_t {
     uint64_t id;                //PK: available_primary_key
