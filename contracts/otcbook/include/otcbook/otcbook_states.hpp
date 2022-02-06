@@ -95,7 +95,7 @@ enum pay_type_t: uint8_t {
     PAYMAX      = 7
 };
 
-enum account_type_t: uint8_t {
+enum class account_type_t: uint8_t {
     NONE           = 0,
     ADMIN          = 1,
     MERCHANT       = 2,    // merchant

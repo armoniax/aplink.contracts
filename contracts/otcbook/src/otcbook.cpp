@@ -242,11 +242,14 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( !deal_itr->closed, "deal already closed: " + to_string(deal_id) );
 
     switch ((account_type_t) account_type) {
-    case MERCHANT: 
+    case account_type_t::MERCHANT: 
         check( deal_itr->order_maker == account, "maker account mismatched");
         break;
-    case USER:
+    case account_type_t::USER:
         check( deal_itr->order_taker == account, "taker account mismatched");
+        break;
+    case account_type_t::ADMIN:
+        check( deal_itr->order_taker == account, "admin account mismatched");
         break;
     default:
         check(false, "account type not supported: " + to_string(account_type));
@@ -261,9 +264,12 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
 
     auto action = deal_action_t::CLOSE;
     auto status = (deal_status_t)deal_itr->status;
-    check(deal_status_t::CREATED == status || deal_status_t::TAKER_RECEIVED == status, 
-        "can not process deal action:" + to_string((uint8_t)action) 
-            + " at status: " + to_string((uint8_t)status) );
+    if ((account_type_t) account_type != account_type_t::ADMIN) {
+        check(deal_status_t::CREATED == status || deal_status_t::TAKER_RECEIVED == status, 
+            "can not process deal action:" + to_string((uint8_t)action) 
+                + " at status: " + to_string((uint8_t)status) );
+    }
+    
 
     auto deal_quantity = deal_itr->deal_quantity;
     check( order_itr->frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
@@ -298,10 +304,10 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     auto now = time_point_sec(current_time_point());
 
     switch ((account_type_t) account_type) {
-    case MERCHANT: 
+    case account_type_t::MERCHANT: 
         check( deal_itr->order_maker == account, "maker account mismatched");
         break;
-    case USER:
+    case account_type_t::USER:
         check( deal_itr->order_taker == account, "taker account mismatched");
         break;
     default:
@@ -317,7 +323,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
 
 #define DEAL_ACTION_CASE(_action, _limited_account_type, _limited_status, _next_status) \
     case deal_action_t::_action:                                                        \
-        limited_account_type = _limited_account_type;                                   \
+        limited_account_type = account_type_t::_limited_account_type;                                   \
         limited_status = deal_status_t::_limited_status;                                \
         next_status = deal_status_t::_next_status;                                      \
         break;
