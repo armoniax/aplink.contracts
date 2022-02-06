@@ -185,10 +185,10 @@ struct CONTRACT_TBL order_t {
 
     //to sort orders by price: 1. buy order: higher first; 2. sell order: lower first
     uint128_t by_price() const {
-        uint128_t option = side;
+        uint64_t option = (uint64_t)side << 56;
         uint64_t price_factor = price.amount;
         price_factor = ((order_side_t)side == order_side_t::BUY) ? std::numeric_limits<uint64_t>::max() - price_factor : price_factor;
-        return (option << 64) | (uint128_t)price_factor; 
+        return (uint128_t)option << 64 | (uint128_t)price_factor; 
     } 
     
     // TODO: should add index by side and price
