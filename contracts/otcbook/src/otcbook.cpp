@@ -14,16 +14,30 @@ using namespace std;
 using namespace eosio;
 using namespace wasm::safemath;
 
+inline int64_t get_precision(const symbol &s) {
+    return calc_precision(s.precision());
+}
 
-inline asset otcbook::_calc_order_stakes(const asset &quantity, const asset &price) {
+inline int64_t get_precision(const asset &a) {
+    return get_precision(a.symbol);
+}
+
+asset otcbook::_calc_order_stakes(const asset &quantity, const asset &price) {
     // calc order quantity value by price
-    auto value = multiply_decimal64( quantity.amount, price.amount, calc_precision(price.symbol.precision()) );
-    // TODO: if (price.symbol != CNY) { convert to cny value }
-    CHECK(price.symbol == CNY, "Only support CNY");
-    
+    auto value = multiply_decimal64( quantity.amount, price.amount, get_precision(price) );
+
+    price_table_t price_tbl(_self, _self.value);
+    const auto & prices_quote_cny = price_tbl.get().prices_quote_cny;
+    if (price.symbol != CNY)
+    {
+        auto price_itr = prices_quote_cny.find(price.symbol);
+        CHECK(price_itr != prices_quote_cny.end() && price_itr->second.amount > 0, "the fiat symbol not have price/cny");
+        const auto &price_cny = price_itr->second;
+        value = multiply_decimal64( value, price_cny.amount, get_precision(price) );
+    }
     // adjust precision
     if (quantity.symbol.precision() != STAKE_SYMBOL.precision()) {
-       value = multiply_decimal64(value, STAKE_SYMBOL.precision(), quantity.symbol.precision());
+       value = multiply_decimal64( value, get_precision(STAKE_SYMBOL), get_precision(quantity) );
     }
 
     int64_t amount = divide_decimal64(value, order_stake_pct, percent_boost);
