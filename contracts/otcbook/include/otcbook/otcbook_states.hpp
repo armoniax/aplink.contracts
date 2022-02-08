@@ -110,8 +110,8 @@ typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
 struct [[eosio::table("price"), eosio::contract("otcbook")]] price_map_t {
     
-    map<symbol, asset> price_quote_cny;
-    EOSLIB_SERIALIZE( price_map_t, (price_quote_cny ) )
+    map<symbol, asset> prices_quote_cny;
+    EOSLIB_SERIALIZE( price_map_t, (prices_quote_cny ) )
 };
 
 typedef eosio::singleton< "price"_n, price_map_t > price_table_t;

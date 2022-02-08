@@ -581,15 +581,18 @@ void otcbook::restart(const name& owner,const uint64_t& deal_id,const uint8_t& u
 /**
  * 更新汇率及mgp价格
  */ 
-void otcbook::setrate(const name& owner, const asset& mgp_price, const asset& usd_exchange_rate){
-    // require_auth( owner );
+void otcbook::setrate(const name& account,const vector<asset>& prices_quote_cny) {
+    require_auth( account );
     
-    // check( owner == _gstate.admin || owner == _self, "None-admin access denied" );
-    // check( mgp_price.symbol == USD_SYMBOL , "MGP price is must be in USD" );
-    // check( usd_exchange_rate.symbol == CNY_SYMBOL , "The exchange rate is CNY" );
-
-    // _gstate2.mgp_price = mgp_price;
-    // _gstate2.usd_exchange_rate = usd_exchange_rate;
+    check( account == _gstate.admin, "None-admin access denied" );
+    check(!prices_quote_cny.empty(), "prices empty");
+    price_table_t price_tbl(_self, _self.value);
+    auto price_map = price_tbl.get();
+    for (const auto& price : prices_quote_cny) {
+        CHECK( _gstate.fiat_type.count(price.symbol) != 0, "price symbol not allowed");
+        price_map.prices_quote_cny[price.symbol] = price;
+    }
+    price_tbl.set( price_map, _self );
 }
 
 /*************** Begin of eosio.token transfer trigger function ******************/

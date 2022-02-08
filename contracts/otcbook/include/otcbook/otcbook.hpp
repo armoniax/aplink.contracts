@@ -127,7 +127,7 @@ public:
     void restart(const name& owner,const uint64_t& deal_id,const uint8_t& user_type);
 
     [[eosio::action]]
-    void setrate(const name& owner,const asset& mgp_price,const asset& usd_exchange_rate);
+    void setrate(const name& owner,const vector<asset>& prices_quote_cny);
 
 private:
     void _init();
