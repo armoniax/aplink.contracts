@@ -474,54 +474,54 @@ void otcbook::withdraw(const name& owner, asset quantity){
  * 超时检测
  *
  */
-void otcbook::timeoutdeal() {
+// void otcbook::timeoutdeal() {
 
-    auto check_time = current_time_point().sec_since_epoch() - seconds_per_day;
+//     auto check_time = current_time_point().sec_since_epoch() - seconds_per_day;
 
-    deal_expiry_tbl exp_time(_self,_self.value);
-    auto exp_index = exp_time.get_index<"expiry"_n>();
-    auto lower_itr = exp_index.find(check_time);
-    // auto itr = exp_time.begin()
-    bool processed = false;
+//     deal_expiry_tbl exp_time(_self,_self.value);
+//     auto exp_index = exp_time.get_index<"expiry"_n>();
+//     auto lower_itr = exp_index.find(check_time);
+//     // auto itr = exp_time.begin()
+//     bool processed = false;
 
-    for (auto itr = exp_index.begin(); itr != lower_itr; ) {
-        if (itr->expired_at <= time_point_sec(check_time)) {
-            deal_t::idx_t deals(_self, _self.value);
-            auto deal_itr = deals.find(itr -> deal_id);
+//     for (auto itr = exp_index.begin(); itr != lower_itr; ) {
+//         if (itr->expired_at <= time_point_sec(check_time)) {
+//             deal_t::idx_t deals(_self, _self.value);
+//             auto deal_itr = deals.find(itr -> deal_id);
 
-             // 订单处于买家未操作状态进行关闭
-            if (deal_itr != deals.end() && 
-                ((deal_status_t)deal_itr->status == deal_status_t::CREATED 
-                    ||  (deal_status_t)deal_itr->status == deal_status_t::MAKER_ACCEPTED) ) {
+//              // 订单处于买家未操作状态进行关闭
+//             if (deal_itr != deals.end() && 
+//                 ((deal_status_t)deal_itr->status == deal_status_t::CREATED 
+//                     ||  (deal_status_t)deal_itr->status == deal_status_t::MAKER_ACCEPTED) ) {
 
-                auto order_id = deal_itr->order_id;
-                order_table_t orders(_self, _self.value);
-                auto order_itr = orders.find(order_id);
-                check( order_itr != orders.end(), "sell order not found: " + to_string(order_id) );
-                check( !order_itr->closed, "order already closed" );
+//                 auto order_id = deal_itr->order_id;
+//                 order_table_t orders(_self, _self.value);
+//                 auto order_itr = orders.find(order_id);
+//                 check( order_itr != orders.end(), "sell order not found: " + to_string(order_id) );
+//                 check( !order_itr->closed, "order already closed" );
 
-                auto deal_quantity = deal_itr->deal_quantity;
-                check( order_itr->frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
+//                 auto deal_quantity = deal_itr->deal_quantity;
+//                 check( order_itr->frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
 
-                orders.modify( *order_itr, _self, [&]( auto& row ) {
-                    row.frozen_quantity -= deal_quantity;
-                });
+//                 orders.modify( *order_itr, _self, [&]( auto& row ) {
+//                     row.frozen_quantity -= deal_quantity;
+//                 });
 
-                deals.modify( *deal_itr, _self, [&]( auto& row ) {
-                    row.closed = true;
-                    row.closed_at = time_point_sec(current_time_point());
-                });
+//                 deals.modify( *deal_itr, _self, [&]( auto& row ) {
+//                     row.closed = true;
+//                     row.closed_at = time_point_sec(current_time_point());
+//                 });
 
-                processed = true;
-            }
+//                 processed = true;
+//             }
 
-            itr = exp_index.erase(itr);
-        } else {
-            itr ++;
-        }
-    }
+//             itr = exp_index.erase(itr);
+//         } else {
+//             itr ++;
+//         }
+//     }
 
-}
+// }
 
 /**
  *

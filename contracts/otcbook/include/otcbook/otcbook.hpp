@@ -114,8 +114,8 @@ public:
     [[eosio::action]]
     void withdraw(const name& owner, asset quantity);
 
-    [[eosio::action]]
-    void timeoutdeal();
+    // [[eosio::action]]
+    // void timeoutdeal();
 
     [[eosio::action]]
     void deltable();
