@@ -1,7 +1,7 @@
 #include <eosio.token/eosio.token.hpp>
 #include <otcbook/mgp_math.hpp>
 #include <otcbook/otcbook.hpp>
-#include <otcbook/utils.h>
+#include <otcbook/utils.hpp>
 
 
 using namespace eosio;
@@ -13,6 +13,23 @@ namespace mgp {
 using namespace std;
 using namespace eosio;
 using namespace wasm::safemath;
+
+
+inline asset otcbook::_calc_order_stakes(const asset &quantity, const asset &price) {
+    // calc order quantity value by price
+    auto value = multiply_decimal64( quantity.amount, price.amount, calc_precision(price.symbol.precision()) );
+    // TODO: if (price.symbol != CNY) { convert to cny value }
+    CHECK(price.symbol == CNY, "Only support CNY");
+    
+    // adjust precision
+    if (quantity.symbol.precision() != STAKE_SYMBOL.precision()) {
+       value = multiply_decimal64(value, STAKE_SYMBOL.precision(), quantity.symbol.precision());
+    }
+
+    int64_t amount = divide_decimal64(value, order_stake_pct, percent_boost);
+    
+    return asset(amount, STAKE_SYMBOL);
+}
 
 void otcbook::_init() {
     _gstate.transaction_fee_receiver 		= "devshare"_n;
@@ -116,15 +133,9 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
     check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
         "merchant not enabled");
-
-    // only support CNYD asset
-    // if (/* condition */)
-    // {
-    //     /* code */
-    // }
     
-    auto stake_quantity = quantity; // TODO: process 70% used-rate of stake
-    check( merchant.stake_quantity >= stake_quantity, "merchant stake quantity insufficient" );
+    auto stake_quantity = _calc_order_stakes(quantity, price); // TODO: process 70% used-rate of stake
+    check( merchant.stake_quantity >= stake_quantity, "merchant stake quantity insufficient, expected: " + stake_quantity.to_string() );
     merchant.stake_quantity -= stake_quantity;
     _dbc.set( merchant );
 

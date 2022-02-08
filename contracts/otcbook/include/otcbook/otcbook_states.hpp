@@ -18,25 +18,9 @@ namespace mgp {
 using namespace std;
 using namespace eosio;
 
-
-constexpr uint64_t get_precision(uint8_t decimals) {
-    // static constexpr uint8_t max_precision = 18;
-    // if (decimals > max_precision) throw std::invalid_argument("decimals out of range");
-    uint64_t p10 = 1;
-    uint64_t p = decimals;
-    while( p > 0  ) {
-        p10 *= 10; --p;
-    }
-    return p10;
-}
-
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
-#define ASSET(quantity, sym) asset(quantity * get_precision(sym.precision()), sym)
-
 static constexpr eosio::name active_perm{"active"_n};
 static constexpr eosio::name SYS_BANK{"eosio.token"_n};
-
-
 
 // crypto assets
 static constexpr symbol   SYS_SYMBOL            = SYMBOL("MGP", 4);
