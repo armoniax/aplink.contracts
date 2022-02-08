@@ -76,7 +76,7 @@ public:
     void setadmin(const name& admin);
 
     [[eosio::action]]
-    void setmerchant(const name& owner, const set<uint8_t> &pay_methods, const string& email, const string& memo_to_buyer);
+    void setmerchant(const name& owner, const set<name> &pay_methods, const string& email, const string& memo_to_buyer);
 
     /**
      * enable merchant

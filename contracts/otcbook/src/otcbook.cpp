@@ -73,15 +73,14 @@ void otcbook::setadmin(const name& admin) {
     _gstate.admin = admin;
 }
 
-void otcbook::setmerchant(const name& owner, const set<uint8_t> &pay_methods, const string& email, const string& memo) {
+void otcbook::setmerchant(const name& owner, const set<name> &pay_methods, const string& email, const string& memo) {
     require_auth( owner );
 
     check(email.size() < 64, "email size too large: " + to_string(email.size()) );
     check(memo.size() < max_memo_size, "memo size too large: " + to_string(memo.size()) );
 
     for (auto& method : pay_methods) {
-        check( (pay_type_t) method < pay_type_t::PAYMAX, "pay method illegal: " + to_string(method) );
-        check( (pay_type_t) method > pay_type_t::PAYMIN, "pay method illegal: " + to_string(method) );
+        check( _gstate.pay_type.count(method) != 0, "pay method illegal: " + method.to_string() );
     }
 
     merchant_t merchant(owner);

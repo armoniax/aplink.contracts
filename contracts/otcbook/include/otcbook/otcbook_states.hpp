@@ -29,13 +29,13 @@ static constexpr symbol   USDT_SYMBOL           = SYMBOL("USDT", 6);
 static constexpr symbol   STAKE_SYMBOL          = CNYD_SYMBOL;
 
 // crypto coins for trading
-constexpr symbol USDT_ERC20 = SYMBOL("USDTERC", 6);
-constexpr symbol USDT_TRC20 = SYMBOL("USDTTRC", 6);
-constexpr symbol USDT_BEP20 = SYMBOL("USDTBEP", 6);
-constexpr symbol CNYD_BEP20 = SYMBOL("CNYDBEP", 6);
-constexpr symbol CNYD_ARC20 = SYMBOL("CNYDARC", 6);
-constexpr symbol BTC        = SYMBOL("BTC", 8);
-constexpr symbol ETH        = SYMBOL("ETH", 18);
+static constexpr symbol USDT_ERC20 = SYMBOL("USDTERC", 6);
+static constexpr symbol USDT_TRC20 = SYMBOL("USDTTRC", 6);
+static constexpr symbol USDT_BEP20 = SYMBOL("USDTBEP", 6);
+static constexpr symbol CNYD_BEP20 = SYMBOL("CNYDBEP", 6);
+static constexpr symbol CNYD_ARC20 = SYMBOL("CNYDARC", 6);
+static constexpr symbol BTC        = SYMBOL("BTC", 8);
+static constexpr symbol ETH        = SYMBOL("ETH", 18);
 
 
 // fiat currency symbols
@@ -43,6 +43,14 @@ static constexpr symbol   CNY    = symbol(symbol_code("CNY"), 2);
 static constexpr symbol   USD    = symbol(symbol_code("USD"), 4);
 static constexpr symbol   EUR    = symbol(symbol_code("EUR"), 4);
 static constexpr symbol   INR    = symbol(symbol_code("INR"), 4);
+
+// pay type
+static constexpr name BANK        = "bank"_n;
+static constexpr name WECHAT      = "wechat"_n;
+static constexpr name ALIPAY      = "alipay"_n;
+static constexpr name MASTER      = "master"_n;
+static constexpr name VISA        = "visa"_n;
+static constexpr name PAYPAL      = "paypal"_n;
 
 static constexpr uint64_t seconds_per_year      = 24 * 3600 * 7 * 52;
 static constexpr uint64_t seconds_per_month     = 24 * 3600 * 30;
@@ -93,6 +101,8 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
         }
     };    
 
+    set<name> pay_type = { BANK, WECHAT, ALIPAY, MASTER, VISA, PAYPAL };
+
     global_t() {
         // min_buy_order_quantity      = asset(10, SYS_SYMBOL);
         // min_sell_order_quantity     = asset(10, SYS_SYMBOL);
@@ -104,6 +114,7 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
                                 (transaction_fee_ratio)(admin)
                                 (coin_type)(fiat_type)
                                 (coin_to_fiat_list)(fiat_to_coin_list)
+                                (pay_type)
     )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
@@ -115,17 +126,6 @@ struct [[eosio::table("price"), eosio::contract("otcbook")]] price_map_t {
 };
 
 typedef eosio::singleton< "price"_n, price_map_t > price_table_t;
-
-enum pay_type_t: uint8_t {
-    PAYMIN      = 0,
-    BANK        = 1,
-    WECAHAT     = 2,
-    ALIPAY      = 3,
-    MASTER      = 4,
-    VISA        = 5,
-    PAYPAL      = 6,
-    PAYMAX      = 7
-};
 
 enum class account_type_t: uint8_t {
     NONE           = 0,
@@ -173,12 +173,10 @@ enum  class merchant_status_t: uint8_t {
 struct CONTRACT_TBL merchant_t {
     name owner;
     asset stake_quantity = asset(0, STAKE_SYMBOL);
-    set<uint8_t> accepted_payments; //accepted payments
+    set<name> accepted_payments; //accepted payments
     string email;
     string memo;
     uint8_t status;
-
-    // uint32_t processed_deals = 0;
 
     merchant_t() {}
     merchant_t(const name& o): owner(o) {}
@@ -189,7 +187,7 @@ struct CONTRACT_TBL merchant_t {
     typedef eosio::multi_index<"merchants"_n, merchant_t> idx_t;
 
     EOSLIB_SERIALIZE(merchant_t,  (owner)(stake_quantity)(accepted_payments)
-                                (email)(memo)/*(processed_deals)*/ (status))
+                                (email)(memo)(status))
 };
 
 /**
@@ -201,7 +199,7 @@ struct CONTRACT_TBL order_t {
     uint64_t id;                //PK: available_primary_key
 
     name owner;                 //order maker's account, merchant
-    set<uint8_t> accepted_payments;
+    set<name> accepted_payments;
     uint8_t side;          // order side, buy or sell
     asset price;                // MGP price the buyer willing to buy, symbol CNY
     // asset price_usd;            // MGP price the buyer willing to buy, symbol USD
