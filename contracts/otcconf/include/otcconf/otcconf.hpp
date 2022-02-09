@@ -25,22 +25,6 @@ using eosio::unsigned_int;
 
 using std::string;
 
-static constexpr bool DEBUG = true;
-
-#define WASM_FUNCTION_PRINT_LENGTH 50
-
-#define SYS_LOG( debug, exception, ... ) {  \
-if ( debug ) {                               \
-   std::string str = std::string(__FILE__); \
-   str += std::string(":");                 \
-   str += std::to_string(__LINE__);         \
-   str += std::string(":[");                \
-   str += std::string(__FUNCTION__);        \
-   str += std::string("]");                 \
-   while(str.size() <= WASM_FUNCTION_PRINT_LENGTH) str += std::string(" ");\
-   eosio::print(str);                                                             \
-   eosio::print( __VA_ARGS__ ); }}
-
 class [[eosio::contract("otcconf")]] otcconf: public eosio::contract {
 private:
     global_singleton    _global;
