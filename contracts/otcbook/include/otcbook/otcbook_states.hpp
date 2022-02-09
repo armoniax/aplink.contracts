@@ -258,28 +258,28 @@ struct OTCBOOK_TBL deal_t {
                                 (memos))
 };
 
-/**
- * 交易订单过期时间
- *
- */
-struct OTCBOOK_TBL deal_expiry_t{
-    uint64_t deal_id;
-    time_point_sec expired_at;
+// /**
+//  * 交易订单过期时间
+//  *
+//  */
+// struct OTCBOOK_TBL deal_expiry_t{
+//     uint64_t deal_id;
+//     time_point_sec expired_at;
 
-    deal_expiry_t() {}
-    deal_expiry_t(uint64_t i): deal_id(i) {}
+//     deal_expiry_t() {}
+//     deal_expiry_t(uint64_t i): deal_id(i) {}
 
-    uint64_t primary_key()const { return deal_id; }
-    uint64_t scope()const { return 0; }
+//     uint64_t primary_key()const { return deal_id; }
+//     uint64_t scope()const { return 0; }
 
-    uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
+//     uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
 
-    EOSLIB_SERIALIZE(deal_expiry_t,  (deal_id)(expired_at) )
-};
+//     EOSLIB_SERIALIZE(deal_expiry_t,  (deal_id)(expired_at) )
+// };
 
-typedef eosio::multi_index
-    <"dealexpiries"_n, deal_expiry_t ,
-        indexed_by<"expiry"_n,    const_mem_fun<deal_expiry_t, uint64_t, &deal_expiry_t::by_expired_at>   >
-    > deal_expiry_tbl;
+// typedef eosio::multi_index
+//     <"dealexpiries"_n, deal_expiry_t ,
+//         indexed_by<"expiry"_n,    const_mem_fun<deal_expiry_t, uint64_t, &deal_expiry_t::by_expired_at>   >
+//     > deal_expiry_tbl;
 
 } // MGP

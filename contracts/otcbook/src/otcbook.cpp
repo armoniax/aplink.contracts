@@ -247,12 +247,12 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
         row.memos.push_back({taker, (uint8_t)deal_status_t::NONE, (uint8_t)deal_action_t::CREATE, memo});
     });
 
-    // 添加交易到期表数据
-    deal_expiry_tbl deal_expiries(_self, _self.value);
-    deal_expiries.emplace( _self, [&]( auto& row ){
-        row.deal_id = deal_id;
-        row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
-    });
+    // // 添加交易到期表数据
+    // deal_expiry_tbl deal_expiries(_self, _self.value);
+    // deal_expiries.emplace( _self, [&]( auto& row ){
+    //     row.deal_id = deal_id;
+    //     row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
+    // });
 
     orders.modify( *itr, _self, [&]( auto& row ) {
         row.frozen_quantity 	+= deal_quantity;
@@ -484,74 +484,6 @@ void otcbook::withdraw(const name& owner, asset quantity){
 
 // }
 
-/**
- *
- * 超时重启
- */
-void otcbook::restart(const name& owner,const uint64_t& deal_id,const uint8_t& user_type){
-    #ifdef __comment
-    require_auth( owner );
-
-    check( _gstate.otc_arbiters.count(owner), "not an arbiter: " + owner.to_string() );
-
-    deal_t::idx_t deals(_self, _self.value);
-    auto deal_itr = deals.find(deal_id);
-    check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
-    check( !deal_itr->closed, "deal already closed: " + to_string(deal_id) );
-
-    order_table_t orders(_self, _self.value);
-    auto order_itr = orders.find(deal_itr->order_id);
-    check( order_itr != orders.end(), "order not found: " + to_string(deal_itr->order_id) );
-
-    auto restart_time = time_point_sec(current_time_point().sec_since_epoch() + _gstate.withhold_expire_sec);
-    auto check_time = time_point_sec(current_time_point().sec_since_epoch() - seconds_per_day);
-    auto now = time_point_sec(current_time_point());
-
-    switch ((account_type_t) user_type) {
-        case MERCHANT:
-        {
-            check( deal_itr -> restart_maker_num == 0 , "It has been rebooted more than 1 time.");
-            check( deal_itr -> maker_expired_at <= now ,"Did not time out.");
-            check( deal_itr -> maker_expired_at > check_time ,"The order has timed out by 24 hours.");
-            check( deal_itr -> maker_passed_at == time_point_sec() , "No operation required" );
-
-            deals.modify( *deal_itr, _self, [&]( auto& row ) {
-                row.restart_maker_num ++;
-                row.maker_expired_at = restart_time;
-            });
-
-            break;
-        }
-        case USER:
-        {
-
-            check( deal_itr -> restart_taker_num == 0 , "It has been rebooted more than 1 time.");
-            check( deal_itr -> expired_at <= now ,"Did not time out.");
-            check( deal_itr -> expired_at > check_time ,"The order has timed out by 24 hours.");
-            check( deal_itr -> taker_passed_at == time_point_sec() , "No operation required" );
-
-            deals.modify( *deal_itr, _self, [&]( auto& row ) {
-                row.restart_taker_num ++;
-                row.expired_at = restart_time;
-            });
-
-            deal_expiry_tbl exp_time(_self,_self.value);
-            auto exp_itr = exp_time.find(deal_id);
-            check( exp_itr != exp_time.end() ,"the order has timed out");
-            check( exp_itr -> expired_at > check_time,"The order has timed out by 24 hours.");
-
-            exp_time.modify( *exp_itr, _self, [&]( auto& row ) {
-                row.expired_at = restart_time;
-            });
-
-            break;
-        }
-        default:
-            break;
-    }
-    #endif
-}
-
 /*************** Begin of eosio.token transfer trigger function ******************/
 /**
  * This happens when a merchant decides to open sell orders
@@ -594,13 +526,11 @@ void otcbook::deltable(){
         itr2 = merchants.erase(itr2);
     }
 
-    deal_expiry_tbl exp(_self,_self.value);
-    auto itr3 = exp.begin();
-    while(itr3 != exp.end()){
-        itr3 = exp.erase(itr3);
-    }
-
-
+    // deal_expiry_tbl exp(_self,_self.value);
+    // auto itr3 = exp.begin();
+    // while(itr3 != exp.end()){
+    //     itr3 = exp.erase(itr3);
+    // }
 
 }
 
