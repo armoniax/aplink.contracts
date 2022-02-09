@@ -212,18 +212,10 @@ struct OTCBOOK_TBL deal_t {
     uint64_t id;                //PK: available_primary_key
     uint64_t order_id;
     asset order_price;
-    // asset order_price_usd;
     asset deal_quantity;
-
     name order_maker; // merchant 
-    // bool maker_passed;
-    // time_point_sec maker_passed_at;
-
     name order_taker; // user
-    // bool taker_passed;
-    // time_point_sec taker_passed_at;
 
-    bool closed;
     uint8_t status;
     time_point_sec created_at;
     time_point_sec closed_at;
@@ -261,7 +253,7 @@ struct OTCBOOK_TBL deal_t {
     EOSLIB_SERIALIZE(deal_t,    (id)(order_id)(order_price)/*(order_price_usd)*/(deal_quantity)
                                 (order_maker)//(maker_passed)(maker_passed_at)
                                 (order_taker)//(taker_passed)(taker_passed_at)
-                                (closed)(status)(created_at)(closed_at)(order_sn)
+                                (status)(created_at)(closed_at)(order_sn)
                                 (expired_at)(maker_expired_at)
                                 (memos))
 };

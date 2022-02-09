@@ -240,7 +240,6 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
         row.deal_quantity		= deal_quantity;
         row.order_maker			= order_maker;
         row.order_taker			= taker;
-        row.closed				= false;
         row.status				= (uint8_t)deal_status_t::CREATED;
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
@@ -269,7 +268,8 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     deal_t::idx_t deals(_self, _self.value);
     auto deal_itr = deals.find(deal_id);
     check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
-    check( !deal_itr->closed, "deal already closed: " + to_string(deal_id) );
+    auto status = (deal_status_t)deal_itr->status;
+    check( status != deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
 
     switch ((account_type_t) account_type) {
     case account_type_t::MERCHANT: 
@@ -293,7 +293,6 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( !order_itr->closed, "order already closed" );
 
     auto action = deal_action_t::CLOSE;
-    auto status = (deal_status_t)deal_itr->status;
     if ((account_type_t) account_type != account_type_t::ADMIN) {
         check(deal_status_t::CREATED == status || deal_status_t::TAKER_RECEIVED == status, 
             "can not process deal action:" + to_string((uint8_t)action) 
@@ -348,7 +347,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     deal_status_t limited_status = deal_status_t::NONE;
     account_type_t limited_account_type = account_type_t::NONE;
     deal_status_t next_status = deal_status_t::NONE;
-    check( status != deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) ); // TODO:...
+    check( status != deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
 
 #define DEAL_ACTION_CASE(_action, _limited_account_type, _limited_status, _next_status) \
     case deal_action_t::_action:                                                        \
