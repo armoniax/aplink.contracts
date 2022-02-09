@@ -56,4 +56,25 @@ uint64_t string_to_name( const std::string& str ) {
    return name;
 }
 
+inline constexpr int64_t power(int64_t base, int64_t exp) {
+    int64_t ret = 1;
+    while( exp > 0  ) {
+        ret *= base; --exp;
+    }
+    return ret;
+}
+
+inline constexpr int64_t power10(int64_t exp) {
+    return power(10, exp);
+}
+
+inline constexpr int64_t calc_precision(int64_t digit) {
+    return power10(digit);
+}
+
+/**
+ *  @param quantity: quantity * precision == amount
+ */
+#define ASSET(quantity, sym) asset(quantity * calc_precision(sym.precision()), sym)
+
 }

@@ -1,8 +1,6 @@
 #include <eosio.token/eosio.token.hpp>
 #include <otcconf/safemath.hpp>
 #include <otcconf/otcconf.hpp>
-#include <otcconf/utils.h>
-
 
 using namespace eosio;
 using namespace std;
