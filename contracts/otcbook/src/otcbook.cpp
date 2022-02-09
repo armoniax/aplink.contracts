@@ -28,8 +28,7 @@ asset otcbook::_calc_order_stakes(const asset &quantity, const asset &price) {
     // calc order quantity value by price
     auto value = multiply_decimal64( quantity.amount, price.amount, get_precision(price) );
 
-    price_table_t price_tbl(_self, _self.value);
-    const auto & prices_quote_cny = price_tbl.get().prices_quote_cny;
+    const auto & prices_quote_cny = _conf().prices_quote_cny;
     if (price.symbol != CNY)
     {
         auto price_itr = prices_quote_cny.find(price.symbol);
@@ -61,7 +60,7 @@ void otcbook::_set_conf(const name &conf_contract) {
     require_auth( _gstate.admin );
     CHECK( is_account(conf_contract), "Invalid account of conf_contract");
     _gstate.conf_contract = conf_contract;
-    _get_conf(true);
+    _conf(true);
 }
 
 void otcbook::setadmin(const name& admin) {
@@ -117,18 +116,18 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
     const asset& min_accept_quantity, const string &memo
 ){
     require_auth( owner );
-    
-    // check( _gstate.usd_exchange_rate > asset(0, USD_SYMBOL), "The exchange rate is incorrect");
+
     check( (order_side_t)side == order_side_t::BUY || (order_side_t)side == order_side_t::SELL, "Invalid order side" );
     check( quantity.is_valid(), "Invalid quantity");
     check( quantity.is_valid(), "Invalid price");
+    const auto& conf = _conf();
     if ((order_side_t)side == order_side_t::BUY) {
-        auto itr = _gstate.coin_to_fiat_list.find(quantity.symbol);
-        check(itr != _gstate.coin_to_fiat_list.end(), "quantity symbol not allowed for buying");
+        auto itr = conf.coin_to_fiat_conf.find(quantity.symbol);
+        check(itr != conf.coin_to_fiat_conf.end(), "quantity symbol not allowed for buying");
         check(itr->second.count(price.symbol) > 0, "price symbol not allowed for buying");
     } else {
-         auto itr = _gstate.fiat_to_coin_list.find(price.symbol);
-        check(itr != _gstate.fiat_to_coin_list.end(), "price symbol not allowed for selling");
+         auto itr = conf.fiat_to_coin_conf.find(price.symbol);
+        check(itr != conf.fiat_to_coin_conf.end(), "price symbol not allowed for selling");
         check(itr->second.count(quantity.symbol) > 0, "quantity symbol not allowed for selling");       
     }
 
@@ -624,13 +623,13 @@ void otcbook::deltable(){
 
 }
 
-const otcbook::conf_t& otcbook::_get_conf(bool refresh/* = false*/) {
-    if (!_conf || refresh) {
+const otcbook::conf_t& otcbook::_conf(bool refresh/* = false*/) {
+    if (!_conf_ptr || refresh) {
         CHECK(_gstate.conf_table.value != 0, "Invalid conf_table");
-        _conf_tbl = make_unique<conf_table_t>(_gstate.conf_table, _gstate.conf_table.value);
-        _conf = make_unique<conf_t>(_conf_tbl->get());
+        _conf_tbl_ptr = make_unique<conf_table_t>(_gstate.conf_table, _gstate.conf_table.value);
+        _conf_ptr = make_unique<conf_t>(_conf_tbl_ptr->get());
     }
-    return *_conf;
+    return *_conf_ptr;
 }
 
 }  //end of namespace:: mgpbpvoting

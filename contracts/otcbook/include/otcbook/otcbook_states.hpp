@@ -75,48 +75,13 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     name admin;             // default is contract self
     name conf_contract      = "otcconf"_n;     
     name conf_table         = "global"_n;
-    bool initialized        = false;
-
-    set<symbol> coin_type = { USDT_ERC20, USDT_TRC20, USDT_BEP20, CNYD_BEP20, CNYD_ARC20 };
-    set<symbol> fiat_type = { CNY, USD, EUR, INR };
-
-    /** 
-     * OTC merchants to make sell orders with cypto
-     */
-    map<symbol, set<symbol>> coin_to_fiat_list = {
-        { CNYD_BEP20,  { CNY } },
-        { CNYD_ARC20,  { CNY } },
-        { BTC,         { CNY } },
-        { ETH,         { CNY } }
-    };
-    
-    /** 
-     * OTC merchants to make buy orders with fiat
-     */
-    map<symbol, set<symbol>> fiat_to_coin_list = {
-        { CNY, {
-            CNYD_BEP20, 
-            CNYD_ARC20,  
-            USDT_ERC20, 
-            USDT_BEP20,
-            BTC,
-            ETH }
-        }
-    };    
+    bool initialized        = false; 
 
     set<name> pay_type = { BANK, WECHAT, ALIPAY, MASTER, VISA, PAYPAL };
-
-    global_t() {
-        // min_buy_order_quantity      = asset(10, SYS_SYMBOL);
-        // min_sell_order_quantity     = asset(10, SYS_SYMBOL);
-        // min_pos_stake_quantity      = asset(0, SYS_SYMBOL);
-    }
 
     EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
                                 (withhold_expire_sec)(transaction_fee_receiver)
                                 (transaction_fee_ratio)(admin)(conf_contract)(conf_table)
-                                (coin_type)(fiat_type)
-                                (coin_to_fiat_list)(fiat_to_coin_list)
                                 (pay_type)
     )
 };

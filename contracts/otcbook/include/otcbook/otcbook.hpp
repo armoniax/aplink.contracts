@@ -49,8 +49,8 @@ private:
     dbc                 _dbc;
     global_singleton    _global;
     global_t            _gstate;
-    std::unique_ptr<conf_table_t> _conf_tbl;
-    std::unique_ptr<conf_t> _conf;
+    std::unique_ptr<conf_table_t> _conf_tbl_ptr;
+    std::unique_ptr<conf_t> _conf_ptr;
     // global2_singleton   _global2;
     // global2_t           _gstate2;
     
@@ -143,7 +143,7 @@ private:
 
     void _set_conf(const name &conf_contract);
 
-    const conf_t& _get_conf(bool refresh = false);
+    const conf_t& _conf(bool refresh = false);
 };
 
 }
