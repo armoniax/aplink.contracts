@@ -73,9 +73,9 @@ void otcbook::setmerchant(const name& owner, const set<name> &pay_methods, const
 
     check(email.size() < 64, "email size too large: " + to_string(email.size()) );
     check(memo.size() < max_memo_size, "memo size too large: " + to_string(memo.size()) );
-
+    const auto& conf = _conf();
     for (auto& method : pay_methods) {
-        check( _gstate.pay_type.count(method) != 0, "pay method illegal: " + method.to_string() );
+        check( conf.pay_type.count(method) != 0, "pay method illegal: " + method.to_string() );
     }
 
     merchant_t merchant(owner);
@@ -329,7 +329,6 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     order_table_t orders(_self, _self.value);
     auto order_itr = orders.find(deal_itr->order_id);
     check( order_itr != orders.end(), "order not found: " + to_string(deal_itr->order_id) );
-    // check( order_itr -> accepted_payments.count(pay_type) , "pay method illegal: " + to_string(pay_type) );
 
     auto now = time_point_sec(current_time_point());
 

@@ -36,12 +36,19 @@ static constexpr symbol BTC        = SYMBOL("BTC", 8);
 static constexpr symbol ETH        = SYMBOL("ETH", 18);
 static constexpr symbol CNYD       = SYMBOL("CNYD", 6);
 
-
 // fiat currency symbols
 static constexpr symbol   CNY      = SYMBOL("CNY", 4);
 static constexpr symbol   USD      = SYMBOL("USD", 4);
 static constexpr symbol   EUR      = SYMBOL("EUR", 4);
 static constexpr symbol   INR      = SYMBOL("INR", 4);
+
+// pay type
+static constexpr name BANK        = "bank"_n;
+static constexpr name WECHAT      = "wechat"_n;
+static constexpr name ALIPAY      = "alipay"_n;
+static constexpr name MASTER      = "master"_n;
+static constexpr name VISA        = "visa"_n;
+static constexpr name PAYPAL      = "paypal"_n;
 
 /** 
  * App upgrade info
@@ -60,6 +67,8 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
         "initial beta testing release", 
         false 
     };
+
+    set<name> pay_type = { BANK, WECHAT, ALIPAY, MASTER, VISA, PAYPAL };
 
     set<symbol> coin_type = { USDT_ERC20, USDT_TRC20, USDT_BEP20, CNYD_BEP20, CNYD_ARC20 };
     set<symbol> fiat_type = { CNY, USD, EUR, INR };
@@ -98,7 +107,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
         
     }
 
-    EOSLIB_SERIALIZE( global_t, (app_info)(coin_type)(fiat_type)
+    EOSLIB_SERIALIZE( global_t, (app_info)(pay_type)(coin_type)(fiat_type)
                                 (coin_to_fiat_conf)(fiat_to_coin_conf)(prices_quote_cny)
     )
 };

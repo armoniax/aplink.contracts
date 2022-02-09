@@ -29,14 +29,6 @@ static constexpr symbol   CNYD_SYMBOL           = SYMBOL("CNYD", 6);
 static constexpr symbol   CNY                   = SYMBOL("CNY", 4);
 static constexpr symbol   STAKE_SYMBOL          = CNYD_SYMBOL;
 
-// pay type
-static constexpr name BANK        = "bank"_n;
-static constexpr name WECHAT      = "wechat"_n;
-static constexpr name ALIPAY      = "alipay"_n;
-static constexpr name MASTER      = "master"_n;
-static constexpr name VISA        = "visa"_n;
-static constexpr name PAYPAL      = "paypal"_n;
-
 static constexpr uint64_t percent_boost     = 10000;
 static constexpr uint64_t order_stake_pct   = 7000; // 70%
 static constexpr uint64_t max_memo_size     = 1024;
@@ -64,12 +56,9 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     name conf_table         = "global"_n;
     bool initialized        = false; 
 
-    set<name> pay_type = { BANK, WECHAT, ALIPAY, MASTER, VISA, PAYPAL };
-
     EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
                                 (withhold_expire_sec)(transaction_fee_receiver)
                                 (transaction_fee_ratio)(admin)(conf_contract)(conf_table)
-                                (pay_type)
     )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
@@ -240,7 +229,6 @@ struct OTCBOOK_TBL deal_t {
     time_point_sec closed_at;
 
     uint64_t order_sn; // 订单号（前端生成）
-    // uint8_t pay_type; // 选择的支付类型
     time_point_sec expired_at; // 订单到期时间
 
     time_point_sec maker_expired_at; // 卖家操作到期时间
@@ -273,9 +261,8 @@ struct OTCBOOK_TBL deal_t {
     EOSLIB_SERIALIZE(deal_t,    (id)(order_id)(order_price)/*(order_price_usd)*/(deal_quantity)
                                 (order_maker)//(maker_passed)(maker_passed_at)
                                 (order_taker)//(taker_passed)(taker_passed_at)
-                                (closed)(status)(created_at)(closed_at)(order_sn)//(pay_type)
+                                (closed)(status)(created_at)(closed_at)(order_sn)
                                 (expired_at)(maker_expired_at)
-                                // (restart_taker_num)(restart_maker_num)
                                 (memos))
 };
 
