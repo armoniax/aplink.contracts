@@ -58,7 +58,7 @@ int128_t multiply_decimal(int128_t a, int128_t b, int128_t precision) {
 #define multiply_i64(a, b) multiply<int64_t>(a, b)
 
 
-inline int64_t power(int64_t base, int64_t exp) {
+inline constexpr int64_t power(int64_t base, int64_t exp) {
     int64_t ret = 1;
     while( exp > 0  ) {
         ret *= base; --exp;
@@ -66,12 +66,11 @@ inline int64_t power(int64_t base, int64_t exp) {
     return ret;
 }
 
-inline int64_t power10(int64_t exp) {
+inline constexpr int64_t power10(int64_t exp) {
     return power(10, exp);
 }
 
-inline int64_t calc_precision(int64_t digit) {
-    CHECK(digit >= 0 && digit <= 18, "precision digit " + std::to_string(digit) + " should be in range[0,18]");
+inline constexpr int64_t calc_precision(int64_t digit) {
     return power10(digit);
 }
 

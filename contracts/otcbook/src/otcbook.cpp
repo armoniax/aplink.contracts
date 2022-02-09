@@ -15,7 +15,9 @@ using namespace eosio;
 using namespace wasm::safemath;
 
 inline int64_t get_precision(const symbol &s) {
-    return calc_precision(s.precision());
+    int64_t digit = s.precision();
+    CHECK(digit >= 0 && digit <= 18, "precision digit " + std::to_string(digit) + " should be in range[0,18]");    
+    return calc_precision(digit);
 }
 
 inline int64_t get_precision(const asset &a) {
