@@ -63,6 +63,7 @@ void otcbook::_init() {
 
 void otcbook::init() {
     // _global.remove();
+    require_auth( _gstate.admin );
     
     check( false, "init completed!" );
 
@@ -100,6 +101,8 @@ void otcbook::setmerchant(const name& owner, const set<name> &pay_methods, const
 }
 
 void otcbook::enablemer(const name& owner, bool is_enabled) {
+    require_auth( _gstate.admin );
+
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
     if (is_enabled) {
@@ -242,7 +245,6 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
         row.id 					= deal_id;
         row.order_id 			= order_id;
         row.order_price			= order_price;
-        // row.order_price_usd		= order_price_usd;
         row.deal_quantity		= deal_quantity;
         row.order_maker			= order_maker;
         row.order_taker			= taker;
@@ -251,8 +253,6 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
         row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
-        // row.restart_taker_num 	= 0;
-        // row.restart_maker_num 	= 0;
         row.memos.push_back({taker, (uint8_t)deal_status_t::NONE, (uint8_t)deal_action_t::CREATE, memo});
     });
 
