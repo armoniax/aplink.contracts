@@ -44,7 +44,7 @@ public:
     void init();
 
     [[eosio::action]]
-    void setrate(const vector<asset>& prices_quote_cny);
+    void setrate(const map<symbol, asset>& prices_quote_cny);
 private:
 };
 

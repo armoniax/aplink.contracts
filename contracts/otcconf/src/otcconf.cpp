@@ -19,13 +19,13 @@ void otcconf::init() {
 /**
  * update price
  */ 
-void otcconf::setrate(const vector<asset>& prices_quote_cny) {
+void otcconf::setrate(const map<symbol, asset>& prices_quote_cny) {
     require_auth( _self );
     
     check(!prices_quote_cny.empty(), "prices_quote_cny empty");
-    for (const auto& price : prices_quote_cny) {
-        CHECK( price.symbol != CNY, "base price symbol not allowed");
-        _gstate.prices_quote_cny[price.symbol] = price;
+    for (const auto& item : prices_quote_cny) {
+        CHECK( item.first != CNY, "base symbol can not equal to quote symbol");
+        _gstate.prices_quote_cny[item.first] = item.second;
     }
 }
 
