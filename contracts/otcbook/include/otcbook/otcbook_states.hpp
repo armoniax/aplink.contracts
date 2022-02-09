@@ -19,30 +19,15 @@ using namespace std;
 using namespace eosio;
 
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
+
 static constexpr eosio::name active_perm{"active"_n};
 static constexpr eosio::name SYS_BANK{"eosio.token"_n};
 
 // crypto assets
 static constexpr symbol   SYS_SYMBOL            = SYMBOL("MGP", 4);
 static constexpr symbol   CNYD_SYMBOL           = SYMBOL("CNYD", 6);
-static constexpr symbol   USDT_SYMBOL           = SYMBOL("USDT", 6);
+static constexpr symbol   CNY                   = SYMBOL("CNY", 4);
 static constexpr symbol   STAKE_SYMBOL          = CNYD_SYMBOL;
-
-// crypto coins for trading
-static constexpr symbol USDT_ERC20 = SYMBOL("USDTERC", 6);
-static constexpr symbol USDT_TRC20 = SYMBOL("USDTTRC", 6);
-static constexpr symbol USDT_BEP20 = SYMBOL("USDTBEP", 6);
-static constexpr symbol CNYD_BEP20 = SYMBOL("CNYDBEP", 6);
-static constexpr symbol CNYD_ARC20 = SYMBOL("CNYDARC", 6);
-static constexpr symbol BTC        = SYMBOL("BTC", 8);
-static constexpr symbol ETH        = SYMBOL("ETH", 18);
-
-
-// fiat currency symbols
-static constexpr symbol   CNY    = symbol(symbol_code("CNY"), 2);
-static constexpr symbol   USD    = symbol(symbol_code("USD"), 4);
-static constexpr symbol   EUR    = symbol(symbol_code("EUR"), 4);
-static constexpr symbol   INR    = symbol(symbol_code("INR"), 4);
 
 // pay type
 static constexpr name BANK        = "bank"_n;
@@ -52,15 +37,17 @@ static constexpr name MASTER      = "master"_n;
 static constexpr name VISA        = "visa"_n;
 static constexpr name PAYPAL      = "paypal"_n;
 
-static constexpr uint64_t seconds_per_year      = 24 * 3600 * 7 * 52;
-static constexpr uint64_t seconds_per_month     = 24 * 3600 * 30;
-static constexpr uint64_t seconds_per_week      = 24 * 3600 * 7;
-static constexpr uint64_t seconds_per_day       = 24 * 3600;
-static constexpr uint64_t seconds_per_hour      = 3600;
-static constexpr uint64_t max_memo_size         = 1024;
+static constexpr uint64_t percent_boost     = 10000;
+static constexpr uint64_t order_stake_pct   = 7000; // 70%
+static constexpr uint64_t max_memo_size     = 1024;
 
-static constexpr uint64_t percent_boost = 10000;
-static constexpr uint64_t order_stake_pct = 7000; // 70%
+// static constexpr uint64_t seconds_per_year      = 24 * 3600 * 7 * 52;
+// static constexpr uint64_t seconds_per_month     = 24 * 3600 * 30;
+// static constexpr uint64_t seconds_per_week      = 24 * 3600 * 7;
+// static constexpr uint64_t seconds_per_day       = 24 * 3600;
+// static constexpr uint64_t seconds_per_hour      = 3600;
+
+
 
 
 #define OTCBOOK_TBL [[eosio::table, eosio::contract("otcbook")]]

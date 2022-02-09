@@ -34,14 +34,14 @@ static constexpr symbol CNYD_BEP20 = SYMBOL("CNYDBEP", 6);
 static constexpr symbol CNYD_ARC20 = SYMBOL("CNYDARC", 6);
 static constexpr symbol BTC        = SYMBOL("BTC", 8);
 static constexpr symbol ETH        = SYMBOL("ETH", 18);
-static constexpr symbol CNYD       = symbol(symbol_code("CNYD"), 6);
+static constexpr symbol CNYD       = SYMBOL("CNYD", 6);
 
 
 // fiat currency symbols
-static constexpr symbol   CNY    = symbol(symbol_code("CNY"), 4);
-static constexpr symbol   USD    = symbol(symbol_code("USD"), 4);
-static constexpr symbol   EUR    = symbol(symbol_code("EUR"), 4);
-static constexpr symbol   INR    = symbol(symbol_code("INR"), 4);
+static constexpr symbol   CNY      = SYMBOL("CNY", 4);
+static constexpr symbol   USD      = SYMBOL("USD", 4);
+static constexpr symbol   EUR      = SYMBOL("EUR", 4);
+static constexpr symbol   INR      = SYMBOL("INR", 4);
 
 /** 
  * App upgrade info
