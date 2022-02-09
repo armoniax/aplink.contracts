@@ -87,14 +87,6 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
-struct [[eosio::table("price"), eosio::contract("otcbook")]] price_map_t {
-    
-    map<symbol, asset> prices_quote_cny;
-    EOSLIB_SERIALIZE( price_map_t, (prices_quote_cny ) )
-};
-
-typedef eosio::singleton< "price"_n, price_map_t > price_table_t;
-
 enum class account_type_t: uint8_t {
     NONE           = 0,
     ADMIN          = 1,

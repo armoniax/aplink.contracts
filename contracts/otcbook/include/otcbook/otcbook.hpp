@@ -134,9 +134,6 @@ public:
     [[eosio::action]]
     void restart(const name& owner,const uint64_t& deal_id,const uint8_t& user_type);
 
-    [[eosio::action]]
-    void setrate(const name& owner,const vector<asset>& prices_quote_cny);
-
 private:
     void _init();
     asset _calc_order_stakes(const asset &quantity, const asset &price);

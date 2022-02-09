@@ -59,6 +59,8 @@ public:
     [[eosio::action]] //only code maintainer can init
     void init();
 
+    [[eosio::action]]
+    void setrate(const vector<asset>& prices_quote_cny);
 private:
 };
 

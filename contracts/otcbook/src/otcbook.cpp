@@ -554,23 +554,6 @@ void otcbook::restart(const name& owner,const uint64_t& deal_id,const uint8_t& u
     #endif
 }
 
-/**
- * 更新汇率及mgp价格
- */ 
-void otcbook::setrate(const name& account,const vector<asset>& prices_quote_cny) {
-    require_auth( account );
-    
-    check( account == _gstate.admin, "None-admin access denied" );
-    check(!prices_quote_cny.empty(), "prices empty");
-    price_table_t price_tbl(_self, _self.value);
-    auto price_map = price_tbl.get();
-    for (const auto& price : prices_quote_cny) {
-        CHECK( _gstate.fiat_type.count(price.symbol) != 0, "price symbol not allowed");
-        price_map.prices_quote_cny[price.symbol] = price;
-    }
-    price_tbl.set( price_map, _self );
-}
-
 /*************** Begin of eosio.token transfer trigger function ******************/
 /**
  * This happens when a merchant decides to open sell orders

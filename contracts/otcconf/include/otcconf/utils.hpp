@@ -3,6 +3,24 @@
 #include <eosio/eosio.hpp>
 #include <vector>
 
+#define EMPTY_MACRO_FUNC(...)
+
+#define PP(prop) "," #prop ":", prop
+#define PP0(prop) #prop ":", prop
+#define PRINT_PROPERTIES(...) eosio::print("{", __VA_ARGS__, "}")
+
+#ifndef ASSERT
+    #define ASSERT(exp) eosio::check(exp, #exp)
+#endif
+
+#ifndef TRACE
+    #define TRACE(...) print(__VA_ARGS__)
+#endif
+
+#define TRACE_L(...) TRACE(__VA_ARGS__, "\n")
+
+#define CHECK(exp, msg) { if (!(exp)) eosio::check(false, msg); }
+
 namespace wasm {
 
 using namespace std;
