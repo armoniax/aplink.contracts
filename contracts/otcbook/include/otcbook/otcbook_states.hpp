@@ -138,12 +138,13 @@ enum class account_type_t: uint8_t {
 enum class deal_action_t: uint8_t {
     CREATE          = 1,
     MAKER_ACCEPT    = 2,
-    TAKER_SEND,
-    MAKER_RECEIVE,
-    MAKER_SEND,
-    TAKER_RECEIVE,
-    CLOSE,
-    ADD_MEMO
+    TAKER_SEND      = 3,
+    MAKER_RECEIVE   = 4,
+    MAKER_SEND      = 5,
+    TAKER_RECEIVE   = 6,
+    CLOSE           = 7,
+    ADD_MEMO        = 8,
+    REVERSE         = 9
 };
 
 

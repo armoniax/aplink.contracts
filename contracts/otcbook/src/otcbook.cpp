@@ -398,56 +398,25 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
 
 }
 
-/**
- *
- * 款项异常，回退到：待付款状态
- *
- */
-void otcbook::reversedeal(const name& arbiter,const uint64_t& deal_id){
+void otcbook::reversedeal(const name& account, const uint64_t& deal_id, const string& memo){
 
-    #ifdef __comment
-    require_auth( arbiter );
+    require_auth( account );
 
-    check( _gstate.otc_arbiters.count(arbiter), "not an arbiter: " + arbiter.to_string() );
+    CHECK( _gstate.admin == account, "Only admin allowed" );
 
     deal_t::idx_t deals(_self, _self.value);
     auto deal_itr = deals.find(deal_id);
-    check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
-    check( !deal_itr->closed, "deal already closed: " + to_string(deal_id) );
-    check( deal_itr->taker_passed_at != time_point_sec(), "No operation required" );
+    CHECK( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
 
-    auto expired_at = time_point_sec(current_time_point().sec_since_epoch() + _gstate.withhold_expire_sec);
+    auto status = (deal_status_t)deal_itr->status;
+    CHECK( status != deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) ); 
+    CHECK( status != deal_status_t::CREATED, "deal no need to reverse" );
+
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
-        row.arbiter = arbiter;
-        row.arbiter_passed = false;
-        row.arbiter_passed_at = time_point_sec(current_time_point());;
-        row.taker_passed = false;
-        row.taker_passed_at = time_point_sec();
-        row.pay_type = 0;
-        row.maker_expired_at = time_point_sec();
-        row.maker_passed = false;
-        row.maker_passed_at = time_point_sec();
-        row.expired_at = expired_at;
-        row.restart_taker_num = 0;
-        row.restart_maker_num = 0;
+        row.status = (uint8_t)deal_status_t::CREATED;
+        row.memos.push_back({account, (uint8_t)status, (uint8_t)deal_action_t::REVERSE, memo});
     });
-
-    deal_expiry_tbl exp_time(_self,_self.value);
-    auto exp_itr = exp_time.find(deal_id);
-
-    if ( exp_itr != exp_time.end() ) {
-        exp_time.modify( *exp_itr, _self, [&]( auto& row ) {
-            row.expired_at = expired_at;
-        });
-    } else {
-        exp_time.emplace( _self, [&]( auto& row ){
-            row.deal_id = deal_id;
-            row.expired_at = expired_at;
-           });
-    }
-    #endif
 }
-
 
 /**
  *  提取
