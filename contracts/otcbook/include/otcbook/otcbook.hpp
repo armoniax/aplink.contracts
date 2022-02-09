@@ -8,6 +8,7 @@
 #include <eosio/action.hpp>
 #include <string>
 
+#include <otcconf/otcconf_states.hpp>
 #include "wasm_db.hpp"
 #include "otcbook_states.hpp"
 
@@ -42,10 +43,14 @@ if ( debug ) {                               \
    eosio::print( __VA_ARGS__ ); }}
 
 class [[eosio::contract("otcbook")]] otcbook: public eosio::contract {
+    using conf_t = otc::global_t;
+    using conf_table_t = otc::global_singleton;
 private:
     dbc                 _dbc;
     global_singleton    _global;
     global_t            _gstate;
+    std::unique_ptr<conf_table_t> _conf_tbl;
+    std::unique_ptr<conf_t> _conf;
     // global2_singleton   _global2;
     // global2_t           _gstate2;
     
@@ -137,6 +142,8 @@ private:
     asset _calc_order_stakes(const asset &quantity, const asset &price);
 
     void _set_conf(const name &conf_contract);
+
+    const conf_t& _get_conf(bool refresh = false);
 };
 
 }

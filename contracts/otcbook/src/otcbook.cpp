@@ -61,7 +61,7 @@ void otcbook::_set_conf(const name &conf_contract) {
     require_auth( _gstate.admin );
     CHECK( is_account(conf_contract), "Invalid account of conf_contract");
     _gstate.conf_contract = conf_contract;
-    // TODO: check loading conf
+    _get_conf(true);
 }
 
 void otcbook::setadmin(const name& admin) {
@@ -624,5 +624,13 @@ void otcbook::deltable(){
 
 }
 
+const otcbook::conf_t& otcbook::_get_conf(bool refresh/* = false*/) {
+    if (!_conf || refresh) {
+        CHECK(_gstate.conf_table.value != 0, "Invalid conf_table");
+        _conf_tbl = make_unique<conf_table_t>(_gstate.conf_table, _gstate.conf_table.value);
+        _conf = make_unique<conf_t>(_conf_tbl->get());
+    }
+    return *_conf;
+}
 
 }  //end of namespace:: mgpbpvoting

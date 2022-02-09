@@ -63,7 +63,7 @@ static constexpr uint64_t percent_boost = 10000;
 static constexpr uint64_t order_stake_pct = 7000; // 70%
 
 
-#define CONTRACT_TBL [[eosio::table, eosio::contract("otcbook")]]
+#define OTCBOOK_TBL [[eosio::table, eosio::contract("otcbook")]]
 
 struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     // asset min_buy_order_quantity;
@@ -174,7 +174,7 @@ enum  class merchant_status_t: uint8_t {
     DISABLED = 3
 };
 
-struct CONTRACT_TBL merchant_t {
+struct OTCBOOK_TBL merchant_t {
     name owner;
     asset stake_quantity = asset(0, STAKE_SYMBOL);
     set<name> accepted_payments; //accepted payments
@@ -199,7 +199,7 @@ struct CONTRACT_TBL merchant_t {
  * when the owner decides to close it before complete fulfillment, it just get erased
  * if it is truly fulfilled, it also get deleted.
  */
-struct CONTRACT_TBL order_t {
+struct OTCBOOK_TBL order_t {
     uint64_t id;                //PK: available_primary_key
 
     name owner;                 //order maker's account, merchant
@@ -275,7 +275,7 @@ struct deal_memo_t {
  * buy/sell deal
  *
  */
-struct CONTRACT_TBL deal_t {
+struct OTCBOOK_TBL deal_t {
     uint64_t id;                //PK: available_primary_key
     uint64_t order_id;
     asset order_price;
@@ -339,7 +339,7 @@ struct CONTRACT_TBL deal_t {
  * 交易订单过期时间
  *
  */
-struct CONTRACT_TBL deal_expiry_t{
+struct OTCBOOK_TBL deal_expiry_t{
     uint64_t deal_id;
     time_point_sec expired_at;
 
