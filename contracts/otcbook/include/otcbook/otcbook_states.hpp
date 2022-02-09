@@ -72,7 +72,10 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     uint64_t withhold_expire_sec = 600;   // the amount hold will be unfrozen upon expiry
     name transaction_fee_receiver;  // receiver account to transaction fees
     uint64_t transaction_fee_ratio = 0; // fee ratio boosted by 10000
-    name admin;     // default is contract self
+    name admin;             // default is contract self
+    name conf_contract      = "otcconf"_n;     
+    name conf_table         = "global"_n;
+    bool initialized        = false;
 
     set<symbol> coin_type = { USDT_ERC20, USDT_TRC20, USDT_BEP20, CNYD_BEP20, CNYD_ARC20 };
     set<symbol> fiat_type = { CNY, USD, EUR, INR };
@@ -111,7 +114,7 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
 
     EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
                                 (withhold_expire_sec)(transaction_fee_receiver)
-                                (transaction_fee_ratio)(admin)
+                                (transaction_fee_ratio)(admin)(conf_contract)(conf_table)
                                 (coin_type)(fiat_type)
                                 (coin_to_fiat_list)(fiat_to_coin_list)
                                 (pay_type)

@@ -69,10 +69,13 @@ public:
         // _global2.set( _gstate2, get_self() );
     }
 
-    [[eosio::action]] //only code maintainer can init
-    void init();
+    [[eosio::action]] //only admin can init
+    void init(const name &conf_contract);
 
-    [[eosio::action]] //only code maintainer can init
+    [[eosio::action]] //only admin can init
+    void setconf(const name &conf_contract);
+
+    [[eosio::action]] //only admin can init
     void setadmin(const name& admin);
 
     [[eosio::action]]
@@ -132,6 +135,8 @@ public:
 private:
     void _init();
     asset _calc_order_stakes(const asset &quantity, const asset &price);
+
+    void _set_conf(const name &conf_contract);
 };
 
 }

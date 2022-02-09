@@ -47,28 +47,21 @@ asset otcbook::_calc_order_stakes(const asset &quantity, const asset &price) {
     return asset(amount, STAKE_SYMBOL);
 }
 
-void otcbook::_init() {
-    _gstate.transaction_fee_receiver 		= "devshare"_n;
-    // _gstate.min_buy_order_quantity.amount 	= 10'0000;
-    // _gstate.min_sell_order_quantity.amount 	= 10'0000;
-    // _gstate.min_pos_stake_quantity.amount 	= 2000'0000; //close to $200
-    _gstate.withhold_expire_sec 			= 900;
-    // _gstate.pos_staking_contract 			= "addressbookt"_n;
-    // _gstate.cs_contact_title				= "Custom Service Contact";
-    // _gstate.cs_contact						= "cs_contact";
-
-    // _gstate2.admin = "mwalletadmin"_n;
+void otcbook::init(const name &conf_contract) {
+    require_auth( _gstate.admin );
+    _set_conf(conf_contract);
 }
 
-
-void otcbook::init() {
-    // _global.remove();
+void otcbook::setconf(const name &conf_contract) {
     require_auth( _gstate.admin );
-    
-    check( false, "init completed!" );
+    _set_conf(conf_contract);
+}
 
-    //_init();
-
+void otcbook::_set_conf(const name &conf_contract) {
+    require_auth( _gstate.admin );
+    CHECK( is_account(conf_contract), "Invalid account of conf_contract");
+    _gstate.conf_contract = conf_contract;
+    // TODO: check loading conf
 }
 
 void otcbook::setadmin(const name& admin) {
