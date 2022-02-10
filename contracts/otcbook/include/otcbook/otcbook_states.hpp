@@ -163,10 +163,6 @@ struct OTCBOOK_TBL order_t {
         price_factor = ((order_side_t)side == order_side_t::BUY) ? std::numeric_limits<uint64_t>::max() - price_factor : price_factor;
         return (uint128_t)option << 64 | (uint128_t)price_factor; 
     } 
-    
-    // TODO: should add index by side and price
-    //to sort buyers orders: bigger-price order first
-    // uint64_t by_invprice() const { return closed ? 0 : std::numeric_limits<uint64_t>::max() - price.amount; } 
 
     //to sort by order makers account
     uint64_t by_maker() const { return owner.value; }
@@ -182,18 +178,6 @@ typedef eosio::multi_index
     indexed_by<"price"_n, const_mem_fun<order_t, uint128_t, &order_t::by_price> >,
     indexed_by<"maker"_n, const_mem_fun<order_t, uint64_t, &order_t::by_maker> >
 > order_table_t;
-
-// typedef eosio::multi_index
-// < "buyorders"_n,  order_t,
-//     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_invprice> >,
-//     indexed_by<"maker"_n, const_mem_fun<order_t, uint64_t, &order_t::by_maker> >
-// > buy_order_t;
-
-// typedef eosio::multi_index
-// < "selorders"_n, order_t,
-//     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_price> >,
-//     indexed_by<"maker"_n, const_mem_fun<order_t, uint64_t, &order_t::by_maker> >
-// > sell_order_t;
 
 struct deal_memo_t {
     name account;
@@ -222,10 +206,7 @@ struct OTCBOOK_TBL deal_t {
 
     uint64_t order_sn; // 订单号（前端生成）
     time_point_sec expired_at; // 订单到期时间
-
     time_point_sec maker_expired_at; // 卖家操作到期时间
-    // uint8_t restart_taker_num; // 重启买家超时次数
-    // uint8_t restart_maker_num; // 重启卖家超时次数
     vector<deal_memo_t> memos;
 
     deal_t() {}
@@ -250,9 +231,9 @@ struct OTCBOOK_TBL deal_t {
         indexed_by<"expiry"_n,  const_mem_fun<deal_t, uint64_t, &deal_t::by_expired_at> >
     > idx_t;
 
-    EOSLIB_SERIALIZE(deal_t,    (id)(order_id)(order_price)/*(order_price_usd)*/(deal_quantity)
-                                (order_maker)//(maker_passed)(maker_passed_at)
-                                (order_taker)//(taker_passed)(taker_passed_at)
+    EOSLIB_SERIALIZE(deal_t,    (id)(order_id)(order_price)(deal_quantity)
+                                (order_maker)
+                                (order_taker)
                                 (status)(created_at)(closed_at)(order_sn)
                                 (expired_at)(maker_expired_at)
                                 (memos))
