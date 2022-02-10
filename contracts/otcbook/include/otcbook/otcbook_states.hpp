@@ -184,8 +184,9 @@ struct deal_memo_t {
     uint8_t status;
     uint8_t action;
     string memo;
+    time_point_sec created_at;    
 
-    EOSLIB_SERIALIZE(deal_memo_t,    (account)(status)(action)(memo) )
+    EOSLIB_SERIALIZE(deal_memo_t,    (account)(status)(action)(memo)(created_at) )
 };
 
 /**
