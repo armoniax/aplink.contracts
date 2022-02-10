@@ -538,8 +538,9 @@ void otcbook::deltable(){
 
 const otcbook::conf_t& otcbook::_conf(bool refresh/* = false*/) {
     if (!_conf_ptr || refresh) {
-        CHECK(_gstate.conf_table.value != 0, "Invalid conf_table");
-        _conf_tbl_ptr = make_unique<conf_table_t>(_gstate.conf_table, _gstate.conf_table.value);
+        CHECK(_gstate.conf_contract.value != 0, "Invalid conf_table");
+        _conf_tbl_ptr = make_unique<conf_table_t>(_gstate.conf_contract, _gstate.conf_contract.value);
+        CHECK(_conf_tbl_ptr->exists(), "conf table not existed in contract: " + _gstate.conf_contract.to_string());
         _conf_ptr = make_unique<conf_t>(_conf_tbl_ptr->get());
     }
     return *_conf_ptr;

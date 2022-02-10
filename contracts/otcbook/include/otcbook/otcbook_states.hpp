@@ -52,13 +52,12 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     name transaction_fee_receiver;  // receiver account to transaction fees
     uint64_t transaction_fee_ratio = 0; // fee ratio boosted by 10000
     name admin;             // default is contract self
-    name conf_contract      = "otcconf"_n;     
-    name conf_table         = "global"_n;
+    name conf_contract      = "otcconf"_n;
     bool initialized        = false; 
 
     EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
                                 (withhold_expire_sec)(transaction_fee_receiver)
-                                (transaction_fee_ratio)(admin)(conf_contract)(conf_table)
+                                (transaction_fee_ratio)(admin)(conf_contract)
     )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
