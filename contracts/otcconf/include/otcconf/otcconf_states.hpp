@@ -60,6 +60,8 @@ struct AppInfo_t {
     bool force_upgrade;
 };
 
+typedef set<symbol> symbol_set;
+
 struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     AppInfo_t app_info = { 
         "0.1.0",
@@ -76,7 +78,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     /** 
      * OTC merchants to make sell orders with cypto
      */
-    map<symbol, set<symbol>> coin_to_fiat_conf = {
+    map<symbol, symbol_set> coin_to_fiat_conf = {
         { CNYD_BEP20,  { CNY } },
         { CNYD_ARC20,  { CNY } },
         { BTC,         { CNY } },
@@ -86,7 +88,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     /** 
      * OTC merchants to make buy orders with fiat
      */
-    map<symbol, set<symbol>> fiat_to_coin_conf = {
+    map<symbol, symbol_set> fiat_to_coin_conf = {
         { CNY, {
             CNYD_BEP20, 
             CNYD_ARC20,  
