@@ -49,6 +49,7 @@ asset otcbook::_calc_order_stakes(const asset &quantity, const asset &price) {
 void otcbook::init(const name &conf_contract) {
     require_auth( _gstate.admin );
     _set_conf(conf_contract);
+    _gstate.initialized = true;
 }
 
 void otcbook::setconf(const name &conf_contract) {
