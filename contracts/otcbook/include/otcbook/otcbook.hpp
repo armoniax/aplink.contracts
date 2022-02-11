@@ -220,7 +220,6 @@ public:
     void deltable();
 
 private:
-    void _init();
     asset _calc_order_stakes(const asset &quantity, const asset &price);
 
     void _set_conf(const name &conf_contract);
