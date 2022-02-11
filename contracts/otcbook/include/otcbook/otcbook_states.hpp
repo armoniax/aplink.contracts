@@ -48,7 +48,7 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     // asset min_buy_order_quantity;
     // asset min_sell_order_quantity;
     // asset min_pos_stake_quantity;
-    uint64_t withhold_expire_sec = 600;   // the amount hold will be unfrozen upon expiry
+    // uint64_t withhold_expire_sec = 600;   // the amount hold will be unfrozen upon expiry
     name transaction_fee_receiver;  // receiver account to transaction fees
     uint64_t transaction_fee_ratio = 0; // fee ratio boosted by 10000
     name admin;             // default is contract self
@@ -56,8 +56,8 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     bool initialized        = false; 
 
     EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
-                                (withhold_expire_sec)(transaction_fee_receiver)
-                                (transaction_fee_ratio)(admin)(conf_contract)
+                                /*(withhold_expire_sec)*/(transaction_fee_receiver)
+                                (transaction_fee_ratio)(admin)(conf_contract)(initialized)
     )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
@@ -205,8 +205,8 @@ struct OTCBOOK_TBL deal_t {
     time_point_sec closed_at;
 
     uint64_t order_sn; // 订单号（前端生成）
-    time_point_sec expired_at; // 订单到期时间
-    time_point_sec maker_expired_at; // 卖家操作到期时间
+    // time_point_sec expired_at; // 订单到期时间
+    // time_point_sec maker_expired_at; // 卖家操作到期时间
     vector<deal_memo_t> memos;
 
     deal_t() {}
@@ -219,23 +219,23 @@ struct OTCBOOK_TBL deal_t {
     uint64_t by_maker()     const { return order_maker.value; }
     uint64_t by_taker()     const { return order_taker.value; }
     uint64_t by_ordersn()   const { return order_sn;}
-    uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
-    uint64_t by_maker_expired_at() const    { return uint64_t(maker_expired_at.sec_since_epoch()); }
+    // uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
+    // uint64_t by_maker_expired_at() const    { return uint64_t(maker_expired_at.sec_since_epoch()); }
 
     typedef eosio::multi_index
     <"deals"_n, deal_t,
         indexed_by<"order"_n,   const_mem_fun<deal_t, uint64_t, &deal_t::by_order> >,
         indexed_by<"maker"_n,   const_mem_fun<deal_t, uint64_t, &deal_t::by_maker> >,
         indexed_by<"taker"_n,   const_mem_fun<deal_t, uint64_t, &deal_t::by_taker> >,
-        indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >,
-        indexed_by<"expiry"_n,  const_mem_fun<deal_t, uint64_t, &deal_t::by_expired_at> >
+        indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >//,
+        // indexed_by<"expiry"_n,  const_mem_fun<deal_t, uint64_t, &deal_t::by_expired_at> >
     > idx_t;
 
     EOSLIB_SERIALIZE(deal_t,    (id)(order_id)(order_price)(deal_quantity)
                                 (order_maker)
                                 (order_taker)
                                 (status)(created_at)(closed_at)(order_sn)
-                                (expired_at)(maker_expired_at)
+                                /*(expired_at)(maker_expired_at)*/
                                 (memos))
 };
 

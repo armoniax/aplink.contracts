@@ -244,7 +244,7 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
         row.status				= (uint8_t)deal_status_t::CREATED;
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
-        row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
+        // row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
         row.memos.push_back({taker, (uint8_t)deal_status_t::NONE, (uint8_t)deal_action_t::CREATE, memo, created_at});
     });
 
