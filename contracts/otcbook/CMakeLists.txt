@@ -11,6 +11,7 @@ set_target_properties(otcbook
    PROPERTIES
    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
+configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/ricardian/otcbook.clauses.md.in ${CMAKE_CURRENT_BINARY_DIR}/ricardian/otcbook.clauses.md @ONLY )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/ricardian/otcbook.contracts.md.in ${CMAKE_CURRENT_BINARY_DIR}/ricardian/otcbook.contracts.md @ONLY )
 
-target_compile_options( otcbook PUBLIC -R${CMAKE_CURRENT_SOURCE_DIR}/ricardian -R${CMAKE_CURRENT_BINARY_DIR}/ricardian )
+target_compile_options( otcbook PUBLIC -R${CMAKE_CURRENT_BINARY_DIR}/ricardian )

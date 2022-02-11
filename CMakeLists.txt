@@ -7,10 +7,37 @@ set(VERSION_MINOR 2)
 set(VERSION_PATCH 0)
 set(VERSION_SUFFIX develop)
 
+set(VERSION_FULL "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+
 if (VERSION_SUFFIX)
-   set(VERSION_FULL "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${VERSION_SUFFIX}")
-else()
-   set(VERSION_FULL "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+   set(VERSION_FULL "${VERSION_FULL}-${VERSION_SUFFIX}")
+endif()
+
+find_package(Git)
+if(GIT_FOUND)
+   execute_process(
+      COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
+      OUTPUT_VARIABLE VERSION_COMMIT_ID
+      ERROR_VARIABLE err
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE VERSION_COMMIT_RESULT
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+   )
+   if(${VERSION_COMMIT_RESULT} EQUAL "0")
+      set(VERSION_FULL "${VERSION_FULL}-${VERSION_COMMIT_ID}")
+      execute_process(
+         COMMAND ${GIT_EXECUTABLE} diff --quiet
+         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+         RESULT_VARIABLE VERSION_DIRTY
+         ERROR_QUIET
+         OUTPUT_STRIP_TRAILING_WHITESPACE )
+      if(${VERSION_DIRTY})
+         set(VERSION_FULL "${VERSION_FULL}-dirty")
+      endif()
+
+   else()
+      message(WARNING "git rev-parse HEAD failed! ${err}")
+   endif()
 endif()
 
 include(ExternalProject)
@@ -49,7 +76,7 @@ ExternalProject_Add(
    contracts_project
    SOURCE_DIR ${CMAKE_SOURCE_DIR}/contracts
    BINARY_DIR ${CMAKE_BINARY_DIR}/contracts
-   CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=${EOSIO_CDT_ROOT}/lib/cmake/eosio.cdt/EosioWasmToolchain.cmake
+   CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=${EOSIO_CDT_ROOT}/lib/cmake/eosio.cdt/EosioWasmToolchain.cmake -DVERSION_FULL=${VERSION_FULL}
    UPDATE_COMMAND ""
    PATCH_COMMAND ""
    TEST_COMMAND ""
