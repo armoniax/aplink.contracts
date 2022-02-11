@@ -7,4 +7,4 @@ User agreement for the decentralized OTC (over-the-counter) can go here.
 This is a decentralized OTC (over-the-counter) contract.
 
 <h1 class="clause">ContractVersion</h1>
-@VERSION_FULL@
+@CONTRACT_VERSION@

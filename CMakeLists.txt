@@ -7,38 +7,22 @@ set(VERSION_MINOR 2)
 set(VERSION_PATCH 0)
 set(VERSION_SUFFIX develop)
 
+
 set(VERSION_FULL "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
 if (VERSION_SUFFIX)
    set(VERSION_FULL "${VERSION_FULL}-${VERSION_SUFFIX}")
 endif()
 
-find_package(Git)
-if(GIT_FOUND)
-   execute_process(
-      COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
-      OUTPUT_VARIABLE VERSION_COMMIT_ID
-      ERROR_VARIABLE err
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      RESULT_VARIABLE VERSION_COMMIT_RESULT
-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-   )
-   if(${VERSION_COMMIT_RESULT} EQUAL "0")
-      set(VERSION_FULL "${VERSION_FULL}-${VERSION_COMMIT_ID}")
-      execute_process(
-         COMMAND ${GIT_EXECUTABLE} diff --quiet
-         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-         RESULT_VARIABLE VERSION_DIRTY
-         ERROR_QUIET
-         OUTPUT_STRIP_TRAILING_WHITESPACE )
-      if(${VERSION_DIRTY})
-         set(VERSION_FULL "${VERSION_FULL}-dirty")
-      endif()
-
-   else()
-      message(WARNING "git rev-parse HEAD failed! ${err}")
-   endif()
-endif()
+add_custom_target(
+   evaluate_every_build ALL
+   COMMAND ${CMAKE_COMMAND} -DVERSION_FULL=${VERSION_FULL}
+                              -DSRC_DIR=${CMAKE_SOURCE_DIR}/version
+                              -DDEST_DIR=${CMAKE_BINARY_DIR}/version
+                              -P ${CMAKE_SOURCE_DIR}/version/VersionUtils.cmake
+   # BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/src/version_impl.cpp
+   COMMENT "Updating version metadata..." VERBATIM )
+set(CONTRACT_VERSION_FILE ${CMAKE_BINARY_DIR}/version/ContractVersion.cmake)
 
 include(ExternalProject)
 
@@ -76,7 +60,9 @@ ExternalProject_Add(
    contracts_project
    SOURCE_DIR ${CMAKE_SOURCE_DIR}/contracts
    BINARY_DIR ${CMAKE_BINARY_DIR}/contracts
-   CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=${EOSIO_CDT_ROOT}/lib/cmake/eosio.cdt/EosioWasmToolchain.cmake -DVERSION_FULL=${VERSION_FULL}
+   CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=${EOSIO_CDT_ROOT}/lib/cmake/eosio.cdt/EosioWasmToolchain.cmake 
+              -DCONTRACT_VERSION_FILE=${CONTRACT_VERSION_FILE}
+   DEPENDS evaluate_every_build
    UPDATE_COMMAND ""
    PATCH_COMMAND ""
    TEST_COMMAND ""
