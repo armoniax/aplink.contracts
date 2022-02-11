@@ -74,53 +74,144 @@ public:
         // _global2.set( _gstate2, get_self() );
     }
 
-    [[eosio::action]] //only admin can init
+    /**
+     * initialize contract by admin
+     * @param conf_contract conf contract
+     * @note require admin auth
+     */
+    [[eosio::action]] 
     void init(const name &conf_contract);
 
-    [[eosio::action]] //only admin can init
+    /**
+     * set conf contract by admin
+     * @param conf_contract conf contract
+     * @note require admin auth
+     */
+    [[eosio::action]]
     void setconf(const name &conf_contract);
 
-    [[eosio::action]] //only admin can init
+    /**
+     * set admin by contract self account
+     * @param admin new admin
+     * @note require contract self auth
+     */
+    [[eosio::action]]
     void setadmin(const name& admin);
 
+    /**
+     * set merchant
+     * @param owner merchant account name
+     * @param pay_methods pay methods
+     * @param email email of merchant
+     * @param memo memo of merchant
+     * @note require owner auth
+     */
     [[eosio::action]]
-    void setmerchant(const name& owner, const set<name> &pay_methods, const string& email, const string& memo_to_buyer);
+    void setmerchant(const name& owner, const set<name> &pay_methods, const string& email, const string& memo);
 
     /**
-     * enable merchant
+     * enable merchant by admin
+     * @param owner merchant account name
+     * @param is_enabled enable(true) or disable(false) merchant
+     * @note require admin auth
      */
     [[eosio::action]]
     void enablemer(const name& owner, bool is_enabled);
     
     /**
-     * merchant open order
+     * open order by merchant
+     * @param owner merchant account name
+     * @param side order side, 1(buy) | 2(sell)
+     * @param quantity quantity of coin for buy|sell, (ex. "1.000000 CNYD")
+     * @param price price in fiat, (ex. "1.0000 CNY")
+     * @param min_accept_quantity min accept quantity for taker
+     * @param memo memo of order
+     * @note require owner auth
      */
     [[eosio::action]]
     void openorder(const name& owner, uint8_t side, const asset& quantity, const asset& price, 
         const asset& min_accept_quantity, const string &memo);
 
+    /**
+     * close order by merchant
+     * all of the related deals must be closed
+     * @param owner merchant account name
+     * @param order_id order id, created by openorder()
+     * @note require owner auth
+     */
     [[eosio::action]]
     void closeorder(const name& owner, const uint64_t& order_id);
 
+    /**
+     * open deal by user
+     * @param taker user account name
+     * @param order_id order id, created by openorder()
+     * @param deal_quantity deal quantity
+     * @param order_sn order_sn should be unique to locate current deal
+     * @param memo memo
+     * @note require taker auth
+     */
     [[eosio::action]]
     void opendeal(const name& taker, const uint64_t& order_id, const asset& deal_quantity, const uint64_t& order_sn, 
         const string& memo);
 
+    /**
+     * close deal
+     * merchat/user can close deal when status in [CREATED | TAKER_RECEIVED]
+     * admin can close deal in any status except [CLOSE]
+     * @param account account name
+     * @param account_type account type, admin(1) | merchant(2) | user(3)
+     * @param deal_id deal_id, created by opendeal()
+     * @param memo memo
+     * @note require account auth
+     */
     [[eosio::action]]
     void closedeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& memo);
     
     /**
-     *  @param: user_type -> 1: admin, 2: merchant, 3: user
+     * process deal
+     * @param account account name
+     * @param account_type account type, merchant(2) | user(3)
+     * @param deal_id deal_id, created by opendeal()
+     * @param action deal action
+     * @param memo memo
+     * @note require account auth
      */
     [[eosio::action]]
     void processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
         uint8_t action, const string& memo);
 
+    /**
+     * action trigger by transfer()
+     * transfer token to this contract will trigger this action
+     * only support merchant to deposit
+     * @param from from account name
+     * @param to must be this contract name
+     * @param quantity transfer quantity
+     * @param memo memo
+     * @note require from auth
+     */
     [[eosio::on_notify("eosio.token::transfer")]]
     void deposit(name from, name to, asset quantity, string memo);
-
+   
+    /**
+     * withdraw
+     * @param owner owner account, only support merchant to withdraw
+     * @param quantity withdraw quantity
+     * @note require owner auth
+     */
     [[eosio::action]]
     void withdraw(const name& owner, asset quantity);
+
+    /**
+     * reversedeal
+     * @param account account, must be admin
+     * @param deal_id deal_id, created by opendeal()
+     * @param memo memo
+     * @note require account auth
+     */
+    [[eosio::action]]
+    void reversedeal(const name& account, const uint64_t& deal_id, const string& memo);
 
     // [[eosio::action]]
     // void timeoutdeal();
@@ -128,8 +219,6 @@ public:
     [[eosio::action]]
     void deltable();
 
-    [[eosio::action]]
-    void reversedeal(const name& account, const uint64_t& deal_id, const string& memo);
 private:
     void _init();
     asset _calc_order_stakes(const asset &quantity, const asset &price);
