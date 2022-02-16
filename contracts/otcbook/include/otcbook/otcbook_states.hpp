@@ -107,13 +107,13 @@ enum  class merchant_status_t: uint8_t {
 };
 
 struct OTCBOOK_TBL merchant_t {
-    name owner;
-    set<name> accepted_payments; //accepted payments
-    string email;
-    string memo;
-    uint8_t status;
-    asset available_quantity = asset(0, STAKE_SYMBOL);
-    asset stake_quantity = asset(0, STAKE_SYMBOL);
+    name owner;                     // owner account of merchant
+    set<name> accepted_payments;    // accepted payments, see conf.pay_type
+    string email;                   // email
+    string memo;                    // memo
+    uint8_t status;                 // status, merchant_status_t
+    asset available_quantity = asset(0, STAKE_SYMBOL);  // available quantity
+    asset stake_quantity = asset(0, STAKE_SYMBOL);      // stake quantity
     // total_quantity = available_quantity + stake_quantity;
 
     merchant_t() {}
@@ -135,22 +135,21 @@ struct OTCBOOK_TBL merchant_t {
  * if it is truly fulfilled, it also get deleted.
  */
 struct OTCBOOK_TBL order_t {
-    uint64_t id;                //PK: available_primary_key
+    uint64_t id = 0;                                // PK: available_primary_key, auto increase
 
-    name owner;                 //order maker's account, merchant
+    name owner;                                     // order maker's account, merchant
     set<name> accepted_payments;
-    uint8_t side;          // order side, buy or sell
-    asset price;                // MGP price the buyer willing to buy, symbol CNY
-    // asset price_usd;            // MGP price the buyer willing to buy, symbol USD
-    asset quantity;
-    asset min_accept_quantity;
-    string memo;
-    asset stake_quantity;
-    asset frozen_quantity;
-    asset fulfilled_quantity;    //support partial fulfillment
-    bool closed;
-    time_point_sec created_at;
-    time_point_sec closed_at;
+    uint8_t side = 0;                               // order side, buy or sell
+    asset price;                                    // coin price, quote in fiat, see fiat_type
+    asset quantity;                                 // coin quantity, see conf.coin_type
+    asset min_accept_quantity;                      // min accept quantity for taker, symbol must equal to quantity's
+    string memo;                                    // memo
+    asset stake_quantity = asset(0, STAKE_SYMBOL);  // stake asset quantity
+    asset frozen_quantity;                          // frozen quantity of sell/buy coin
+    asset fulfilled_quantity;                       // fulfilled quantity of sell/buy coin, support partial fulfillment
+    bool closed = false;                            // is closed
+    time_point_sec created_at;                      // created time at
+    time_point_sec closed_at;                       // closed time at
 
     order_t() {}
     order_t(const uint64_t& i): id(i) {}
@@ -182,11 +181,11 @@ typedef eosio::multi_index
 > order_table_t;
 
 struct deal_memo_t {
-    name account;
-    uint8_t status;
-    uint8_t action;
-    string memo;
-    time_point_sec created_at;    
+    name account;               // action account
+    uint8_t status = 0;         // status before action, deal_status_t
+    uint8_t action = 0;         // action type, deal_action_t
+    string memo;                // memo
+    time_point_sec created_at;  // created time at  
 
     EOSLIB_SERIALIZE(deal_memo_t,    (account)(status)(action)(memo)(created_at) )
 };
@@ -196,21 +195,21 @@ struct deal_memo_t {
  *
  */
 struct OTCBOOK_TBL deal_t {
-    uint64_t id;                //PK: available_primary_key
-    uint64_t order_id;
-    asset order_price;
-    asset deal_quantity;
-    name order_maker; // merchant 
-    name order_taker; // user
+    uint64_t id = 0;                // PK: available_primary_key, auto increase
+    uint64_t order_id = 0;          // order id, created by maker by openorder()
+    asset order_price;              // order price, deal price
+    asset deal_quantity;            // deal quantity
+    name order_maker;               // maker, merchant 
+    name order_taker;               // taker, user
 
-    uint8_t status;
-    time_point_sec created_at;
-    time_point_sec closed_at;
+    uint8_t status = 0;             // status
+    time_point_sec created_at;      // create time at
+    time_point_sec closed_at;       // closed time at
 
-    uint64_t order_sn; // 订单号（前端生成）
+    uint64_t order_sn = 0;          // order sn, created by external app
     // time_point_sec expired_at; // 订单到期时间
     // time_point_sec maker_expired_at; // 卖家操作到期时间
-    vector<deal_memo_t> memos;
+    vector<deal_memo_t> memos;      // memos
 
     deal_t() {}
     deal_t(uint64_t i): id(i) {}
@@ -246,9 +245,9 @@ struct OTCBOOK_TBL deal_t {
  * deposit log
  */
 struct OTCBOOK_TBL fund_log_t {
-    uint64_t id = 0;                //PK: available_primary_key
+    uint64_t id = 0;        // PK: available_primary_key, auto increase
     name owner;             // merchant
-    name action;            // operation action
+    name action;            // operation action, [deposit, withdraw, openorder, closeorder]
     asset quantity;         // maybe positive(plus) or negative(minus)
     time_point_sec log_at;  // log time at 
 
