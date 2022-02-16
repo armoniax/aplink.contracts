@@ -147,7 +147,7 @@ struct OTCBOOK_TBL order_t {
     asset quantity;                                 // coin quantity, see conf.coin_type
     asset min_accept_quantity;                      // min accept quantity for taker, symbol must equal to quantity's
     string memo;                                    // memo
-    asset stake_frozen = asset(0, STAKE_SYMBOL);  // stake asset quantity
+    asset stake_frozen = asset(0, STAKE_SYMBOL);    // stake frozen asset
     asset frozen_quantity;                          // frozen quantity of sell/buy coin
     asset fulfilled_quantity;                       // fulfilled quantity of sell/buy coin, support partial fulfillment
     bool closed = false;                            // is closed
