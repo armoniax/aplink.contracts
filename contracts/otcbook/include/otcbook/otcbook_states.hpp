@@ -108,11 +108,11 @@ enum  class merchant_status_t: uint8_t {
 
 struct OTCBOOK_TBL merchant_t {
     name owner;
-    asset stake_quantity = asset(0, STAKE_SYMBOL);
     set<name> accepted_payments; //accepted payments
     string email;
     string memo;
     uint8_t status;
+    asset available_quantity = asset(0, STAKE_SYMBOL);
 
     merchant_t() {}
     merchant_t(const name& o): owner(o) {}
@@ -122,8 +122,9 @@ struct OTCBOOK_TBL merchant_t {
 
     typedef eosio::multi_index<"merchants"_n, merchant_t> idx_t;
 
-    EOSLIB_SERIALIZE(merchant_t,  (owner)(stake_quantity)(accepted_payments)
-                                (email)(memo)(status))
+    EOSLIB_SERIALIZE(merchant_t,  (owner)(accepted_payments)
+                                  (email)(memo)(status)(available_quantity)
+    )
 };
 
 /**

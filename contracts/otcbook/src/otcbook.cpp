@@ -146,8 +146,8 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
         "merchant not enabled");
     
     auto stake_quantity = _calc_order_stakes(quantity, price); // TODO: process 70% used-rate of stake
-    check( merchant.stake_quantity >= stake_quantity, "merchant stake quantity insufficient, expected: " + stake_quantity.to_string() );
-    merchant.stake_quantity -= stake_quantity;
+    check( merchant.available_quantity >= stake_quantity, "merchant stake quantity insufficient, expected: " + stake_quantity.to_string() );
+    merchant.available_quantity -= stake_quantity;
     _dbc.set( merchant );
     _add_fund_log(owner, "openorder"_n, -stake_quantity);  
 
@@ -195,7 +195,7 @@ void otcbook::closeorder(const name& owner, const uint64_t& order_id) {
     check( itr->quantity >= itr->fulfilled_quantity, "Err: insufficient quanitty" );
 
     // 撤单后币未交易完成的币退回
-    merchant.stake_quantity += itr->stake_quantity;
+    merchant.available_quantity += itr->stake_quantity;
     _dbc.set( merchant );
     _add_fund_log(owner, "closeorder"_n, itr->stake_quantity);  
 
@@ -428,8 +428,8 @@ void otcbook::withdraw(const name& owner, asset quantity){
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
     check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
     "merchant not enabled");
-    check( merchant.stake_quantity >= quantity, "The withdrawl amount must be less than the balance" );
-    merchant.stake_quantity -= quantity;
+    check( merchant.available_quantity >= quantity, "The withdrawl amount must be less than the balance" );
+    merchant.available_quantity -= quantity;
     _dbc.set(merchant);
 
     TRANSFER( SYS_BANK, owner, quantity, "withdraw" )
@@ -502,7 +502,7 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
         if (_dbc.get( merchant )) {
             check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
                 "merchant not enabled");
-            merchant.stake_quantity += quantity;
+            merchant.available_quantity += quantity;
             _dbc.set( merchant );
             _add_fund_log(from, "deposit"_n, quantity);
         }
