@@ -100,10 +100,10 @@ enum class order_side_t: uint8_t {
 };
 
 enum  class merchant_status_t: uint8_t {
-    NONE = 0,
-    REGISTERED = 1,
-    ENABLED = 2,
-    DISABLED = 3
+    NONE        = 0,
+    REGISTERED  = 1,
+    DISABLED    = 2,
+    ENABLED     = 3
 };
 
 struct OTCBOOK_TBL merchant_t {
@@ -119,10 +119,14 @@ struct OTCBOOK_TBL merchant_t {
     merchant_t() {}
     merchant_t(const name& o): owner(o) {}
 
+    uint64_t by_status()     const { return status; }
+
     uint64_t primary_key()const { return owner.value; }
     uint64_t scope()const { return 0; }
 
-    typedef eosio::multi_index<"merchants"_n, merchant_t> idx_t;
+    typedef eosio::multi_index<"merchants"_n, merchant_t,
+        indexed_by<"status"_n, const_mem_fun<merchant_t, uint64_t, &merchant_t::by_status> >
+    > idx_t;
 
     EOSLIB_SERIALIZE(merchant_t,  (owner)(accepted_payments)
                                   (email)(memo)(status)(available_quantity)(stake_quantity)
