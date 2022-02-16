@@ -145,20 +145,20 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
     check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
         "merchant not enabled");
     
-    auto stake_quantity = _calc_order_stakes(quantity, price); // TODO: process 70% used-rate of stake
-    check( merchant.available_quantity >= stake_quantity, "merchant stake quantity insufficient, expected: " + stake_quantity.to_string() );
-    merchant.available_quantity -= stake_quantity;
-    merchant.stake_quantity += stake_quantity;
+    auto stake_frozen = _calc_order_stakes(quantity, price); // TODO: process 70% used-rate of stake
+    check( merchant.stake_free >= stake_frozen, "merchant stake quantity insufficient, expected: " + stake_frozen.to_string() );
+    merchant.stake_free -= stake_frozen;
+    merchant.stake_frozen += stake_frozen;
     _dbc.set( merchant );
-    _add_fund_log(owner, "openorder"_n, -stake_quantity);  
+    _add_fund_log(owner, "openorder"_n, -stake_frozen);  
 
     // TODO: check pos_staking_contract
-    // if (_gstate.min_pos_stake_quantity.amount > 0) {
+    // if (_gstate.min_pos_stake_frozen.amount > 0) {
     // 	auto staking_con = _gstate.pos_staking_contract;
     // 	balances bal(staking_con, staking_con.value);
     // 	auto itr = bal.find(owner.value);
     // 	check( itr != bal.end(), "POS staking not found for: " + owner.to_string() );
-    // 	check( itr->remaining >= _gstate.min_pos_stake_quantity, "POS Staking requirement not met" );
+    // 	check( itr->remaining >= _gstate.min_pos_stake_frozen, "POS Staking requirement not met" );
     // }
 
     order_table_t orders(_self, _self.value);
@@ -170,7 +170,7 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
         row.price				= price;
         // row.price_usd			= asset( price.amount * 10000 / _gstate2.usd_exchange_rate.amount , USD_SYMBOL);
         row.quantity			= quantity;
-        row.stake_quantity      = stake_quantity;
+        row.stake_frozen      = stake_frozen;
         row.min_accept_quantity = min_accept_quantity;
         row.memo = memo;
         row.closed				= false;
@@ -195,12 +195,12 @@ void otcbook::closeorder(const name& owner, const uint64_t& order_id) {
     check( itr->frozen_quantity.amount == 0, "order being processed" );
     check( itr->quantity >= itr->fulfilled_quantity, "order quantity insufficient" );
 
-    check( merchant.stake_quantity >= itr->stake_quantity, "merchant stake quantity insufficient" );
+    check( merchant.stake_frozen >= itr->stake_frozen, "merchant stake quantity insufficient" );
     // 撤单后币未交易完成的币退回
-    merchant.stake_quantity -= itr->stake_quantity;
-    merchant.available_quantity += itr->stake_quantity;
+    merchant.stake_frozen -= itr->stake_frozen;
+    merchant.stake_free += itr->stake_frozen;
     _dbc.set( merchant );
-    _add_fund_log(owner, "closeorder"_n, itr->stake_quantity);  
+    _add_fund_log(owner, "closeorder"_n, itr->stake_frozen);  
 
     orders.modify( *itr, _self, [&]( auto& row ) {
         row.closed = true;
@@ -431,8 +431,8 @@ void otcbook::withdraw(const name& owner, asset quantity){
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
     check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
     "merchant not enabled");
-    check( merchant.available_quantity >= quantity, "The withdrawl amount must be less than the balance" );
-    merchant.available_quantity -= quantity;
+    check( merchant.stake_free >= quantity, "The withdrawl amount must be less than the balance" );
+    merchant.stake_free -= quantity;
     _dbc.set(merchant);
 
     TRANSFER( SYS_BANK, owner, quantity, "withdraw" )
@@ -505,7 +505,7 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
         if (_dbc.get( merchant )) {
             check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
                 "merchant not enabled");
-            merchant.available_quantity += quantity;
+            merchant.stake_free += quantity;
             _dbc.set( merchant );
             _add_fund_log(from, "deposit"_n, quantity);
         }

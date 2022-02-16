@@ -47,7 +47,7 @@ static constexpr uint64_t max_memo_size     = 1024;
 struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     // asset min_buy_order_quantity;
     // asset min_sell_order_quantity;
-    // asset min_pos_stake_quantity;
+    // asset min_pos_stake_frozen;
     // uint64_t withhold_expire_sec = 600;   // the amount hold will be unfrozen upon expiry
     name transaction_fee_receiver;  // receiver account to transaction fees
     uint64_t transaction_fee_ratio = 0; // fee ratio boosted by 10000
@@ -112,9 +112,8 @@ struct OTCBOOK_TBL merchant_t {
     string email;                   // email
     string memo;                    // memo
     uint8_t status;                 // status, merchant_status_t
-    asset available_quantity = asset(0, STAKE_SYMBOL);  // available quantity
-    asset stake_quantity = asset(0, STAKE_SYMBOL);      // stake quantity
-    // total_quantity = available_quantity + stake_quantity;
+    asset stake_free = asset(0, STAKE_SYMBOL);      // staked and free to make orders
+    asset stake_frozen = asset(0, STAKE_SYMBOL);     // staked and frozen in orders
 
     merchant_t() {}
     merchant_t(const name& o): owner(o) {}
@@ -129,7 +128,7 @@ struct OTCBOOK_TBL merchant_t {
     > idx_t;
 
     EOSLIB_SERIALIZE(merchant_t,  (owner)(accepted_payments)
-                                  (email)(memo)(status)(available_quantity)(stake_quantity)
+                                  (email)(memo)(status)(stake_free)(stake_frozen)
     )
 };
 
@@ -148,7 +147,7 @@ struct OTCBOOK_TBL order_t {
     asset quantity;                                 // coin quantity, see conf.coin_type
     asset min_accept_quantity;                      // min accept quantity for taker, symbol must equal to quantity's
     string memo;                                    // memo
-    asset stake_quantity = asset(0, STAKE_SYMBOL);  // stake asset quantity
+    asset stake_frozen = asset(0, STAKE_SYMBOL);  // stake asset quantity
     asset frozen_quantity;                          // frozen quantity of sell/buy coin
     asset fulfilled_quantity;                       // fulfilled quantity of sell/buy coin, support partial fulfillment
     bool closed = false;                            // is closed
@@ -174,7 +173,7 @@ struct OTCBOOK_TBL order_t {
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(side)(price)/*(price_usd)*/
                                 (quantity)(min_accept_quantity)(memo)
-                                (stake_quantity)(frozen_quantity)(fulfilled_quantity)
+                                (stake_frozen)(frozen_quantity)(fulfilled_quantity)
                                 (closed)(created_at)(closed_at))
 };
 
