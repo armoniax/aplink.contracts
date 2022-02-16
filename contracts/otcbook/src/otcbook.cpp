@@ -149,6 +149,7 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
     check( merchant.stake_quantity >= stake_quantity, "merchant stake quantity insufficient, expected: " + stake_quantity.to_string() );
     merchant.stake_quantity -= stake_quantity;
     _dbc.set( merchant );
+    _add_fund_log(owner, "openorder"_n, -stake_quantity);  
 
     // TODO: check pos_staking_contract
     // if (_gstate.min_pos_stake_quantity.amount > 0) {
@@ -177,6 +178,7 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
         row.fulfilled_quantity = asset(0, quantity.symbol);
         row.accepted_payments = merchant.accepted_payments;
     });
+
 }
 
 void otcbook::closeorder(const name& owner, const uint64_t& order_id) {
@@ -195,6 +197,7 @@ void otcbook::closeorder(const name& owner, const uint64_t& order_id) {
     // 撤单后币未交易完成的币退回
     merchant.stake_quantity += itr->stake_quantity;
     _dbc.set( merchant );
+    _add_fund_log(owner, "closeorder"_n, itr->stake_quantity);  
 
     orders.modify( *itr, _self, [&]( auto& row ) {
         row.closed = true;
@@ -431,6 +434,7 @@ void otcbook::withdraw(const name& owner, asset quantity){
 
     TRANSFER( SYS_BANK, owner, quantity, "withdraw" )
 
+    _add_fund_log(owner, "withdraw"_n, -quantity);    
 }
 
 /**
@@ -500,6 +504,7 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
                 "merchant not enabled");
             merchant.stake_quantity += quantity;
             _dbc.set( merchant );
+            _add_fund_log(from, "deposit"_n, quantity);
         }
     }
 }
@@ -544,6 +549,19 @@ const otcbook::conf_t& otcbook::_conf(bool refresh/* = false*/) {
         _conf_ptr = make_unique<conf_t>(_conf_tbl_ptr->get());
     }
     return *_conf_ptr;
+}
+
+void otcbook::_add_fund_log(const name& owner, const name & action, const asset &quantity) {
+    auto now = time_point_sec(current_time_point());
+    fund_log_t::table_t stake_log_tbl(_self, _self.value);
+    auto id = stake_log_tbl.available_primary_key();
+    stake_log_tbl.emplace( _self, [&]( auto& row ) {
+        row.id 					= id;
+        row.owner 			    = owner;
+        row.action			    = action;
+        row.quantity		    = quantity;
+        row.log_at			    = now;
+    }); 
 }
 
 }  //end of namespace:: mgpbpvoting

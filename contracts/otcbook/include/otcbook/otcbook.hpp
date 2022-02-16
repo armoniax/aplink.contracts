@@ -225,6 +225,8 @@ private:
     void _set_conf(const name &conf_contract);
 
     const conf_t& _conf(bool refresh = false);
+
+    void _add_fund_log(const name& owner, const name & action, const asset &quantity);
 };
 
 }

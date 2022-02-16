@@ -239,6 +239,32 @@ struct OTCBOOK_TBL deal_t {
                                 (memos))
 };
 
+/**
+ * deposit log
+ */
+struct OTCBOOK_TBL fund_log_t {
+    uint64_t id = 0;                //PK: available_primary_key
+    name owner;             // merchant
+    name action;            // operation action
+    asset quantity;         // maybe positive(plus) or negative(minus)
+    time_point_sec log_at;  // log time at 
+
+    fund_log_t() {}
+    fund_log_t(uint64_t i): id(i) {}
+
+    uint64_t primary_key() const { return id; }
+    uint64_t scope() const { return /*order_price.symbol.code().raw()*/ 0; }
+
+    uint64_t by_owner()     const { return owner.value; }
+
+    typedef eosio::multi_index
+    <"fundlog"_n, fund_log_t,
+        indexed_by<"owner"_n,   const_mem_fun<fund_log_t, uint64_t, &fund_log_t::by_owner> > 
+    > table_t;
+
+    EOSLIB_SERIALIZE(fund_log_t,    (id)(owner)(action)(quantity)(log_at) )
+};
+
 // /**
 //  * 交易订单过期时间
 //  *
