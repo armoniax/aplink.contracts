@@ -113,6 +113,8 @@ struct OTCBOOK_TBL merchant_t {
     string memo;
     uint8_t status;
     asset available_quantity = asset(0, STAKE_SYMBOL);
+    asset stake_quantity = asset(0, STAKE_SYMBOL);
+    // total_quantity = available_quantity + stake_quantity;
 
     merchant_t() {}
     merchant_t(const name& o): owner(o) {}
@@ -123,7 +125,7 @@ struct OTCBOOK_TBL merchant_t {
     typedef eosio::multi_index<"merchants"_n, merchant_t> idx_t;
 
     EOSLIB_SERIALIZE(merchant_t,  (owner)(accepted_payments)
-                                  (email)(memo)(status)(available_quantity)
+                                  (email)(memo)(status)(available_quantity)(stake_quantity)
     )
 };
 

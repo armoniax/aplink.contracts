@@ -148,6 +148,7 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
     auto stake_quantity = _calc_order_stakes(quantity, price); // TODO: process 70% used-rate of stake
     check( merchant.available_quantity >= stake_quantity, "merchant stake quantity insufficient, expected: " + stake_quantity.to_string() );
     merchant.available_quantity -= stake_quantity;
+    merchant.stake_quantity += stake_quantity;
     _dbc.set( merchant );
     _add_fund_log(owner, "openorder"_n, -stake_quantity);  
 
@@ -192,9 +193,11 @@ void otcbook::closeorder(const name& owner, const uint64_t& order_id) {
     check( itr != orders.end(), "sell order not found: " + to_string(order_id) );
     check( !itr->closed, "order already closed" );
     check( itr->frozen_quantity.amount == 0, "order being processed" );
-    check( itr->quantity >= itr->fulfilled_quantity, "Err: insufficient quanitty" );
+    check( itr->quantity >= itr->fulfilled_quantity, "order quantity insufficient" );
 
+    check( merchant.stake_quantity >= itr->stake_quantity, "merchant stake quantity insufficient" );
     // 撤单后币未交易完成的币退回
+    merchant.stake_quantity -= itr->stake_quantity;
     merchant.available_quantity += itr->stake_quantity;
     _dbc.set( merchant );
     _add_fund_log(owner, "closeorder"_n, itr->stake_quantity);  
