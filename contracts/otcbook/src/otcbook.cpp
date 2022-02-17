@@ -221,7 +221,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
 }
 
 void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t& order_id, 
-    const asset& deal_quantity, const uint64_t& order_sn, const string& memo
+    const asset& deal_quantity, const uint64_t& order_sn, const string& session_msg
 ) {
     require_auth( taker );
 
@@ -266,7 +266,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
         // row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
-        row.memos.push_back({taker, (uint8_t)deal_status_t::NONE, (uint8_t)deal_action_t::CREATE, memo, created_at});
+        row.session.push_back({taker, (uint8_t)deal_status_t::NONE, (uint8_t)deal_action_t::CREATE, session_msg, created_at});
     });
 
     // // 添加交易到期表数据
@@ -284,7 +284,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
 /**
  * actively close the deal by order taker
  */
-void otcbook::closedeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& memo) {
+void otcbook::closedeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& session_msg) {
     require_auth( account );
     
     deal_t::idx_t deals(_self, _self.value);
@@ -336,13 +336,13 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
         row.status = (uint8_t)deal_status_t::CLOSED;
         row.closed_at = time_point_sec(current_time_point());
-        row.memos.push_back({account, (uint8_t)status, (uint8_t)action, memo, row.closed_at});
+        row.session.push_back({account, (uint8_t)status, (uint8_t)action, session_msg, row.closed_at});
     });
 
 }
 
 void otcbook::processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
-    uint8_t action, const string& memo
+    uint8_t action, const string& session_msg
 ) {
     require_auth( account );
 
@@ -390,7 +390,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     DEAL_ACTION_CASE(MAKER_RECEIVE, MERCHANT,     TAKER_SENT,      MAKER_RECEIVED)
     DEAL_ACTION_CASE(MAKER_SEND,    MERCHANT,     MAKER_RECEIVED,  MAKER_SENT)
     DEAL_ACTION_CASE(TAKER_RECEIVE, USER,         MAKER_SENT,      TAKER_RECEIVED) 
-    DEAL_ACTION_CASE(ADD_MEMO,      NONE,         NONE,            NONE) 
+    DEAL_ACTION_CASE(ADD_SESSION_MSG,      NONE,         NONE,            NONE) 
     default: 
         check(false, "unsupported process deal action:" + to_string((uint8_t)action));
         break;
@@ -409,12 +409,12 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
         if (next_status != deal_status_t::NONE) {
             row.status = (uint8_t)next_status;
         }
-        row.memos.push_back({account, (uint8_t)status, action, memo, now});
+        row.session.push_back({account, (uint8_t)status, action, session_msg, now});
     });
 
 }
 
-void otcbook::reversedeal(const name& account, const uint64_t& deal_id, const string& memo){
+void otcbook::reversedeal(const name& account, const uint64_t& deal_id, const string& session_msg){
 
     require_auth( account );
 
@@ -431,7 +431,7 @@ void otcbook::reversedeal(const name& account, const uint64_t& deal_id, const st
     auto now = time_point_sec(current_time_point());
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
         row.status = (uint8_t)deal_status_t::CREATED;
-        row.memos.push_back({account, (uint8_t)status, (uint8_t)deal_action_t::REVERSE, memo, now});
+        row.session.push_back({account, (uint8_t)status, (uint8_t)deal_action_t::REVERSE, session_msg, now});
     });
 }
 

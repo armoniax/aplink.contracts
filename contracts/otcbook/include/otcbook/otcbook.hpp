@@ -148,12 +148,12 @@ public:
      * @param order_id order id, created in openorder()
      * @param deal_quantity deal quantity of va
      * @param order_sn order_sn should be unique to locate current deal
-     * @param memo memo
+     * @param session_msg session msg(message)
      * @note require taker auth
      */
     [[eosio::action]]
     void opendeal(const name& taker, const name& order_side, const uint64_t& order_id, 
-        const asset& deal_quantity, const uint64_t& order_sn, const string& memo);
+        const asset& deal_quantity, const uint64_t& order_sn, const string& session_msg);
 
     /**
      * close deal
@@ -162,11 +162,11 @@ public:
      * @param account account name
      * @param account_type account type, admin(1) | merchant(2) | user(3)
      * @param deal_id deal_id, created by opendeal()
-     * @param memo memo
+     * @param session_msg session msg(message)
      * @note require account auth
      */
     [[eosio::action]]
-    void closedeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& memo);
+    void closedeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& session_msg);
     
     /**
      * process deal
@@ -174,12 +174,12 @@ public:
      * @param account_type account type, merchant(2) | user(3)
      * @param deal_id deal_id, created by opendeal()
      * @param action deal action
-     * @param memo memo
+     * @param session_msg session msg(message)
      * @note require account auth
      */
     [[eosio::action]]
     void processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
-        uint8_t action, const string& memo);
+        uint8_t action, const string& session_msg);
 
     /**
      * action trigger by transfer()
@@ -207,11 +207,11 @@ public:
      * reversedeal
      * @param account account, must be admin
      * @param deal_id deal_id, created by opendeal()
-     * @param memo memo
+     * @param session_msg session msg(message)
      * @note require account auth
      */
     [[eosio::action]]
-    void reversedeal(const name& account, const uint64_t& deal_id, const string& memo);
+    void reversedeal(const name& account, const uint64_t& deal_id, const string& session_msg);
 
     // [[eosio::action]]
     // void timeoutdeal();

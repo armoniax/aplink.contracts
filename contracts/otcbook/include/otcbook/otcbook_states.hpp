@@ -78,20 +78,20 @@ enum class deal_action_t: uint8_t {
     MAKER_SEND      = 5,
     TAKER_RECEIVE   = 6,
     CLOSE           = 7,
-    ADD_MEMO        = 8,
+    ADD_SESSION_MSG = 8,
     REVERSE         = 9
 };
 
 
 enum class deal_status_t: uint8_t {
-    NONE = 0,
-    CREATED = 1,
-    MAKER_ACCEPTED,
-    TAKER_SENT,
-    MAKER_RECEIVED,
-    MAKER_SENT,
-    TAKER_RECEIVED,
-    CLOSED
+    NONE                = 0,
+    CREATED             = 1,
+    MAKER_ACCEPTED      = 2,
+    TAKER_SENT          = 3,
+    MAKER_RECEIVED      = 4,
+    MAKER_SENT          = 5,
+    TAKER_RECEIVED      = 6,
+    CLOSED              = 7
 };
 
 // order sides
@@ -143,7 +143,7 @@ struct OTCBOOK_TBL order_t {
     uint64_t id = 0;                                // PK: available_primary_key, auto increase
 
     name owner;                                     // order maker's account, merchant
-    set<name> accepted_payments;
+    set<name> accepted_payments;                    // accepted payments
     asset va_price;                                 // va(virtual asset) quantity price, quote in fiat, see fiat_type
     asset va_quantity;                              // va(virtual asset) quantity, see conf.coin_type
     asset va_min_take_quantity;                     // va(virtual asset) min take quantity quantity for taker, symbol must equal to quantity's
@@ -236,14 +236,17 @@ private:
 typedef order_wrapper_impl_t<buy_order_table_t> buy_order_wrapper_t;
 typedef order_wrapper_impl_t<sell_order_table_t> sell_order_wrapper_t;
 
-struct deal_memo_t {
+/**
+ * deal session msg(message)
+ */
+struct deal_session_msg_t {
     name account;               // action account
     uint8_t status = 0;         // status before action, deal_status_t
     uint8_t action = 0;         // action type, deal_action_t
-    string memo;                // memo
+    string msg;                // msg(message)
     time_point_sec created_at;  // created time at  
 
-    EOSLIB_SERIALIZE(deal_memo_t,    (account)(status)(action)(memo)(created_at) )
+    EOSLIB_SERIALIZE(deal_session_msg_t,    (account)(status)(action)(msg)(created_at) )
 };
 
 /**
@@ -266,7 +269,7 @@ struct OTCBOOK_TBL deal_t {
     uint64_t order_sn = 0;          // order sn, created by external app
     // time_point_sec expired_at; // 订单到期时间
     // time_point_sec maker_expired_at; // 卖家操作到期时间
-    vector<deal_memo_t> memos;      // memos
+    vector<deal_session_msg_t> session; // session
 
     deal_t() {}
     deal_t(uint64_t i): id(i) {}
@@ -295,7 +298,7 @@ struct OTCBOOK_TBL deal_t {
                                 (order_taker)
                                 (status)(created_at)(closed_at)(order_sn)
                                 /*(expired_at)(maker_expired_at)*/
-                                (memos))
+                                (session))
 };
 
 /**
