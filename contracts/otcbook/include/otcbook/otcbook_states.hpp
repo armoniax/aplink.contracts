@@ -94,9 +94,11 @@ enum class deal_status_t: uint8_t {
     CLOSED
 };
 
-enum class order_side_t: uint8_t {
-    BUY         = 1,
-    SELL        = 2
+// order sides
+static constexpr name BUY_SIDE = "buy"_n;
+static constexpr name SELL_SIDE = "sell"_n;
+static const set<name> ORDER_SIDES = {
+    BUY_SIDE, SELL_SIDE
 };
 
 enum  class merchant_status_t: uint8_t {
@@ -142,7 +144,6 @@ struct OTCBOOK_TBL order_t {
 
     name owner;                                     // order maker's account, merchant
     set<name> accepted_payments;
-    uint8_t side = 0;                               // order side, buy or sell
     asset price;                                    // coin price, quote in fiat, see fiat_type
     asset quantity;                                 // coin quantity, see conf.coin_type
     asset min_accept_quantity;                      // min accept quantity for taker, symbol must equal to quantity's
@@ -160,28 +161,80 @@ struct OTCBOOK_TBL order_t {
     uint64_t primary_key() const { return id; }
     // uint64_t scope() const { return price.symbol.code().raw(); } //not in use actually
 
-    //to sort orders by price: 1. buy order: higher first; 2. sell order: lower first
-    uint128_t by_price() const {
-        uint64_t option = (uint64_t)side << 56;
-        uint64_t price_factor = price.amount;
-        price_factor = ((order_side_t)side == order_side_t::BUY) ? std::numeric_limits<uint64_t>::max() - price_factor : price_factor;
-        return (uint128_t)option << 64 | (uint128_t)price_factor; 
+    uint64_t by_price() const {
+        return closed || (frozen_quantity + fulfilled_quantity >= quantity) ? 
+                    std::numeric_limits<uint64_t>::max() : price.amount;
+    } 
+    
+    //to sort buyers orders: bigger-price order first
+    uint64_t by_invprice() const { 
+        return closed || (frozen_quantity + fulfilled_quantity >= quantity) ? 
+                    std::numeric_limits<uint64_t>::max() : std::numeric_limits<uint64_t>::max() - price.amount; 
     } 
 
-    //to sort by order makers account
+    //to sort by order maker account
     uint64_t by_maker() const { return owner.value; }
   
-    EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(side)(price)/*(price_usd)*/
+    EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(price)/*(price_usd)*/
                                 (quantity)(min_accept_quantity)(memo)
                                 (stake_frozen)(frozen_quantity)(fulfilled_quantity)
                                 (closed)(created_at)(closed_at))
 };
 
+
 typedef eosio::multi_index
-< "orders"_n,  order_t,
-    indexed_by<"price"_n, const_mem_fun<order_t, uint128_t, &order_t::by_price> >,
+< "buyorders"_n,  order_t,
+    indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_invprice> >,
     indexed_by<"maker"_n, const_mem_fun<order_t, uint64_t, &order_t::by_maker> >
-> order_table_t;
+> buy_order_table_t;
+
+typedef eosio::multi_index
+< "sellorders"_n, order_t,
+    indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_price> >,
+    indexed_by<"maker"_n, const_mem_fun<order_t, uint64_t, &order_t::by_maker> >
+> sell_order_table_t;
+
+
+struct order_wrapper_t {
+    typedef std::function<void(order_t&)> updater_t;
+    virtual ~order_wrapper_t() {}
+    virtual const order_t& get_order() const = 0;
+    virtual void modify(eosio::name payer, const updater_t& updater) = 0;
+};
+
+buy_order_table_t::const_iterator *tttt;
+
+template<typename table_t>
+struct order_wrapper_impl_t: public order_wrapper_t {
+
+    virtual const order_t& get_order() const override {
+        return *_row_ptr;
+    }
+
+    void modify(eosio::name payer, const updater_t& updater) override {
+        _table->modify(*_row_ptr, payer, updater);  
+    }
+
+    static std::unique_ptr<order_wrapper_t> get_from_db(name code, uint64_t scope, uint64_t pk) {
+        auto ret = std::make_unique<order_wrapper_impl_t<table_t>>();
+        ret->_table = make_unique<table_t>(code, scope);
+        auto itr = ret->_table->find(pk); 
+        if (itr != ret->_table->end()) {
+            ret->_row_ptr = &(*itr);
+            return ret;
+        } else {
+            return nullptr;
+        }
+    }
+
+private:
+    typedef typename table_t::const_iterator const_iterator;
+    std::unique_ptr<table_t> _table;
+    const order_t *_row_ptr;
+};
+
+typedef order_wrapper_impl_t<buy_order_table_t> buy_order_wrapper_t;
+typedef order_wrapper_impl_t<sell_order_table_t> sell_order_wrapper_t;
 
 struct deal_memo_t {
     name account;               // action account
@@ -199,6 +252,7 @@ struct deal_memo_t {
  */
 struct OTCBOOK_TBL deal_t {
     uint64_t id = 0;                // PK: available_primary_key, auto increase
+    name order_side;                // order side, buy(1) or sell(2)
     uint64_t order_id = 0;          // order id, created by maker by openorder()
     asset order_price;              // order price, deal price
     asset deal_quantity;            // deal quantity
@@ -236,7 +290,7 @@ struct OTCBOOK_TBL deal_t {
         // indexed_by<"expiry"_n,  const_mem_fun<deal_t, uint64_t, &deal_t::by_expired_at> >
     > idx_t;
 
-    EOSLIB_SERIALIZE(deal_t,    (id)(order_id)(order_price)(deal_quantity)
+    EOSLIB_SERIALIZE(deal_t,    (id)(order_side)(order_id)(order_price)(deal_quantity)
                                 (order_maker)
                                 (order_taker)
                                 (status)(created_at)(closed_at)(order_sn)

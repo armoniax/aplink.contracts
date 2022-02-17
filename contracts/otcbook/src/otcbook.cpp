@@ -113,16 +113,16 @@ void otcbook::enablemer(const name& owner, bool is_enabled) {
 /**
  * only merchant allowed to open orders
  */
-void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, const asset& price, 
+void otcbook::openorder(const name& owner, const name& side, const asset& quantity, const asset& price, 
     const asset& min_accept_quantity, const string &memo
 ){
     require_auth( owner );
 
-    check( (order_side_t)side == order_side_t::BUY || (order_side_t)side == order_side_t::SELL, "Invalid order side" );
+    check( ORDER_SIDES.count(side) != 0, "Invalid order side" );
     check( quantity.is_valid(), "Invalid quantity");
     check( quantity.is_valid(), "Invalid price");
     const auto& conf = _conf();
-    if ((order_side_t)side == order_side_t::BUY) {
+    if (side == BUY_SIDE) {
         auto itr = conf.coin_to_fiat_conf.find(quantity.symbol);
         check(itr != conf.coin_to_fiat_conf.end(), "quantity symbol not allowed for buying");
         check(itr->second.count(price.symbol) > 0, "price symbol not allowed for buying");
@@ -161,75 +161,90 @@ void otcbook::openorder(const name& owner, uint8_t side, const asset& quantity, 
     // 	check( itr->remaining >= _gstate.min_pos_stake_frozen, "POS Staking requirement not met" );
     // }
 
-    order_table_t orders(_self, _self.value);
-    auto order_id = orders.available_primary_key();
-    orders.emplace( _self, [&]( auto& row ) {
-        row.id 					= order_id;
-        row.owner 				= owner;
-        row.side				= side;
-        row.price				= price;
-        // row.price_usd			= asset( price.amount * 10000 / _gstate2.usd_exchange_rate.amount , USD_SYMBOL);
-        row.quantity			= quantity;
-        row.stake_frozen      = stake_frozen;
-        row.min_accept_quantity = min_accept_quantity;
-        row.memo = memo;
-        row.closed				= false;
-        row.created_at			= time_point_sec(current_time_point());
-        row.frozen_quantity = asset(0, quantity.symbol);
-        row.fulfilled_quantity = asset(0, quantity.symbol);
-        row.accepted_payments = merchant.accepted_payments;
-    });
+    order_t order;
+    order.owner 				= owner;
+    order.price				    = price;
+    order.quantity			    = quantity;
+    order.stake_frozen          = stake_frozen;
+    order.min_accept_quantity   = min_accept_quantity;
+    order.memo                  = memo;
+    order.closed				= false;
+    order.created_at			= time_point_sec(current_time_point());
+    order.frozen_quantity       = asset(0, quantity.symbol);
+    order.fulfilled_quantity    = asset(0, quantity.symbol);
+    order.accepted_payments     = merchant.accepted_payments;
 
+
+    if (side == BUY_SIDE) {
+        buy_order_table_t orders(_self, _self.value);
+        order.id = orders.available_primary_key();
+        orders.emplace( _self, [&]( auto& row ) {
+            row = order;
+        });
+    } else {
+        sell_order_table_t orders(_self, _self.value);
+        order.id = orders.available_primary_key();
+        orders.emplace( _self, [&]( auto& row ) {
+            row = order;
+        });       
+    }
 }
 
-void otcbook::closeorder(const name& owner, const uint64_t& order_id) {
+void otcbook::closeorder(const name& owner, const name& order_side, const uint64_t& order_id) {
     require_auth( owner );
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
+    check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
 
-    order_table_t orders(_self, _self.value);
-    auto itr = orders.find(order_id);
-    check( itr != orders.end(), "sell order not found: " + to_string(order_id) );
-    check( !itr->closed, "order already closed" );
-    check( itr->frozen_quantity.amount == 0, "order being processed" );
-    check( itr->quantity >= itr->fulfilled_quantity, "order quantity insufficient" );
+    std::unique_ptr<order_wrapper_t> order_wrapper_ptr = (order_side == BUY_SIDE) ? 
+        buy_order_wrapper_t::get_from_db(_self, _self.value, order_id)
+        : sell_order_wrapper_t::get_from_db(_self, _self.value, order_id);
+    check( !order_wrapper_ptr, "order not found");
+    const auto &order = order_wrapper_ptr->get_order();
+    check( !order.closed, "order already closed" );
+    check( order.frozen_quantity.amount == 0, "order being processed" );
+    check( order.quantity >= order.fulfilled_quantity, "order quantity insufficient" );
 
-    check( merchant.stake_frozen >= itr->stake_frozen, "merchant stake quantity insufficient" );
+    check( merchant.stake_frozen >= order.stake_frozen, "merchant stake quantity insufficient" );
     // 撤单后币未交易完成的币退回
-    merchant.stake_frozen -= itr->stake_frozen;
-    merchant.stake_free += itr->stake_frozen;
+    merchant.stake_frozen -= order.stake_frozen;
+    merchant.stake_free += order.stake_frozen;
     _dbc.set( merchant );
-    _add_fund_log(owner, "closeorder"_n, itr->stake_frozen);  
+    _add_fund_log(owner, "closeorder"_n, order.stake_frozen);  
 
-    orders.modify( *itr, _self, [&]( auto& row ) {
+    order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.closed = true;
         row.closed_at = time_point_sec(current_time_point());
     });
 
 }
 
-void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset& deal_quantity, const uint64_t& order_sn,
-    const string& memo
+void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t& order_id, 
+    const asset& deal_quantity, const uint64_t& order_sn, const string& memo
 ) {
     require_auth( taker );
 
     // check( deal_quantity >= _gstate.min_buy_order_quantity, "min buy order quantity not met: " +  _gstate.min_buy_order_quantity.to_string() );
 
-    order_table_t orders(_self, _self.value);
-    auto itr = orders.find(order_id);
-    check( itr != orders.end(), "Order not found: " + to_string(order_id) );
-    check( itr->owner != taker, "taker can not be equal to maker");
-    check( deal_quantity.symbol == itr->quantity.symbol, "Token Symbol mismatch" );
-    check( !itr->closed, "Order already closed" );
-    check( itr->quantity >= itr->frozen_quantity + itr->fulfilled_quantity + deal_quantity, 
+    check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
+
+    std::unique_ptr<order_wrapper_t> order_wrapper_ptr = (order_side == BUY_SIDE) ? 
+        buy_order_wrapper_t::get_from_db(_self, _self.value, order_id)
+        : sell_order_wrapper_t::get_from_db(_self, _self.value, order_id);
+    check( !order_wrapper_ptr, "order not found");
+    const auto &order = order_wrapper_ptr->get_order();
+    check( order.owner != taker, "taker can not be equal to maker");
+    check( deal_quantity.symbol == order.quantity.symbol, "Token Symbol mismatch" );
+    check( !order.closed, "Order already closed" );
+    check( order.quantity >= order.frozen_quantity + order.fulfilled_quantity + deal_quantity, 
         "Order's quantity insufficient" );
     // check( itr->price.amount * deal_quantity.amount >= itr->min_accept_quantity.amount * 10000, "Order's min accept quantity not met!" );
-    check( deal_quantity >= itr->min_accept_quantity, "Order's min accept quantity not met!" );
+    check( deal_quantity >= order.min_accept_quantity, "Order's min accept quantity not met!" );
     
-    asset order_price = itr->price;
+    asset order_price = order.price;
     // asset order_price_usd = itr->price_usd;
-    name order_maker = itr->owner;
+    name order_maker = order.owner;
 
     deal_t::idx_t deals(_self, _self.value);
     auto ordersn_index 			= deals.get_index<"ordersn"_n>();
@@ -261,7 +276,7 @@ void otcbook::opendeal(const name& taker, const uint64_t& order_id, const asset&
     //     row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
     // });
 
-    orders.modify( *itr, _self, [&]( auto& row ) {
+    order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.frozen_quantity 	+= deal_quantity;
     });
 }
@@ -294,10 +309,13 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     }
 
     auto order_id = deal_itr->order_id;
-    order_table_t orders(_self, _self.value);
-    auto order_itr = orders.find(order_id);
-    check( order_itr != orders.end(), "sell order not found: " + to_string(order_id) );
-    check( !order_itr->closed, "order already closed" );
+    std::unique_ptr<order_wrapper_t> order_wrapper_ptr = (deal_itr->order_side == BUY_SIDE) ? 
+        buy_order_wrapper_t::get_from_db(_self, _self.value, order_id)
+        : sell_order_wrapper_t::get_from_db(_self, _self.value, order_id);
+    check( !order_wrapper_ptr, "order not found");
+    const auto &order = order_wrapper_ptr->get_order();    
+
+    check( !order.closed, "order already closed" );
 
     auto action = deal_action_t::CLOSE;
     if ((account_type_t) account_type != account_type_t::ADMIN) {
@@ -308,9 +326,9 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     
 
     auto deal_quantity = deal_itr->deal_quantity;
-    check( order_itr->frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
+    check( order.frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
 
-    orders.modify( *order_itr, _self, [&]( auto& row ) {
+    order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.frozen_quantity -= deal_quantity;
         row.fulfilled_quantity += deal_quantity;
     });
@@ -332,9 +350,10 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     auto deal_itr = deals.find(deal_id);
     check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
 
-    order_table_t orders(_self, _self.value);
-    auto order_itr = orders.find(deal_itr->order_id);
-    check( order_itr != orders.end(), "order not found: " + to_string(deal_itr->order_id) );
+    std::unique_ptr<order_wrapper_t> order_wrapper_ptr = (deal_itr->order_side == BUY_SIDE) ? 
+        buy_order_wrapper_t::get_from_db(_self, _self.value, deal_itr->order_id)
+        : sell_order_wrapper_t::get_from_db(_self, _self.value, deal_itr->order_id);
+    check( !order_wrapper_ptr, "order not found");
 
     auto now = time_point_sec(current_time_point());
 
@@ -518,11 +537,11 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
 void otcbook::deltable(){
     require_auth( _self );
 
-    order_table_t sellorders(_self,_self.value);
-    auto itr = sellorders.begin();
-    while(itr != sellorders.end()){
-        itr = sellorders.erase(itr);
-    }
+    // order_table_t sellorders(_self,_self.value);
+    // auto itr = sellorders.begin();
+    // while(itr != sellorders.end()){
+    //     itr = sellorders.erase(itr);
+    // }
 
     deal_t::idx_t deals(_self,_self.value);
     auto itr1 = deals.begin();
