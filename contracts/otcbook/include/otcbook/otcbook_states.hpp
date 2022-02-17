@@ -240,13 +240,14 @@ typedef order_wrapper_impl_t<sell_order_table_t> sell_order_wrapper_t;
  * deal session msg(message)
  */
 struct deal_session_msg_t {
+    uint8_t account_type = 0;   // account type
     name account;               // action account
     uint8_t status = 0;         // status before action, deal_status_t
     uint8_t action = 0;         // action type, deal_action_t
     string msg;                // msg(message)
     time_point_sec created_at;  // created time at  
 
-    EOSLIB_SERIALIZE(deal_session_msg_t,    (account)(status)(action)(msg)(created_at) )
+    EOSLIB_SERIALIZE(deal_session_msg_t,   (account_type)(account)(status)(action)(msg)(created_at) )
 };
 
 /**

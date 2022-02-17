@@ -266,7 +266,8 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
         // row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
-        row.session.push_back({taker, (uint8_t)deal_status_t::NONE, (uint8_t)deal_action_t::CREATE, session_msg, created_at});
+        row.session.push_back({(uint8_t)account_type_t::MERCHANT, taker, (uint8_t)deal_status_t::NONE, 
+            (uint8_t)deal_action_t::CREATE, session_msg, created_at});
     });
 
     // // 添加交易到期表数据
@@ -336,7 +337,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
         row.status = (uint8_t)deal_status_t::CLOSED;
         row.closed_at = time_point_sec(current_time_point());
-        row.session.push_back({account, (uint8_t)status, (uint8_t)action, session_msg, row.closed_at});
+        row.session.push_back({account_type, account, (uint8_t)status, (uint8_t)action, session_msg, row.closed_at});
     });
 
 }
@@ -409,7 +410,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
         if (next_status != deal_status_t::NONE) {
             row.status = (uint8_t)next_status;
         }
-        row.session.push_back({account, (uint8_t)status, action, session_msg, now});
+        row.session.push_back({account_type, account, (uint8_t)status, action, session_msg, now});
     });
 
 }
@@ -431,7 +432,8 @@ void otcbook::reversedeal(const name& account, const uint64_t& deal_id, const st
     auto now = time_point_sec(current_time_point());
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
         row.status = (uint8_t)deal_status_t::CREATED;
-        row.session.push_back({account, (uint8_t)status, (uint8_t)deal_action_t::REVERSE, session_msg, now});
+        row.session.push_back({(uint8_t)account_type_t::ADMIN, account, (uint8_t)status, 
+            (uint8_t)deal_action_t::REVERSE, session_msg, now});
     });
 }
 
