@@ -121,16 +121,16 @@ public:
     /**
      * open order by merchant
      * @param owner merchant account name
-     * @param side order side, buy | sell
-     * @param quantity quantity of coin for buy|sell, (ex. "1.000000 CNYD")
-     * @param price price in fiat, (ex. "1.0000 CNY")
-     * @param min_accept_quantity min accept quantity for taker
+     * @param order_side order side, buy | sell
+     * @param va_quantity  va quantity for buy|sell, (ex. "1.000000 CNYD")
+     * @param va_price va price base on fiat, (ex. "1.0000 CNY")
+     * @param va_min_take_quantity min accept quantity for taker
      * @param memo memo of order
      * @note require owner auth
      */
     [[eosio::action]]
-    void openorder(const name& owner, const name& side, const asset& quantity, const asset& price, 
-        const asset& min_accept_quantity, const string &memo);
+    void openorder(const name& owner, const name& order_side, const asset& va_quantity, const asset& va_price, 
+        const asset& va_min_take_quantity, const string &memo);
 
     /**
      * close order by merchant
@@ -146,7 +146,7 @@ public:
      * open deal by user
      * @param taker user account name
      * @param order_id order id, created in openorder()
-     * @param deal_quantity deal quantity
+     * @param deal_quantity deal quantity of va
      * @param order_sn order_sn should be unique to locate current deal
      * @param memo memo
      * @note require taker auth

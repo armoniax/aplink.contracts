@@ -144,13 +144,14 @@ struct OTCBOOK_TBL order_t {
 
     name owner;                                     // order maker's account, merchant
     set<name> accepted_payments;
-    asset price;                                    // coin price, quote in fiat, see fiat_type
-    asset quantity;                                 // coin quantity, see conf.coin_type
-    asset min_accept_quantity;                      // min accept quantity for taker, symbol must equal to quantity's
-    string memo;                                    // memo
+    asset va_price;                                 // va(virtual asset) quantity price, quote in fiat, see fiat_type
+    asset va_quantity;                              // va(virtual asset) quantity, see conf.coin_type
+    asset va_min_take_quantity;                     // va(virtual asset) min take quantity quantity for taker, symbol must equal to quantity's
+    asset va_frozen_quantity;                       // va(virtual asset) frozen quantity of sell/buy coin
+    asset va_fulfilled_quantity;                    // va(virtual asset) fulfilled quantity of sell/buy coin, support partial fulfillment
     asset stake_frozen = asset(0, STAKE_SYMBOL);    // stake frozen asset
-    asset frozen_quantity;                          // frozen quantity of sell/buy coin
-    asset fulfilled_quantity;                       // fulfilled quantity of sell/buy coin, support partial fulfillment
+    string memo;                                    // memo
+
     bool closed = false;                            // is closed
     time_point_sec created_at;                      // created time at
     time_point_sec closed_at;                       // closed time at
@@ -162,23 +163,22 @@ struct OTCBOOK_TBL order_t {
     // uint64_t scope() const { return price.symbol.code().raw(); } //not in use actually
 
     uint64_t by_price() const {
-        return closed || (frozen_quantity + fulfilled_quantity >= quantity) ? 
-                    std::numeric_limits<uint64_t>::max() : price.amount;
+        return closed || (va_frozen_quantity + va_fulfilled_quantity >= va_quantity) ? 
+                    std::numeric_limits<uint64_t>::max() : va_price.amount;
     } 
     
     //to sort buyers orders: bigger-price order first
     uint64_t by_invprice() const { 
-        return closed || (frozen_quantity + fulfilled_quantity >= quantity) ? 
-                    std::numeric_limits<uint64_t>::max() : std::numeric_limits<uint64_t>::max() - price.amount; 
+        return closed || (va_frozen_quantity + va_fulfilled_quantity >= va_quantity) ? 
+                    std::numeric_limits<uint64_t>::max() : std::numeric_limits<uint64_t>::max() - va_price.amount; 
     } 
 
     //to sort by order maker account
     uint64_t by_maker() const { return owner.value; }
   
-    EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(price)/*(price_usd)*/
-                                (quantity)(min_accept_quantity)(memo)
-                                (stake_frozen)(frozen_quantity)(fulfilled_quantity)
-                                (closed)(created_at)(closed_at))
+    EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(va_price)(va_quantity)
+                                (va_min_take_quantity)(va_frozen_quantity)(va_fulfilled_quantity)
+                                (stake_frozen)(memo)(closed)(created_at)(closed_at))
 };
 
 

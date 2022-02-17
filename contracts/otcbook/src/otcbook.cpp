@@ -113,39 +113,39 @@ void otcbook::enablemer(const name& owner, bool is_enabled) {
 /**
  * only merchant allowed to open orders
  */
-void otcbook::openorder(const name& owner, const name& side, const asset& quantity, const asset& price, 
-    const asset& min_accept_quantity, const string &memo
+void otcbook::openorder(const name& owner, const name& order_side, const asset& va_quantity, const asset& va_price, 
+    const asset& va_min_take_quantity, const string &memo
 ){
     require_auth( owner );
 
-    check( ORDER_SIDES.count(side) != 0, "Invalid order side" );
-    check( quantity.is_valid(), "Invalid quantity");
-    check( quantity.is_valid(), "Invalid price");
+    check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
+    check( va_quantity.is_valid(), "Invalid quantity");
+    check( va_quantity.is_valid(), "Invalid va_price");
     const auto& conf = _conf();
-    if (side == BUY_SIDE) {
-        auto itr = conf.coin_to_fiat_conf.find(quantity.symbol);
-        check(itr != conf.coin_to_fiat_conf.end(), "quantity symbol not allowed for buying");
-        check(itr->second.count(price.symbol) > 0, "price symbol not allowed for buying");
+    if (order_side == BUY_SIDE) {
+        auto itr = conf.coin_to_fiat_conf.find(va_quantity.symbol);
+        check(itr != conf.coin_to_fiat_conf.end(), "va quantity symbol not allowed for buying");
+        check(itr->second.count(va_price.symbol) > 0, "va price symbol not allowed for buying");
     } else {
-         auto itr = conf.fiat_to_coin_conf.find(price.symbol);
+         auto itr = conf.fiat_to_coin_conf.find(va_price.symbol);
         check(itr != conf.fiat_to_coin_conf.end(), "price symbol not allowed for selling");
-        check(itr->second.count(quantity.symbol) > 0, "quantity symbol not allowed for selling");       
+        check(itr->second.count(va_quantity.symbol) > 0, "va quantity symbol not allowed for selling");       
     }
 
-    check( quantity.amount > 0, "quantity must be positive");
+    check( va_quantity.amount > 0, "quantity must be positive");
     // TODO: min order quantity
-    check( price.amount > 0, "price must be positive" );
+    check( va_price.amount > 0, "va price must be positive" );
     // TODO: price range
-    check( min_accept_quantity.symbol == quantity.symbol, "min_accept_quantity Symbol mismatch with quantity" );
-    check( min_accept_quantity.amount >= 0 && min_accept_quantity.amount <= quantity.amount, 
-        "invalid min_accept_quantity amount" );
+    check( va_min_take_quantity.symbol == va_quantity.symbol, "va_min_take_quantity Symbol mismatch with quantity" );
+    check( va_min_take_quantity.amount >= 0 && va_min_take_quantity.amount <= va_quantity.amount, 
+        "invalid va_min_take_quantity amount" );
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
     check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
         "merchant not enabled");
     
-    auto stake_frozen = _calc_order_stakes(quantity, price); // TODO: process 70% used-rate of stake
+    auto stake_frozen = _calc_order_stakes(va_quantity, va_price); // TODO: process 70% used-rate of stake
     check( merchant.stake_free >= stake_frozen, "merchant stake quantity insufficient, expected: " + stake_frozen.to_string() );
     merchant.stake_free -= stake_frozen;
     merchant.stake_frozen += stake_frozen;
@@ -162,20 +162,20 @@ void otcbook::openorder(const name& owner, const name& side, const asset& quanti
     // }
 
     order_t order;
-    order.owner 				= owner;
-    order.price				    = price;
-    order.quantity			    = quantity;
-    order.stake_frozen          = stake_frozen;
-    order.min_accept_quantity   = min_accept_quantity;
-    order.memo                  = memo;
-    order.closed				= false;
-    order.created_at			= time_point_sec(current_time_point());
-    order.frozen_quantity       = asset(0, quantity.symbol);
-    order.fulfilled_quantity    = asset(0, quantity.symbol);
-    order.accepted_payments     = merchant.accepted_payments;
+    order.owner 				    = owner;
+    order.va_price				    = va_price;
+    order.va_quantity			    = va_quantity;
+    order.stake_frozen              = stake_frozen;
+    order.va_min_take_quantity      = va_min_take_quantity;
+    order.memo                      = memo;
+    order.closed				    = false;
+    order.created_at			    = time_point_sec(current_time_point());
+    order.va_frozen_quantity       = asset(0, va_quantity.symbol);
+    order.va_fulfilled_quantity    = asset(0, va_quantity.symbol);
+    order.accepted_payments         = merchant.accepted_payments;
 
 
-    if (side == BUY_SIDE) {
+    if (order_side == BUY_SIDE) {
         buy_order_table_t orders(_self, _self.value);
         order.id = orders.available_primary_key();
         orders.emplace( _self, [&]( auto& row ) {
@@ -203,8 +203,8 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     check( !order_wrapper_ptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();
     check( !order.closed, "order already closed" );
-    check( order.frozen_quantity.amount == 0, "order being processed" );
-    check( order.quantity >= order.fulfilled_quantity, "order quantity insufficient" );
+    check( order.va_frozen_quantity.amount == 0, "order being processed" );
+    check( order.va_quantity >= order.va_fulfilled_quantity, "order quantity insufficient" );
 
     check( merchant.stake_frozen >= order.stake_frozen, "merchant stake quantity insufficient" );
     // 撤单后币未交易完成的币退回
@@ -235,14 +235,14 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     check( !order_wrapper_ptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();
     check( order.owner != taker, "taker can not be equal to maker");
-    check( deal_quantity.symbol == order.quantity.symbol, "Token Symbol mismatch" );
+    check( deal_quantity.symbol == order.va_quantity.symbol, "Token Symbol mismatch" );
     check( !order.closed, "Order already closed" );
-    check( order.quantity >= order.frozen_quantity + order.fulfilled_quantity + deal_quantity, 
+    check( order.va_quantity >= order.va_frozen_quantity + order.va_fulfilled_quantity + deal_quantity, 
         "Order's quantity insufficient" );
-    // check( itr->price.amount * deal_quantity.amount >= itr->min_accept_quantity.amount * 10000, "Order's min accept quantity not met!" );
-    check( deal_quantity >= order.min_accept_quantity, "Order's min accept quantity not met!" );
+    // check( itr->price.amount * deal_quantity.amount >= itr->va_min_take_quantity.amount * 10000, "Order's min accept quantity not met!" );
+    check( deal_quantity >= order.va_min_take_quantity, "Order's min accept quantity not met!" );
     
-    asset order_price = order.price;
+    asset order_price = order.va_price;
     // asset order_price_usd = itr->price_usd;
     name order_maker = order.owner;
 
@@ -277,7 +277,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     // });
 
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
-        row.frozen_quantity 	+= deal_quantity;
+        row.va_frozen_quantity 	+= deal_quantity;
     });
 }
 
@@ -326,11 +326,11 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     
 
     auto deal_quantity = deal_itr->deal_quantity;
-    check( order.frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
+    check( order.va_frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
 
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
-        row.frozen_quantity -= deal_quantity;
-        row.fulfilled_quantity += deal_quantity;
+        row.va_frozen_quantity -= deal_quantity;
+        row.va_fulfilled_quantity += deal_quantity;
     });
 
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
@@ -490,10 +490,10 @@ void otcbook::withdraw(const name& owner, asset quantity){
 //                 check( !order_itr->closed, "order already closed" );
 
 //                 auto deal_quantity = deal_itr->deal_quantity;
-//                 check( order_itr->frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
+//                 check( order_itr->va_frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
 
 //                 orders.modify( *order_itr, _self, [&]( auto& row ) {
-//                     row.frozen_quantity -= deal_quantity;
+//                     row.va_frozen_quantity -= deal_quantity;
 //                 });
 
 //                 deals.modify( *deal_itr, _self, [&]( auto& row ) {
