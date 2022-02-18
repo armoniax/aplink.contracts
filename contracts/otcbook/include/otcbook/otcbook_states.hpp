@@ -162,24 +162,30 @@ struct OTCBOOK_TBL order_t {
     uint64_t primary_key() const { return id; }
     // uint64_t scope() const { return price.symbol.code().raw(); } //not in use actually
 
+    // check this order can be took by user
+    inline bool can_be_took() const {
+        return !closed && va_quantity >= va_frozen_quantity + va_fulfilled_quantity + va_min_take_quantity;
+    }
+
+    // sort by price, used by sell orders, can_be_took and lower price first
     uint64_t by_price() const {
-        return closed || (va_frozen_quantity + va_fulfilled_quantity >= va_quantity) ? 
-                    std::numeric_limits<uint64_t>::max() : va_price.amount;
+        return can_be_took() ? va_price.amount : std::numeric_limits<uint64_t>::max();
     } 
     
-    //to sort buyers orders: bigger-price order first
+    // sort by price, used by buy orders, can_be_took and higher price first
     uint64_t by_invprice() const { 
-        return closed || (va_frozen_quantity + va_fulfilled_quantity >= va_quantity) ? 
-                    std::numeric_limits<uint64_t>::max() : std::numeric_limits<uint64_t>::max() - va_price.amount; 
+        return can_be_took() ? std::numeric_limits<uint64_t>::max() - va_price.amount
+                    : std::numeric_limits<uint64_t>::max(); 
     } 
 
     // sort by order maker account + status(is closed) + id
     // owner: lower first
-    // status: closed=true in first
+    // status: closed=true in first(=0), not can_be_book in second(=1), others in third(=2)
     // id: lower first
     // should use --revert option when get table by this index
-    uint128_t by_maker_status() const { 
-        return (uint128_t)owner.value << 64 | uint128_t(closed ? 0 : 1); 
+    uint128_t by_maker_status() const {
+        uint128_t status =  closed ? 0 : !can_be_took() ? 1 : 2;
+        return (uint128_t)owner.value << 64 | status; 
     }
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(va_price)(va_quantity)
@@ -187,13 +193,22 @@ struct OTCBOOK_TBL order_t {
                                 (stake_frozen)(memo)(closed)(created_at)(closed_at))
 };
 
-
+/**
+ * buyorders table
+ * index 2: by_invprice
+ * index 3: by_maker_status
+ */
 typedef eosio::multi_index
 < "buyorders"_n,  order_t,
     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_invprice> >,
     indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >
 > buy_order_table_t;
 
+/**
+ * buyorders table
+ * index 2: by_price
+ * index 3: by_maker_status
+ */
 typedef eosio::multi_index
 < "sellorders"_n, order_t,
     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_price> >,
