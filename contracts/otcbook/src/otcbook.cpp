@@ -120,14 +120,13 @@ void otcbook::openorder(const name& owner, const name& order_side, const asset& 
 
     check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
     check( va_quantity.is_valid(), "Invalid quantity");
-    check( va_quantity.is_valid(), "Invalid va_price");
+    check( va_price.is_valid(), "Invalid va_price");
     const auto& conf = _conf();
+    check( va_price.symbol == conf.fiat_type, "va price symbol not allow");
     if (order_side == BUY_SIDE) {
-        check( conf.coin_to_fiat_conf.count(va_price.symbol) != 0, "va quantity symbol not allowed for buying" );
-        check(itr->second.count(va_price.symbol) > 0, "va price symbol not allowed for buying");
+        check( conf.buy_coins_conf.count(va_quantity.symbol) != 0, "va quantity symbol not allowed for buying" );
     } else {
-        check( conf.fiat_to_coin_conf.count(va_price.symbol) != 0, "price symbol not allowed for selling" );
-        check(itr->second.count(va_quantity.symbol) > 0, "va quantity symbol not allowed for selling");       
+        check( conf.sell_coins_conf.count(va_quantity.symbol) != 0, "va quantity symbol not allowed for selling" );    
     }
 
     check( va_quantity.amount > 0, "quantity must be positive");

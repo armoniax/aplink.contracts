@@ -76,19 +76,9 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     symbol fiat_type = CNY;
 
     /** 
-     * OTC merchants to make sell orders with cypto
+     * crypto coins that OTC merchants can buy in orders 
      */
-    set<symbol> coin_to_fiat_conf = {
-        CNYD_BEP20,
-        CNYD_ARC20,
-        BTC,
-        ETH
-    };
-    
-    /** 
-     * OTC merchants to make buy orders with fiat
-     */
-    set<symbol> fiat_to_coin_conf = {
+    set<symbol> buy_coins_conf = {
         CNYD_BEP20, 
         CNYD_ARC20,  
         USDT_ERC20, 
@@ -97,6 +87,15 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
         ETH
     };
 
+    /** 
+     * crypto coins that OTC merchants can sell in orders
+     */
+    set<symbol> sell_coins_conf = {
+        CNYD_BEP20,
+        CNYD_ARC20,
+        BTC,
+        ETH
+    };
 
     map<symbol, asset> prices_quote_cny {
         { USD,  ASSET(6.3000, CNY) },
@@ -108,7 +107,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     }
 
     EOSLIB_SERIALIZE( global_t, (app_info)(pay_type)(coin_type)(fiat_type)
-                                (coin_to_fiat_conf)(fiat_to_coin_conf)(prices_quote_cny)
+                                (buy_coins_conf)(sell_coins_conf)(prices_quote_cny)
     )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
