@@ -200,7 +200,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     auto order_wrapper_ptr = (order_side == BUY_SIDE) ? 
         buy_order_wrapper_t::get_from_db(_self, _self.value, order_id)
         : sell_order_wrapper_t::get_from_db(_self, _self.value, order_id);
-    check( !order_wrapper_ptr, "order not found");
+    check( order_wrapper_ptr != nullptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();
     check( !order.closed, "order already closed" );
     check( order.va_frozen_quantity.amount == 0, "order being processed" );
@@ -232,7 +232,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     auto order_wrapper_ptr = (order_side == BUY_SIDE) ? 
         buy_order_wrapper_t::get_from_db(_self, _self.value, order_id)
         : sell_order_wrapper_t::get_from_db(_self, _self.value, order_id);
-    check( !order_wrapper_ptr, "order not found");
+    check( order_wrapper_ptr != nullptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();
     check( order.owner != taker, "taker can not be equal to maker");
     check( deal_quantity.symbol == order.va_quantity.symbol, "Token Symbol mismatch" );
@@ -313,7 +313,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     auto order_wrapper_ptr = (deal_itr->order_side == BUY_SIDE) ? 
         buy_order_wrapper_t::get_from_db(_self, _self.value, order_id)
         : sell_order_wrapper_t::get_from_db(_self, _self.value, order_id);
-    check( !order_wrapper_ptr, "order not found");
+    check( order_wrapper_ptr != nullptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();    
 
     check( !order.closed, "order already closed" );
@@ -354,7 +354,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     auto order_wrapper_ptr = (deal_itr->order_side == BUY_SIDE) ? 
         buy_order_wrapper_t::get_from_db(_self, _self.value, deal_itr->order_id)
         : sell_order_wrapper_t::get_from_db(_self, _self.value, deal_itr->order_id);
-    check( !order_wrapper_ptr, "order not found");
+    check( order_wrapper_ptr != nullptr, "order not found");
 
     auto now = time_point_sec(current_time_point());
 
