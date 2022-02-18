@@ -126,8 +126,7 @@ void otcbook::openorder(const name& owner, const name& order_side, const asset& 
         check( conf.coin_to_fiat_conf.count(va_price.symbol) != 0, "va quantity symbol not allowed for buying" );
         check(itr->second.count(va_price.symbol) > 0, "va price symbol not allowed for buying");
     } else {
-         auto itr = conf.fiat_to_coin_conf.find(va_price.symbol);
-        check(itr != conf.fiat_to_coin_conf.end(), "price symbol not allowed for selling");
+        check( conf.fiat_to_coin_conf.count(va_price.symbol) != 0, "price symbol not allowed for selling" );
         check(itr->second.count(va_quantity.symbol) > 0, "va quantity symbol not allowed for selling");       
     }
 
