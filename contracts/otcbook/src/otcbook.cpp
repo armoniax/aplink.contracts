@@ -197,7 +197,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
     check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
 
-    std::unique_ptr<order_wrapper_t> order_wrapper_ptr = (order_side == BUY_SIDE) ? 
+    auto order_wrapper_ptr = (order_side == BUY_SIDE) ? 
         buy_order_wrapper_t::get_from_db(_self, _self.value, order_id)
         : sell_order_wrapper_t::get_from_db(_self, _self.value, order_id);
     check( !order_wrapper_ptr, "order not found");
@@ -229,7 +229,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
 
     check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
 
-    std::unique_ptr<order_wrapper_t> order_wrapper_ptr = (order_side == BUY_SIDE) ? 
+    auto order_wrapper_ptr = (order_side == BUY_SIDE) ? 
         buy_order_wrapper_t::get_from_db(_self, _self.value, order_id)
         : sell_order_wrapper_t::get_from_db(_self, _self.value, order_id);
     check( !order_wrapper_ptr, "order not found");
@@ -310,7 +310,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     }
 
     auto order_id = deal_itr->order_id;
-    std::unique_ptr<order_wrapper_t> order_wrapper_ptr = (deal_itr->order_side == BUY_SIDE) ? 
+    auto order_wrapper_ptr = (deal_itr->order_side == BUY_SIDE) ? 
         buy_order_wrapper_t::get_from_db(_self, _self.value, order_id)
         : sell_order_wrapper_t::get_from_db(_self, _self.value, order_id);
     check( !order_wrapper_ptr, "order not found");
@@ -351,7 +351,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     auto deal_itr = deals.find(deal_id);
     check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
 
-    std::unique_ptr<order_wrapper_t> order_wrapper_ptr = (deal_itr->order_side == BUY_SIDE) ? 
+    auto order_wrapper_ptr = (deal_itr->order_side == BUY_SIDE) ? 
         buy_order_wrapper_t::get_from_db(_self, _self.value, deal_itr->order_id)
         : sell_order_wrapper_t::get_from_db(_self, _self.value, deal_itr->order_id);
     check( !order_wrapper_ptr, "order not found");

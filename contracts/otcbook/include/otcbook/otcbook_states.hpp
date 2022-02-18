@@ -236,8 +236,8 @@ struct order_wrapper_impl_t: public order_wrapper_t {
         _table->modify(*_row_ptr, payer, updater);  
     }
 
-    static std::unique_ptr<order_wrapper_t> get_from_db(name code, uint64_t scope, uint64_t pk) {
-        auto ret = std::make_unique<order_wrapper_impl_t<table_t>>();
+    static std::shared_ptr<order_wrapper_t> get_from_db(name code, uint64_t scope, uint64_t pk) {
+        auto ret = std::make_shared<order_wrapper_impl_t<table_t>>();
         ret->_table = make_unique<table_t>(code, scope);
         auto itr = ret->_table->find(pk); 
         if (itr != ret->_table->end()) {

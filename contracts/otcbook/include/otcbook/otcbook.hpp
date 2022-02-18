@@ -124,7 +124,7 @@ public:
      * @param order_side order side, buy | sell
      * @param va_quantity  va quantity for buy|sell, (ex. "1.000000 CNYD")
      * @param va_price va price base on fiat, (ex. "1.0000 CNY")
-     * @param va_min_take_quantity min accept quantity for taker
+     * @param va_min_take_quantity min take quantity for taker
      * @param memo memo of order
      * @note require owner auth
      */
