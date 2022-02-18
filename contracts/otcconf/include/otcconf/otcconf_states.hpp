@@ -73,30 +73,28 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     set<name> pay_type = { BANK, WECHAT, ALIPAY, MASTER, VISA, PAYPAL };
 
     set<symbol> coin_type = { USDT_ERC20, USDT_TRC20, USDT_BEP20, CNYD_BEP20, CNYD_ARC20 };
-    set<symbol> fiat_type = { CNY, USD, EUR, INR };
+    symbol fiat_type = CNY;
 
     /** 
      * OTC merchants to make sell orders with cypto
      */
-    map<symbol, symbol_set> coin_to_fiat_conf = {
-        { CNYD_BEP20,  { CNY } },
-        { CNYD_ARC20,  { CNY } },
-        { BTC,         { CNY } },
-        { ETH,         { CNY } }
+    set<symbol> coin_to_fiat_conf = {
+        CNYD_BEP20,
+        CNYD_ARC20,
+        BTC,
+        ETH
     };
     
     /** 
      * OTC merchants to make buy orders with fiat
      */
-    map<symbol, symbol_set> fiat_to_coin_conf = {
-        { CNY, {
-            CNYD_BEP20, 
-            CNYD_ARC20,  
-            USDT_ERC20, 
-            USDT_BEP20,
-            BTC,
-            ETH }
-        }
+    set<symbol> fiat_to_coin_conf = {
+        CNYD_BEP20, 
+        CNYD_ARC20,  
+        USDT_ERC20, 
+        USDT_BEP20,
+        BTC,
+        ETH
     };
 
 
