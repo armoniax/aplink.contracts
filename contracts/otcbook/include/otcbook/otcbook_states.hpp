@@ -173,8 +173,14 @@ struct OTCBOOK_TBL order_t {
                     std::numeric_limits<uint64_t>::max() : std::numeric_limits<uint64_t>::max() - va_price.amount; 
     } 
 
-    //to sort by order maker account
-    uint64_t by_maker() const { return owner.value; }
+    // sort by order maker account + status(is closed) + id
+    // owner: lower first
+    // status: closed=true in first
+    // id: lower first
+    // should use --revert option when get table by this index
+    uint128_t by_maker_status() const { 
+        return (uint128_t)owner.value << 64 | uint128_t(closed ? 0 : 1); 
+    }
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(va_price)(va_quantity)
                                 (va_min_take_quantity)(va_frozen_quantity)(va_fulfilled_quantity)
@@ -185,13 +191,13 @@ struct OTCBOOK_TBL order_t {
 typedef eosio::multi_index
 < "buyorders"_n,  order_t,
     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_invprice> >,
-    indexed_by<"maker"_n, const_mem_fun<order_t, uint64_t, &order_t::by_maker> >
+    indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >
 > buy_order_table_t;
 
 typedef eosio::multi_index
 < "sellorders"_n, order_t,
     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_price> >,
-    indexed_by<"maker"_n, const_mem_fun<order_t, uint64_t, &order_t::by_maker> >
+    indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >
 > sell_order_table_t;
 
 
