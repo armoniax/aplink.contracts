@@ -257,6 +257,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     auto deal_id = deals.available_primary_key();
     deals.emplace( _self, [&]( auto& row ) {
         row.id 					= deal_id;
+        row.order_side 			= order_side;
         row.order_id 			= order_id;
         row.order_price			= order_price;
         row.deal_quantity		= deal_quantity;
