@@ -12,7 +12,11 @@ using namespace std;
 using namespace eosio;
 using namespace wasm::safemath;
 
+/**
+ * reset the global with default values
+ */
 void otcconf::init() {
+    _gstate = global_t();
 }
 
 

@@ -40,7 +40,11 @@ public:
         _global.set( _gstate, get_self() );
     }
 
-    [[eosio::action]] //only code maintainer can init
+    /**
+     * reset the global with default values
+     * only code maintainer can init
+     */
+    [[eosio::action]] 
     void init();
 
     [[eosio::action]]

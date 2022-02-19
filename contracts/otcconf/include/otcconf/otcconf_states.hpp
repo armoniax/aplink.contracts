@@ -80,9 +80,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
      */
     set<symbol> buy_coins_conf = {
         CNYD_BEP20, 
-        CNYD_ARC20,  
-        USDT_ERC20, 
-        USDT_BEP20,
+        CNYD_ARC20,
         BTC,
         ETH
     };
@@ -92,7 +90,9 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
      */
     set<symbol> sell_coins_conf = {
         CNYD_BEP20,
-        CNYD_ARC20,
+        CNYD_ARC20,  
+        USDT_ERC20, 
+        USDT_BEP20,
         BTC,
         ETH
     };
