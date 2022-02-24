@@ -93,7 +93,7 @@ void otcbook::setmerchant(const name& owner, const set<name> &pay_methods, const
 
 }
 
-void otcbook::enablemer(const name& owner, bool is_enabled) {
+void otcbook::enbmerchant(const name& owner, bool is_enabled) {
     require_auth( _gstate.admin );
 
     merchant_t merchant(owner);
@@ -521,13 +521,12 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
 
     if (get_first_receiver() == SYS_BANK && quantity.symbol == CNYD_SYMBOL){
         merchant_t merchant(from);
-        if (_dbc.get( merchant )) {
-            check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
-                "merchant not enabled");
-            merchant.stake_free += quantity;
-            _dbc.set( merchant );
-            _add_fund_log(from, "deposit"_n, quantity);
-        }
+        check(_dbc.get( merchant ),"merchant not set")
+        check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
+            "merchant not enabled");
+        merchant.stake_free += quantity;
+        _dbc.set( merchant );
+        _add_fund_log(from, "deposit"_n, quantity);
     }
 }
 

@@ -116,7 +116,7 @@ public:
      * @note require admin auth
      */
     [[eosio::action]]
-    void enablemer(const name& owner, bool is_enabled);
+    void enbmerchant(const name& owner, bool is_enabled);
     
     /**
      * open order by merchant
