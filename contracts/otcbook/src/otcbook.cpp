@@ -199,6 +199,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
         : sell_order_wrapper_t::get_from_db(_self, _self.value, order_id);
     check( order_wrapper_ptr != nullptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();
+    check( owner == order.owner, "have no access to close others' order");
     check( !order.closed, "order already closed" );
     check( order.va_frozen_quantity.amount == 0, "order being processed" );
     check( order.va_quantity >= order.va_fulfilled_quantity, "order quantity insufficient" );
@@ -264,7 +265,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
         // row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
-        row.session.push_back({(uint8_t)account_type_t::MERCHANT, taker, (uint8_t)deal_status_t::NONE, 
+        row.session.push_back({(uint8_t)account_type_t::USER, taker, (uint8_t)deal_status_t::NONE, 
             (uint8_t)deal_action_t::CREATE, session_msg, created_at});
     });
 
