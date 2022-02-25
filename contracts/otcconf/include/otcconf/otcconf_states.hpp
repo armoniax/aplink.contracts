@@ -33,7 +33,7 @@ static constexpr symbol USDT_BEP20 = SYMBOL("USDTBEP", 6);
 static constexpr symbol CNYD_BEP20 = SYMBOL("CNYDBEP", 6);
 static constexpr symbol CNYD_ARC20 = SYMBOL("CNYDARC", 6);
 static constexpr symbol BTC        = SYMBOL("BTC", 8);
-static constexpr symbol ETH        = SYMBOL("ETH", 18);
+static constexpr symbol ETH        = SYMBOL("ETH", 8);
 static constexpr symbol CNYD       = SYMBOL("CNYD", 6);
 
 // fiat currency symbols

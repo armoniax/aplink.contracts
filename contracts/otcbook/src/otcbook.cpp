@@ -134,7 +134,7 @@ void otcbook::openorder(const name& owner, const name& order_side, const asset& 
     check( va_price.amount > 0, "va price must be positive" );
     // TODO: price range
     check( va_min_take_quantity.symbol == va_quantity.symbol, "va_min_take_quantity Symbol mismatch with quantity" );
-    check( va_min_take_quantity.amount >= 0 && va_min_take_quantity.amount <= va_quantity.amount, 
+    check( va_min_take_quantity.amount > 0 && va_min_take_quantity.amount <= va_quantity.amount, 
         "invalid va_min_take_quantity amount" );
 
     merchant_t merchant(owner);
@@ -521,7 +521,7 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
 
     if (get_first_receiver() == SYS_BANK && quantity.symbol == CNYD_SYMBOL){
         merchant_t merchant(from);
-        check(_dbc.get( merchant ),"merchant not set")
+        check(_dbc.get( merchant ),"merchant not set");
         check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
             "merchant not enabled");
         merchant.stake_free += quantity;
