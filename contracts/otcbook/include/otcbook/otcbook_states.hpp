@@ -303,6 +303,10 @@ struct OTCBOOK_TBL deal_t {
     uint64_t by_maker()     const { return order_maker.value; }
     uint64_t by_taker()     const { return order_taker.value; }
     uint64_t by_ordersn()   const { return order_sn;}
+
+    uint128_t by_order_id() const {
+        return (uint128_t)order_side << 64 | id; 
+    }
     // uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
     // uint64_t by_maker_expired_at() const    { return uint64_t(maker_expired_at.sec_since_epoch()); }
 
@@ -311,7 +315,8 @@ struct OTCBOOK_TBL deal_t {
         indexed_by<"order"_n,   const_mem_fun<deal_t, uint64_t, &deal_t::by_order> >,
         indexed_by<"maker"_n,   const_mem_fun<deal_t, uint64_t, &deal_t::by_maker> >,
         indexed_by<"taker"_n,   const_mem_fun<deal_t, uint64_t, &deal_t::by_taker> >,
-        indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >//,
+        indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >,
+        indexed_by<"orderid"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_order_id> >//,
         // indexed_by<"expiry"_n,  const_mem_fun<deal_t, uint64_t, &deal_t::by_expired_at> >
     > idx_t;
 
