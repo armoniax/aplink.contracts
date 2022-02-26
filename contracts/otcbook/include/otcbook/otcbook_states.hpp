@@ -305,7 +305,7 @@ struct OTCBOOK_TBL deal_t {
     uint64_t by_ordersn()   const { return order_sn;}
 
     uint128_t by_order_id() const {
-        return (uint128_t)order_side.value << 64 | id; 
+        return (uint128_t)order_side.value << 64 | order_id;
     }
     // uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
     // uint64_t by_maker_expired_at() const    { return uint64_t(maker_expired_at.sec_since_epoch()); }
