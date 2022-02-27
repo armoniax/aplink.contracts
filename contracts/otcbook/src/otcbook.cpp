@@ -113,7 +113,7 @@ void otcbook::enbmerchant(const name& owner, bool is_enabled) {
 /**
  * only merchant allowed to open orders
  */
-void otcbook::openorder(const name& owner, const name& order_side, const asset& va_quantity, const asset& va_price, 
+void otcbook::openorder(const name& owner, const name& order_side, const set<name> &pay_methods, const asset& va_quantity, const asset& va_price, 
     const asset& va_min_take_quantity, const string &memo
 ){
     require_auth( owner );
@@ -127,6 +127,10 @@ void otcbook::openorder(const name& owner, const name& order_side, const asset& 
         check( conf.buy_coins_conf.count(va_quantity.symbol) != 0, "va quantity symbol not allowed for buying" );
     } else {
         check( conf.sell_coins_conf.count(va_quantity.symbol) != 0, "va quantity symbol not allowed for selling" );    
+    }
+
+    for (auto& method : pay_methods) {
+        check( conf.pay_type.count(method) != 0, "pay method illegal: " + method.to_string() );
     }
 
     check( va_quantity.amount > 0, "quantity must be positive");
@@ -170,6 +174,7 @@ void otcbook::openorder(const name& owner, const name& order_side, const asset& 
     order.va_frozen_quantity       = asset(0, va_quantity.symbol);
     order.va_fulfilled_quantity    = asset(0, va_quantity.symbol);
     order.accepted_payments         = merchant.accepted_payments;
+    order.accepted_payments         = pay_methods;
 
 
     if (order_side == BUY_SIDE) {

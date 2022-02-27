@@ -129,7 +129,7 @@ public:
      * @note require owner auth
      */
     [[eosio::action]]
-    void openorder(const name& owner, const name& order_side, const asset& va_quantity, const asset& va_price, 
+    void openorder(const name& owner, const name& order_side,const set<name> &pay_methods, const asset& va_quantity, const asset& va_price, 
         const asset& va_min_take_quantity, const string &memo);
 
     /**
