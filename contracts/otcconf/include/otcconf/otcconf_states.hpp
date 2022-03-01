@@ -32,6 +32,7 @@ static constexpr symbol USDT_TRC20 = SYMBOL("USDTTRC", 6);
 static constexpr symbol USDT_BEP20 = SYMBOL("USDTBEP", 6);
 static constexpr symbol CNYD_BEP20 = SYMBOL("CNYDBEP", 6);
 static constexpr symbol CNYD_ARC20 = SYMBOL("CNYDARC", 6);
+static constexpr symbol AMA        = SYMBOL("AMA", 8);
 static constexpr symbol BTC        = SYMBOL("BTC", 8);
 static constexpr symbol ETH        = SYMBOL("ETH", 8);
 static constexpr symbol CNYD       = SYMBOL("CNYD", 6);
@@ -46,6 +47,7 @@ static constexpr symbol   INR      = SYMBOL("INR", 4);
 static constexpr name BANK        = "bank"_n;
 static constexpr name WECHAT      = "wechat"_n;
 static constexpr name ALIPAY      = "alipay"_n;
+static constexpr name CNYDPAY     = "cnyd"_n;
 static constexpr name MASTER      = "master"_n;
 static constexpr name VISA        = "visa"_n;
 static constexpr name PAYPAL      = "paypal"_n;
@@ -70,15 +72,16 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
         false 
     };
 
-    set<name> pay_type = { BANK, WECHAT, ALIPAY, MASTER, VISA, PAYPAL };
+    set<name> pay_type = { CNYDPAY, BANK, WECHAT, ALIPAY, MASTER, VISA, PAYPAL };
 
-    set<symbol> coin_type = { USDT_ERC20, USDT_TRC20, USDT_BEP20, CNYD_BEP20, CNYD_ARC20 };
+    set<symbol> coin_type = { AMA, USDT_ERC20, USDT_TRC20, USDT_BEP20, CNYD_BEP20, CNYD_ARC20 };
     symbol fiat_type = CNY;
 
     /** 
      * crypto coins that OTC merchants can buy in orders 
      */
     set<symbol> buy_coins_conf = {
+        AMA,
         CNYD_BEP20, 
         CNYD_ARC20,
         BTC,
@@ -89,6 +92,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
      * crypto coins that OTC merchants can sell in orders
      */
     set<symbol> sell_coins_conf = {
+        AMA,
         CNYD_BEP20,
         CNYD_ARC20,  
         USDT_ERC20, 
