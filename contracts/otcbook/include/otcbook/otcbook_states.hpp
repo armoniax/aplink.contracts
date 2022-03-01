@@ -144,7 +144,7 @@ struct OTCBOOK_TBL order_t {
     uint64_t id = 0;                                // PK: available_primary_key, auto increase
 
     name owner;                                     // order maker's account, merchant
-    name merchant_name;
+    string merchant_name;
     set<name> accepted_payments;                    // accepted payments
     asset va_price;                                 // va(virtual asset) quantity price, quote in fiat, see fiat_type
     asset va_quantity;                              // va(virtual asset) quantity, see conf.coin_type
