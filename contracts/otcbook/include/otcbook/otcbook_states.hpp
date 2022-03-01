@@ -299,9 +299,9 @@ struct OTCBOOK_TBL deal_t {
     uint64_t primary_key() const { return id; }
     uint64_t scope() const { return /*order_price.symbol.code().raw()*/ 0; }
 
-    uint64_t by_order()     const { return order_id; }
-    uint64_t by_maker()     const { return order_maker.value; }
-    uint64_t by_taker()     const { return order_taker.value; }
+    uint128_t by_order()     const { return (uint128_t)order_id << 64 | status; }
+    uint128_t by_maker()     const { return (uint128_t)order_maker.value << 64 | status ; }
+    uint128_t by_taker()     const { return (uint128_t)order_taker.value << 64 | status; }
     uint64_t by_ordersn()   const { return order_sn;}
 
     uint128_t by_order_id() const {
@@ -312,9 +312,9 @@ struct OTCBOOK_TBL deal_t {
 
     typedef eosio::multi_index
     <"deals"_n, deal_t,
-        indexed_by<"order"_n,   const_mem_fun<deal_t, uint64_t, &deal_t::by_order> >,
-        indexed_by<"maker"_n,   const_mem_fun<deal_t, uint64_t, &deal_t::by_maker> >,
-        indexed_by<"taker"_n,   const_mem_fun<deal_t, uint64_t, &deal_t::by_taker> >,
+        indexed_by<"order"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_order> >,
+        indexed_by<"maker"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_maker> >,
+        indexed_by<"taker"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_taker> >,
         indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >,
         indexed_by<"orderid"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_order_id> >//,
         // indexed_by<"expiry"_n,  const_mem_fun<deal_t, uint64_t, &deal_t::by_expired_at> >
