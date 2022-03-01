@@ -110,6 +110,7 @@ enum  class merchant_status_t: uint8_t {
 
 struct OTCBOOK_TBL merchant_t {
     name owner;                     // owner account of merchant
+    String merchant_name;                    // merchant's name 
     set<name> accepted_payments;    // accepted payments, see conf.pay_type
     string email;                   // email
     string memo;                    // memo
@@ -129,7 +130,7 @@ struct OTCBOOK_TBL merchant_t {
         indexed_by<"status"_n, const_mem_fun<merchant_t, uint64_t, &merchant_t::by_status> >
     > idx_t;
 
-    EOSLIB_SERIALIZE(merchant_t,  (owner)(accepted_payments)
+    EOSLIB_SERIALIZE(merchant_t,  (owner)(merchant_name)(accepted_payments)
                                   (email)(memo)(status)(stake_free)(stake_frozen)
     )
 };
@@ -143,6 +144,7 @@ struct OTCBOOK_TBL order_t {
     uint64_t id = 0;                                // PK: available_primary_key, auto increase
 
     name owner;                                     // order maker's account, merchant
+    name merchant_name;
     set<name> accepted_payments;                    // accepted payments
     asset va_price;                                 // va(virtual asset) quantity price, quote in fiat, see fiat_type
     asset va_quantity;                              // va(virtual asset) quantity, see conf.coin_type
@@ -188,7 +190,7 @@ struct OTCBOOK_TBL order_t {
         return (uint128_t)owner.value << 64 | status; 
     }
   
-    EOSLIB_SERIALIZE(order_t,   (id)(owner)(accepted_payments)(va_price)(va_quantity)
+    EOSLIB_SERIALIZE(order_t,   (id)(owner)(merchant_name)(accepted_payments)(va_price)(va_quantity)
                                 (va_min_take_quantity)(va_frozen_quantity)(va_fulfilled_quantity)
                                 (stake_frozen)(memo)(closed)(created_at)(closed_at))
 };
@@ -281,7 +283,8 @@ struct OTCBOOK_TBL deal_t {
     uint64_t order_id = 0;          // order id, created by maker by openorder()
     asset order_price;              // order price, deal price
     asset deal_quantity;            // deal quantity
-    name order_maker;               // maker, merchant 
+    name order_maker;               // maker, merchant
+    String merchant_name;           // merchant's name
     name order_taker;               // taker, user
 
     uint8_t status = 0;             // status
@@ -321,7 +324,7 @@ struct OTCBOOK_TBL deal_t {
     > idx_t;
 
     EOSLIB_SERIALIZE(deal_t,    (id)(order_side)(order_id)(order_price)(deal_quantity)
-                                (order_maker)
+                                (order_maker)(merchant_name)
                                 (order_taker)
                                 (status)(created_at)(closed_at)(order_sn)
                                 /*(expired_at)(maker_expired_at)*/

@@ -101,13 +101,14 @@ public:
     /**
      * set merchant
      * @param owner merchant account name
+     * @param merchant_name merchant's name
      * @param pay_methods pay methods
      * @param email email of merchant
      * @param memo memo of merchant
      * @note require owner auth
      */
     [[eosio::action]]
-    void setmerchant(const name& owner, const set<name> &pay_methods, const string& email, const string& memo);
+    void setmerchant(const name& owner, const string &merchant_name, const set<name> &pay_methods, const string& email, const string& memo);
 
     /**
      * enable merchant by admin

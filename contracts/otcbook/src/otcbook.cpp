@@ -69,9 +69,9 @@ void otcbook::setadmin(const name& admin) {
     _gstate.admin = admin;
 }
 
-void otcbook::setmerchant(const name& owner, const set<name> &pay_methods, const string& email, const string& memo) {
+void otcbook::setmerchant(const name& owner, const string &merchant_name, const set<name> &pay_methods, const string& email, const string& memo) {
     require_auth( owner );
-
+    check(merchant_name.size() < 64, "merchant name size too large: " + to_string(merchant_name.size()));
     check(email.size() < 64, "email size too large: " + to_string(email.size()) );
     check(memo.size() < max_memo_size, "memo size too large: " + to_string(memo.size()) );
     const auto& conf = _conf();
@@ -84,7 +84,7 @@ void otcbook::setmerchant(const name& owner, const set<name> &pay_methods, const
         // first register, init
         merchant.status = (uint8_t)merchant_status_t::REGISTERED;
     }
-
+    merchant.merchant_name = merchant_name;
     merchant.email = email;
     merchant.memo = memo;
     merchant.accepted_payments = pay_methods;
@@ -175,6 +175,7 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
     order.va_fulfilled_quantity    = asset(0, va_quantity.symbol);
     order.accepted_payments         = merchant.accepted_payments;
     order.accepted_payments         = pay_methods;
+    order.merchant_name             = merchant.merchant_name;
 
 
     if (order_side == BUY_SIDE) {
@@ -261,6 +262,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     deals.emplace( _self, [&]( auto& row ) {
         row.id 					= deal_id;
         row.order_side 			= order_side;
+        row.merchant_name       = order.merchant_name;  
         row.order_id 			= order_id;
         row.order_price			= order_price;
         row.deal_quantity		= deal_quantity;
