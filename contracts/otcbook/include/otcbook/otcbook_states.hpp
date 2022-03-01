@@ -110,7 +110,7 @@ enum  class merchant_status_t: uint8_t {
 
 struct OTCBOOK_TBL merchant_t {
     name owner;                     // owner account of merchant
-    String merchant_name;                    // merchant's name 
+    string merchant_name;                    // merchant's name 
     set<name> accepted_payments;    // accepted payments, see conf.pay_type
     string email;                   // email
     string memo;                    // memo
@@ -284,7 +284,7 @@ struct OTCBOOK_TBL deal_t {
     asset order_price;              // order price, deal price
     asset deal_quantity;            // deal quantity
     name order_maker;               // maker, merchant
-    String merchant_name;           // merchant's name
+    string merchant_name;           // merchant's name
     name order_taker;               // taker, user
 
     uint8_t status = 0;             // status

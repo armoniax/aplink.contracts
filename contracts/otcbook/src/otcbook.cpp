@@ -249,7 +249,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     asset order_price = order.va_price;
     // asset order_price_usd = itr->price_usd;
     name order_maker = order.owner;
-    String merchant_name = order.merchant_name;
+    string merchant_name = order.merchant_name;
 
     deal_t::idx_t deals(_self, _self.value);
     auto ordersn_index 			= deals.get_index<"ordersn"_n>();
