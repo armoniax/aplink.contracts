@@ -30,7 +30,7 @@ static constexpr symbol   CNY                   = SYMBOL("CNY", 4);
 static constexpr symbol   STAKE_SYMBOL          = CNYD_SYMBOL;
 
 static constexpr uint64_t percent_boost     = 10000;
-static constexpr uint64_t order_stake_pct   = 7000; // 70%
+static constexpr uint64_t order_stake_pct   = 8000; // 80%
 static constexpr uint64_t max_memo_size     = 1024;
 
 // static constexpr uint64_t seconds_per_year      = 24 * 3600 * 7 * 52;
