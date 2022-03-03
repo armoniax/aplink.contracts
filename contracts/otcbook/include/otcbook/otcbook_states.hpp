@@ -317,7 +317,7 @@ struct OTCBOOK_TBL deal_t {
         return (uint128_t)order_side.value << 64 | order_id;
     }
     uint128_t by_coin() const {
-        return (uint128_t)va_quantity.symbol.code().raw() << 64 | va_price.amount;
+        return (uint128_t)deal_quantity.symbol.code().raw() << 64 | order_price.amount;
     }
     // uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
     // uint64_t by_maker_expired_at() const    { return uint64_t(maker_expired_at.sec_since_epoch()); }
