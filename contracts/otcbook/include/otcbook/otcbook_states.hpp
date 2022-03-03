@@ -190,7 +190,7 @@ struct OTCBOOK_TBL order_t {
         return (uint128_t)owner.value << 64 | status; 
     }
     uint128_t by_coin() const {
-        return (uint128_t)va_quantity.symbol.value << 64 | va_price.amount;
+        return (uint128_t)va_quantity.symbol.code().raw() << 64 | va_price.amount;
     }
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(merchant_name)(accepted_payments)(va_price)(va_quantity)
@@ -317,7 +317,7 @@ struct OTCBOOK_TBL deal_t {
         return (uint128_t)order_side.value << 64 | order_id;
     }
     uint128_t by_coin() const {
-        return (uint128_t)va_quantity.symbol.value << 64 | va_price.amount;
+        return (uint128_t)va_quantity.symbol..code().raw() << 64 | va_price.amount;
     }
     // uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
     // uint64_t by_maker_expired_at() const    { return uint64_t(maker_expired_at.sec_since_epoch()); }
