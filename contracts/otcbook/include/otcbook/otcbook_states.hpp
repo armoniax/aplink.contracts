@@ -285,7 +285,7 @@ struct OTCBOOK_TBL deal_t {
     asset deal_quantity;            // deal quantity
     name order_maker;               // maker, merchant
     string merchant_name;           // merchant's name
-    List<String> accepted_payments;
+    set<name> accepted_payments;
     name order_taker;               // taker, user
 
     uint8_t status = 0;             // status

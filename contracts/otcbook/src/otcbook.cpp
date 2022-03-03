@@ -250,7 +250,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     // asset order_price_usd = itr->price_usd;
     name order_maker = order.owner;
     string merchant_name = order.merchant_name;
-    List<string> accepted_payments = order.accepted_payments;
+    set<name> accepted_payments = order.accepted_payments;
 
     deal_t::idx_t deals(_self, _self.value);
     auto ordersn_index 			= deals.get_index<"ordersn"_n>();
