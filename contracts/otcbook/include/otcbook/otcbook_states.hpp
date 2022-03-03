@@ -206,7 +206,7 @@ struct OTCBOOK_TBL order_t {
 typedef eosio::multi_index
 < "buyorders"_n,  order_t,
     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_invprice> >,
-    indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >
+    indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >,
     indexed_by<"symbol"_n, const_mem_fun<order_t, symbol, &order_t::by_symbol> >
 > buy_order_table_t;
 
@@ -218,7 +218,7 @@ typedef eosio::multi_index
 typedef eosio::multi_index
 < "sellorders"_n, order_t,
     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_price> >,
-    indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >
+    indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >,
     indexed_by<"symbol"_n, const_mem_fun<order_t, symbol, &order_t::by_symbol> >
 > sell_order_table_t;
 
