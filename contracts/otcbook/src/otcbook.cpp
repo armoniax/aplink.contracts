@@ -250,6 +250,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     // asset order_price_usd = itr->price_usd;
     name order_maker = order.owner;
     string merchant_name = order.merchant_name;
+    List<string> pay_methods = order.pay_methods;
 
     deal_t::idx_t deals(_self, _self.value);
     auto ordersn_index 			= deals.get_index<"ordersn"_n>();
@@ -272,6 +273,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.status				= (uint8_t)deal_status_t::CREATED;
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
+
         // row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
         row.session.push_back({(uint8_t)account_type_t::USER, taker, (uint8_t)deal_status_t::NONE, 
             (uint8_t)deal_action_t::CREATE, session_msg, created_at});

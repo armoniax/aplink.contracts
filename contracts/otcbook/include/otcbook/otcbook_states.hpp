@@ -285,6 +285,7 @@ struct OTCBOOK_TBL deal_t {
     asset deal_quantity;            // deal quantity
     name order_maker;               // maker, merchant
     string merchant_name;           // merchant's name
+    List<String> accepted_payments;
     name order_taker;               // taker, user
 
     uint8_t status = 0;             // status
@@ -324,7 +325,7 @@ struct OTCBOOK_TBL deal_t {
     > idx_t;
 
     EOSLIB_SERIALIZE(deal_t,    (id)(order_side)(order_id)(order_price)(deal_quantity)
-                                (order_maker)(merchant_name)
+                                (order_maker)(merchant_name)(accepted_payments)
                                 (order_taker)
                                 (status)(created_at)(closed_at)(order_sn)
                                 /*(expired_at)(maker_expired_at)*/
