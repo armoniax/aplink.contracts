@@ -326,7 +326,7 @@ struct OTCBOOK_TBL deal_t {
         indexed_by<"maker"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_maker> >,
         indexed_by<"taker"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_taker> >,
         indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >,
-        indexed_by<"orderid"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_order_id> >//,
+        indexed_by<"orderid"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_order_id> >,
         indexed_by<"symbol"_n, const_mem_fun<order_t, symbol, &deal_t::by_symbol> >
         // indexed_by<"expiry"_n,  const_mem_fun<deal_t, uint64_t, &deal_t::by_expired_at> >
     > idx_t;
