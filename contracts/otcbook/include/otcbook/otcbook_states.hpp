@@ -189,8 +189,8 @@ struct OTCBOOK_TBL order_t {
         uint128_t status =  closed ? 0 : !can_be_took() ? 1 : 2;
         return (uint128_t)owner.value << 64 | status; 
     }
-    symbol by_symbol() const {
-        return va_quantity.symbol;
+    uint128_t by_coin() const {
+        return (uint128_t)va_quantity.symbol.value << 64 | va_price.amount;
     }
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(merchant_name)(accepted_payments)(va_price)(va_quantity)
@@ -207,7 +207,7 @@ typedef eosio::multi_index
 < "buyorders"_n,  order_t,
     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_invprice> >,
     indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >,
-    indexed_by<"symbol"_n, const_mem_fun<order_t, symbol, &order_t::by_symbol> >
+    indexed_by<"coin"_n, const_mem_fun<order_t, uint128_t, &order_t::by_coin> >
 > buy_order_table_t;
 
 /**
@@ -219,7 +219,7 @@ typedef eosio::multi_index
 < "sellorders"_n, order_t,
     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_price> >,
     indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >,
-    indexed_by<"symbol"_n, const_mem_fun<order_t, symbol, &order_t::by_symbol> >
+    indexed_by<"coin"_n, const_mem_fun<order_t, uint128_t, &order_t::by_coin> >
 > sell_order_table_t;
 
 
@@ -316,7 +316,9 @@ struct OTCBOOK_TBL deal_t {
     uint128_t by_order_id() const {
         return (uint128_t)order_side.value << 64 | order_id;
     }
-    symbol by_symbol()  const { return deal_quantity.symbol;}
+    uint128_t by_coin() const {
+        return (uint128_t)va_quantity.symbol.value << 64 | va_price.amount;
+    }
     // uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
     // uint64_t by_maker_expired_at() const    { return uint64_t(maker_expired_at.sec_since_epoch()); }
 
@@ -327,7 +329,7 @@ struct OTCBOOK_TBL deal_t {
         indexed_by<"taker"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_taker> >,
         indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >,
         indexed_by<"orderid"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_order_id> >,
-        indexed_by<"symbol"_n, const_mem_fun<order_t, symbol, &deal_t::by_symbol> >
+        indexed_by<"coin"_n, const_mem_fun<order_t, uint128_t, &order_t::by_coin> >
         // indexed_by<"expiry"_n,  const_mem_fun<deal_t, uint64_t, &deal_t::by_expired_at> >
     > idx_t;
 
