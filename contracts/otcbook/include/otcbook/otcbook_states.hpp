@@ -111,7 +111,6 @@ enum  class merchant_status_t: uint8_t {
 struct OTCBOOK_TBL merchant_t {
     name owner;                     // owner account of merchant
     string merchant_name;                    // merchant's name 
-    set<name> accepted_payments;    // accepted payments, see conf.pay_type
     string email;                   // email
     string memo;                    // memo
     uint8_t status;                 // status, merchant_status_t
@@ -130,7 +129,7 @@ struct OTCBOOK_TBL merchant_t {
         indexed_by<"status"_n, const_mem_fun<merchant_t, uint64_t, &merchant_t::by_status> >
     > idx_t;
 
-    EOSLIB_SERIALIZE(merchant_t,  (owner)(merchant_name)(accepted_payments)
+    EOSLIB_SERIALIZE(merchant_t,  (owner)(merchant_name)
                                   (email)(memo)(status)(stake_free)(stake_frozen)
     )
 };
@@ -191,7 +190,7 @@ struct OTCBOOK_TBL order_t {
     }
     uint128_t by_coin() const {
         return can_be_took() ? (uint128_t)va_quantity.symbol.code().raw() << 64 | va_price.amount
-                    : std::numeric_limits<uint64_t>::max();
+                    : std::numeric_limits<uint128_t>::max();
     }
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(merchant_name)(accepted_payments)(va_price)(va_quantity)

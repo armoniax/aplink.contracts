@@ -69,15 +69,11 @@ void otcbook::setadmin(const name& admin) {
     _gstate.admin = admin;
 }
 
-void otcbook::setmerchant(const name& owner, const string &merchant_name, const set<name> &pay_methods, const string& email, const string& memo) {
+void otcbook::setmerchant(const name& owner, const string &merchant_name, const string& email, const string& memo) {
     require_auth( owner );
-    check(merchant_name.size() < 64, "merchant name size too large: " + to_string(merchant_name.size()));
     check(email.size() < 64, "email size too large: " + to_string(email.size()) );
     check(memo.size() < max_memo_size, "memo size too large: " + to_string(memo.size()) );
     const auto& conf = _conf();
-    for (auto& method : pay_methods) {
-        check( conf.pay_type.count(method) != 0, "pay method illegal: " + method.to_string() );
-    }
 
     merchant_t merchant(owner);
     if (!_dbc.get(merchant)) {
@@ -87,7 +83,6 @@ void otcbook::setmerchant(const name& owner, const string &merchant_name, const 
     merchant.merchant_name = merchant_name;
     merchant.email = email;
     merchant.memo = memo;
-    merchant.accepted_payments = pay_methods;
 
     _dbc.set( merchant );
 
@@ -173,7 +168,6 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
     order.created_at			    = time_point_sec(current_time_point());
     order.va_frozen_quantity       = asset(0, va_quantity.symbol);
     order.va_fulfilled_quantity    = asset(0, va_quantity.symbol);
-    order.accepted_payments         = merchant.accepted_payments;
     order.accepted_payments         = pay_methods;
     order.merchant_name             = merchant.merchant_name;
 

@@ -108,7 +108,7 @@ public:
      * @note require owner auth
      */
     [[eosio::action]]
-    void setmerchant(const name& owner, const string &merchant_name, const set<name> &pay_methods, const string& email, const string& memo);
+    void setmerchant(const name& owner, const string &merchant_name, const string& email, const string& memo);
 
     /**
      * enable merchant by admin
