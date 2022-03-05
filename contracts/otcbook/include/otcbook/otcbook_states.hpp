@@ -190,7 +190,8 @@ struct OTCBOOK_TBL order_t {
         return (uint128_t)owner.value << 64 | status; 
     }
     uint128_t by_coin() const {
-        return (uint128_t)va_quantity.symbol.code().raw() << 64 | va_price.amount;
+        return can_be_took() ? (uint128_t)va_quantity.symbol.code().raw() << 64 | va_price.amount
+                    : std::numeric_limits<uint64_t>::max();
     }
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(merchant_name)(accepted_payments)(va_price)(va_quantity)
