@@ -279,7 +279,6 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.status				= (uint8_t)deal_status_t::CREATED;
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
-        row.accepted_payments   = accepted_payments;
         row.deal_fee            = deal_fee;
 
         // row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
