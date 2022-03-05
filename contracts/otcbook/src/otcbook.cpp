@@ -53,7 +53,7 @@ asset otcbook::_calc_deal_fee(const asset &quantity, const asset &price) {
 
     const auto & prices_quote_cny = _conf().fee_pct;
     int64_t amount = divide_decimal64(value, prices_quote_cny, percent_boost);
-    
+
     return asset(amount, STAKE_SYMBOL);
 }
 
@@ -81,15 +81,11 @@ void otcbook::setadmin(const name& admin) {
     _gstate.admin = admin;
 }
 
-void otcbook::setmerchant(const name& owner, const string &merchant_name, const set<name> &pay_methods, const string& email, const string& memo) {
+void otcbook::setmerchant(const name& owner, const string &merchant_name, const string& email, const string& memo) {
     require_auth( owner );
-    check(merchant_name.size() < 64, "merchant name size too large: " + to_string(merchant_name.size()));
     check(email.size() < 64, "email size too large: " + to_string(email.size()) );
     check(memo.size() < max_memo_size, "memo size too large: " + to_string(memo.size()) );
     const auto& conf = _conf();
-    for (auto& method : pay_methods) {
-        check( conf.pay_type.count(method) != 0, "pay method illegal: " + method.to_string() );
-    }
 
     merchant_t merchant(owner);
     if (!_dbc.get(merchant)) {
@@ -99,7 +95,6 @@ void otcbook::setmerchant(const name& owner, const string &merchant_name, const 
     merchant.merchant_name = merchant_name;
     merchant.email = email;
     merchant.memo = memo;
-    merchant.accepted_payments = pay_methods;
 
     _dbc.set( merchant );
 
@@ -185,7 +180,6 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
     order.created_at			    = time_point_sec(current_time_point());
     order.va_frozen_quantity       = asset(0, va_quantity.symbol);
     order.va_fulfilled_quantity    = asset(0, va_quantity.symbol);
-    order.accepted_payments         = merchant.accepted_payments;
     order.accepted_payments         = pay_methods;
     order.merchant_name             = merchant.merchant_name;
 
@@ -262,7 +256,6 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     // asset order_price_usd = itr->price_usd;
     name order_maker = order.owner;
     string merchant_name = order.merchant_name;
-    set<name> accepted_payments = order.accepted_payments;
 
     deal_t::idx_t deals(_self, _self.value);
     auto ordersn_index 			= deals.get_index<"ordersn"_n>();
@@ -287,7 +280,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
         row.accepted_payments   = accepted_payments;
-        row.deal_fee            = deal_fee; 
+        row.deal_fee            = deal_fee;
 
         // row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
         row.session.push_back({(uint8_t)account_type_t::USER, taker, (uint8_t)deal_status_t::NONE, 
