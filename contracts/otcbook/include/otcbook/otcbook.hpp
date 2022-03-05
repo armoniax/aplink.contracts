@@ -223,6 +223,8 @@ public:
 private:
     asset _calc_order_stakes(const asset &quantity, const asset &price);
 
+    asset _calc_deal_fee(const asset &quantity, const asset &price);
+
     void _set_conf(const name &conf_contract);
 
     const conf_t& _conf(bool refresh = false);
