@@ -77,6 +77,9 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     set<symbol> coin_type = { AMA, USDT_ERC20, USDT_TRC20, USDT_BEP20, CNYD_BEP20, CNYD_ARC20 };
     symbol fiat_type = CNY;
 
+    name fee_recv_addr="amaxhu3t3tjd"_n;
+    uint64_t fee_pct   = 8000;
+
     /** 
      * crypto coins that OTC merchants can buy in orders 
      */
@@ -110,7 +113,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
         
     }
 
-    EOSLIB_SERIALIZE( global_t, (app_info)(pay_type)(coin_type)(fiat_type)
+    EOSLIB_SERIALIZE( global_t, (app_info)(pay_type)(fee_recv_addr)(fee_pct)(coin_type)(fiat_type)
                                 (buy_coins_conf)(sell_coins_conf)(prices_quote_cny)
     )
 };

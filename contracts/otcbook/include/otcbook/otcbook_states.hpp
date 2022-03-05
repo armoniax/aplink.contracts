@@ -152,6 +152,7 @@ struct OTCBOOK_TBL order_t {
     asset va_frozen_quantity;                       // va(virtual asset) frozen quantity of sell/buy coin
     asset va_fulfilled_quantity;                    // va(virtual asset) fulfilled quantity of sell/buy coin, support partial fulfillment
     asset stake_frozen = asset(0, STAKE_SYMBOL);    // stake frozen asset
+    asset total_fee = asset(0, STAKE_SYMBOL);
     string memo;                                    // memo
 
     bool closed = false;                            // is closed
@@ -195,7 +196,7 @@ struct OTCBOOK_TBL order_t {
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(merchant_name)(accepted_payments)(va_price)(va_quantity)
                                 (va_min_take_quantity)(va_frozen_quantity)(va_fulfilled_quantity)
-                                (stake_frozen)(memo)(closed)(created_at)(closed_at))
+                                (stake_frozen)(total_fee)(memo)(closed)(created_at)(closed_at))
 };
 
 /**
@@ -292,6 +293,7 @@ struct OTCBOOK_TBL deal_t {
     string merchant_name;           // merchant's name
     set<name> accepted_payments;
     name order_taker;               // taker, user
+    asset deal_fee;                 // deal fee
 
     uint8_t status = 0;             // status
     time_point_sec created_at;      // create time at
@@ -335,7 +337,7 @@ struct OTCBOOK_TBL deal_t {
 
     EOSLIB_SERIALIZE(deal_t,    (id)(order_side)(order_id)(order_price)(deal_quantity)
                                 (order_maker)(merchant_name)(accepted_payments)
-                                (order_taker)
+                                (order_taker)(deal_fee)
                                 (status)(created_at)(closed_at)(order_sn)
                                 /*(expired_at)(maker_expired_at)*/
                                 (session))

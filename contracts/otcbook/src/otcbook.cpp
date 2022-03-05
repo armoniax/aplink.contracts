@@ -46,6 +46,18 @@ asset otcbook::_calc_order_stakes(const asset &quantity, const asset &price) {
     return asset(amount, STAKE_SYMBOL);
 }
 
+
+asset otcbook::_calc_deal_fee(const asset &quantity, const asset &price) {
+    // calc order quantity value by price
+    auto value = multiply_decimal64( quantity.amount, price.amount, get_precision(price) );
+
+    const auto & prices_quote_cny = _conf().fee_pct;
+    int64_t amount = divide_decimal64(value, prices_quote_cny, percent_boost);
+    
+    return asset(amount, STAKE_SYMBOL);
+}
+
+
 void otcbook::init(const name &conf_contract) {
     require_auth( _gstate.admin );
     _set_conf(conf_contract);
@@ -258,6 +270,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     auto upper_itr 				= ordersn_index.upper_bound(order_sn);
 
     check( ordersn_index.find(order_sn) == ordersn_index.end() , "order_sn already existing!" );
+    auto deal_fee = _calc_deal_fee(deal_quantity, order_price);
 
     auto created_at = time_point_sec(current_time_point());
     auto deal_id = deals.available_primary_key();
@@ -274,6 +287,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
         row.accepted_payments   = accepted_payments;
+        row.deal_fee            = deal_fee; 
 
         // row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
         row.session.push_back({(uint8_t)account_type_t::USER, taker, (uint8_t)deal_status_t::NONE, 
@@ -338,10 +352,12 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
 
     auto deal_quantity = deal_itr->deal_quantity;
     check( order.va_frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
+    auto deal_fee= deal_itr->deal_fee;
 
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.va_frozen_quantity -= deal_quantity;
         row.va_fulfilled_quantity += deal_quantity;
+        row.total_fee += deal_fee;
     });
 
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
@@ -350,6 +366,8 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         row.session.push_back({account_type, account, (uint8_t)status, (uint8_t)action, session_msg, row.closed_at});
     });
 
+    const auto &fee_recv_addr  = _conf().fee_recv_addr;
+    TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
 }
 
 void otcbook::processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
