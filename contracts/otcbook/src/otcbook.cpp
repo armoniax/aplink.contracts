@@ -220,6 +220,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     // 撤单后币未交易完成的币退回
     merchant.stake_frozen -= order.stake_frozen;
     merchant.stake_free += order.stake_frozen;
+    merchant.stake_free -= order.stake_fee;
     _dbc.set( merchant );
     _add_fund_log(owner, "closeorder"_n, order.stake_frozen);  
 
