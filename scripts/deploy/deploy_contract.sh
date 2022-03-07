@@ -1,4 +1,3 @@
-
 # create account
 createAccount() {
     contractAccount=$1
@@ -6,8 +5,8 @@ createAccount() {
     ret=`ssh sh-misc "${remoteDockerScrip} '${createAccountScript}'"`
     echo $ret
     #get priv key 
-    privKey=`echo $ret | sed -n '4,4p' | awk '{print substr($1,2)}' | sed 's/.$//'`
-    echo "privKey: ${privKey}"
+    privKey=${ret:0-54:53}
+    return 0
 }
 
 # create contract
@@ -25,30 +24,36 @@ createContract() {
     ssh sh-misc "${remoteDockerScrip} '${setContractScript}'"
 }
 
-accountTail=$1
 #build
-DOCKER_ID=amax-dev-sean
-remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
-buildScript='cd /opt/data/build && rm -rf ./* && cmake .. && make -j8'
-docker exec -it $DOCKER_ID /bin/bash -c ${buildScript}
+buildContract(){
+    DOCKER_ID=amax-dev-sean
+    buildScript='cd /opt/data/build && rm -rf ./* && cmake .. && make -j8'
+    docker exec -i $DOCKER_ID /bin/bash -c "${buildScript}"
+}
 
 #scp
-remoteContractPath=/mnt/data/mgp-test/eosio-docker/node_devnet/data/otccontract
-scp build/contracts/otcbook/otcbook* sh-misc:${remoteContractPath}
-scp build/contracts/otcconf/otcconf* sh-misc:${remoteContractPath}
+scpToMiscMerchine(){
+    remoteContractPath=/mnt/data/mgp-test/eosio-docker/node_devnet/data/otccontract
+    scp build/contracts/otcbook/otcbook* sh-misc:${remoteContractPath}
+    scp build/contracts/otcconf/otcconf* sh-misc:${remoteContractPath}
+}
 
-
+accountTail=$1
+remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
 otcFileName='otcbook'
-#create account
+echo "-----buildContract     函数开始执行-----"
+# buildContract
+echo "-----buildContract     函数结束执行-----"
+# scpToMiscMerchine
+echo "-----scpToMiscMerchine 函数结束执行-----"
+
+##create account
 otcContractName="${otcFileName}.${accountTail}"
-createAccount otcContractName
+createAccount $otcContractName
+echo "-----createAccount 函数结束执行----- $privKey"
 
-#deploy contract
-createContract ${otcFileName} ${otcContractName}
+##deploy contract
+# createContract ${otcFileName} ${otcContractName}
 
-otcConfName='otcconf'
-otcContractName="${otcConfName}.${accountTail}"
-
-
-#sh-misc target
-#/mnt/data/mgp-test/eosio-docker/node_devnet/data/otccontract
+#otcConfName='otcconf'
+#otcContractName="${otcConfName}.${accountTail}"
