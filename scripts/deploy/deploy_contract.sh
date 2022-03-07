@@ -14,6 +14,12 @@ createAccount() {
     return 0
 }
 
+#newAccountAndActive
+newAccountAndActive(){
+  newAccountAndActiveScript="cleos system newaccount eosio ${accountTail} ${pubKey} ${pubKey} --stake-net '1.0000 MGP' --stake-cpu '1.0000 MGP' --buy-ram-kbytes 1100"
+  ssh sh-misc "${remoteDockerScrip} '${newAccountAndActiveScript}'"
+}
+
 # create contract
 # param1: file name
 createContract() {
@@ -43,15 +49,6 @@ scpToMiscMerchine(){
     scp build/contracts/otcconf/otcconf* sh-misc:${remoteContractPath}
 }
 
-#transfer
-transferMgp() {
-    tranferScript="cleos transfer eosio ${contractAccount} '1000000.00 MGP'"
-    ssh sh-misc "${remoteDockerScrip} '${tranferScript}'"
-    sleep 3
-    buyRamScript="cleos system buyram ${contractAccount} ${contractAccount} '1000000.00 MGP'"
-    ssh sh-misc "${remoteDockerScrip} '${buyRamScript}'"
-}
-
 accountTail=$1
 remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
 otcFileName='otcbook'
@@ -67,7 +64,8 @@ createAccount $otcContractName
 echo "--privKey: [${privKey}]"
 echo "--pubKey: [${pubKey}]"
 echo "-----createAccount 函数结束执行-----, ${otcContractName} : $privKey"
-#transferMgp
+
+#newAccountAndActive
 
 ##deploy contract
 # createContract ${otcFileName} ${otcContractName}
