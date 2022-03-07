@@ -78,7 +78,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     symbol fiat_type = CNY;
 
     name fee_recv_addr="amaxhu3t3tjd"_n;
-    uint64_t fee_pct   = 8000;
+    uint64_t fee_pct   = 80;
 
     /** 
      * crypto coins that OTC merchants can buy in orders 

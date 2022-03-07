@@ -17,7 +17,7 @@ createAccount() {
 #newAccountAndActive
 newAccountAndActive(){
   newAccountAndActiveScript="cleos system newaccount eosio ${accountTail} ${pubKey} ${pubKey} --stake-net '1.0000 MGP' --stake-cpu '1.0000 MGP' --buy-ram-kbytes 1100"
-  ssh sh-misc "${remoteDockerScrip} '${newAccountAndActiveScript}'"
+  ret=`ssh sh-misc "${remoteDockerScrip} '${newAccountAndActiveScript}'"`
 }
 
 # create contract
@@ -64,6 +64,8 @@ createAccount $otcContractName
 echo "--privKey: [${privKey}]"
 echo "--pubKey: [${pubKey}]"
 echo "-----createAccount 函数结束执行-----, ${otcContractName} : $privKey"
+
+newAccountAndActive
 
 #newAccountAndActive
 
