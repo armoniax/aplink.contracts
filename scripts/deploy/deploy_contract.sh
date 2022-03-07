@@ -1,11 +1,16 @@
 # create account
 createAccount() {
     contractAccount=$1
-    createAccountScript="cleos wallet create -n ${contractAccount}.wallet --to-console"
+    # createAccountScript="cleos wallet create -n ${contractAccount}.wallet --to-console"
+    # privKey=${ret:0-54:53}
+    unlockScript='cleos wallet unlock --password PW5KQzzoYJcijs2wtMpF5Vqk4v8n9FNcxxHj1aqqcjpGJDEkdBrog'
+    ssh sh-misc "${remoteDockerScrip} '${unlockScript}'"
+    createAccountScript='cleos create key --to-console'
     ret=`ssh sh-misc "${remoteDockerScrip} '${createAccountScript}'"`
-    echo $ret
-    #get priv key 
-    privKey=${ret:0-54:53}
+    echo "create account: $ret"
+    privKey=${ret:13:51}
+    pubKey=`echo $ret | sed -n '1p'`
+    pubKey=${pubKey:0-54:54}
     return 0
 }
 
@@ -38,6 +43,15 @@ scpToMiscMerchine(){
     scp build/contracts/otcconf/otcconf* sh-misc:${remoteContractPath}
 }
 
+#transfer
+transferMgp() {
+    tranferScript="cleos transfer eosio ${contractAccount} '1000000.00 MGP'"
+    ssh sh-misc "${remoteDockerScrip} '${tranferScript}'"
+    sleep 3
+    buyRamScript="cleos system buyram ${contractAccount} ${contractAccount} '1000000.00 MGP'"
+    ssh sh-misc "${remoteDockerScrip} '${buyRamScript}'"
+}
+
 accountTail=$1
 remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
 otcFileName='otcbook'
@@ -50,7 +64,10 @@ echo "-----scpToMiscMerchine 函数结束执行-----"
 ##create account
 otcContractName="${otcFileName}.${accountTail}"
 createAccount $otcContractName
-echo "-----createAccount 函数结束执行----- $privKey"
+echo "--privKey: [${privKey}]"
+echo "--pubKey: [${pubKey}]"
+echo "-----createAccount 函数结束执行-----, ${otcContractName} : $privKey"
+#transferMgp
 
 ##deploy contract
 # createContract ${otcFileName} ${otcContractName}
