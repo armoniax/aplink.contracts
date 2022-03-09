@@ -1,23 +1,22 @@
-# create account
-createAccount() {
-    contractAccount=$1
-    # createAccountScript="cleos wallet create -n ${contractAccount}.wallet --to-console"
-    # privKey=${ret:0-54:53}
+# create key
+createKey() {
     unlockScript='cleos wallet unlock --password PW5KQzzoYJcijs2wtMpF5Vqk4v8n9FNcxxHj1aqqcjpGJDEkdBrog'
     ssh sh-misc "${remoteDockerScrip} '${unlockScript}'"
     createAccountScript='cleos create key --to-console'
     ret=`ssh sh-misc "${remoteDockerScrip} '${createAccountScript}'"`
-    echo "create account: $ret"
+    echo "create key: $ret"
     privKey=${ret:13:51}
     pubKey=`echo $ret | sed -n '1p'`
     pubKey=${pubKey:0-54:54}
-    return 0
 }
 
 #newAccountAndActive
 newAccountAndActive(){
-  newAccountAndActiveScript="cleos system newaccount eosio ${accountTail} ${pubKey} ${pubKey} --stake-net '1.0000 MGP' --stake-cpu '1.0000 MGP' --buy-ram-kbytes 1100"
-  ret=`ssh sh-misc "${remoteDockerScrip} '${newAccountAndActiveScript}'"`
+  STAKE_NET='1.0000 MGP'
+  STAKE_CPU='1.0000 MGP'
+  newAccountAndActiveScript="cleos system newaccount eosio ${accountTail} ${pubKey} ${pubKey} --stake-net \"${STAKE_NET}\" --stake-cpu \"${STAKE_CPU}\" --buy-ram-kbytes 1100"
+  ret=`ssh sh-misc "${remoteDockerScrip} '${newAccountAndActiveScript}' "`
+  echo "newAccountAndActive output: $ret"
 }
 
 # create contract
@@ -52,22 +51,19 @@ scpToMiscMerchine(){
 accountTail=$1
 remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
 otcFileName='otcbook'
-echo "-----buildContract     函数开始执行-----"
-# buildContract
-echo "-----buildContract     函数结束执行-----"
-# scpToMiscMerchine
-echo "-----scpToMiscMerchine 函数结束执行-----"
 
 ##create account
+echo "--------------------------        createKey 函数开始执行            --------------------------"
 otcContractName="${otcFileName}.${accountTail}"
-createAccount $otcContractName
-echo "--privKey: [${privKey}]"
-echo "--pubKey: [${pubKey}]"
-echo "-----createAccount 函数结束执行-----, ${otcContractName} : $privKey"
+createKey $otcContractName
 
-newAccountAndActive
+echo "--------------------------        createKey 函数结束执行            --------------------------"
 
+##newAccountAndActive
+echo "--------------------------    newAccountAndActive  函数开始执行     --------------------------"
 #newAccountAndActive
+echo "--------------------------    newAccountAndActive  函数结束执行     --------------------------"
+
 
 ##deploy contract
 # createContract ${otcFileName} ${otcContractName}
