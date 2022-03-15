@@ -102,13 +102,14 @@ public:
      * set merchant
      * @param owner merchant account name
      * @param merchant_name merchant's name
+     * @param merchant_detail merchant's detail
      * @param pay_methods pay methods
      * @param email email of merchant
      * @param memo memo of merchant
      * @note require owner auth
      */
     [[eosio::action]]
-    void setmerchant(const name& owner, const string &merchant_name, const string& email, const string& memo);
+    void setmerchant(const name& owner, const string &merchant_name, const string &merchant_detail, const string& email, const string& memo);
 
     /**
      * enable merchant by admin
@@ -131,7 +132,7 @@ public:
      */
     [[eosio::action]]
     void openorder(const name& owner, const name& order_side,const set<name> &pay_methods, const asset& va_quantity, const asset& va_price, 
-        const asset& va_min_take_quantity, const string &memo);
+        const asset& va_min_take_quantity, const asset& va_max_take_quantity, const string &memo);
 
     /**
      * close order by merchant

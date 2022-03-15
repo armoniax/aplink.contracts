@@ -81,7 +81,7 @@ void otcbook::setadmin(const name& admin) {
     _gstate.admin = admin;
 }
 
-void otcbook::setmerchant(const name& owner, const string &merchant_name, const string& email, const string& memo) {
+void otcbook::setmerchant(const name& owner, const string &merchant_name, const string &merchant_detail, const string& email, const string& memo) {
     require_auth( owner );
     check(email.size() < 64, "email size too large: " + to_string(email.size()) );
     check(memo.size() < max_memo_size, "memo size too large: " + to_string(memo.size()) );
@@ -93,11 +93,11 @@ void otcbook::setmerchant(const name& owner, const string &merchant_name, const 
         merchant.status = (uint8_t)merchant_status_t::REGISTERED;
     }
     merchant.merchant_name = merchant_name;
+    merchant.merchant_detail = merchant_detail;
     merchant.email = email;
     merchant.memo = memo;
 
     _dbc.set( merchant );
-
 }
 
 void otcbook::enbmerchant(const name& owner, bool is_enabled) {
@@ -121,7 +121,7 @@ void otcbook::enbmerchant(const name& owner, bool is_enabled) {
  * only merchant allowed to open orders
  */
 void otcbook::openorder(const name& owner, const name& order_side, const set<name> &pay_methods, const asset& va_quantity, const asset& va_price, 
-    const asset& va_min_take_quantity, const string &memo
+    const asset& va_min_take_quantity,  const asset& va_max_take_quantity, const string &memo
 ){
     require_auth( owner );
 
@@ -145,8 +145,11 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
     check( va_price.amount > 0, "va price must be positive" );
     // TODO: price range
     check( va_min_take_quantity.symbol == va_quantity.symbol, "va_min_take_quantity Symbol mismatch with quantity" );
+    check( va_max_take_quantity.symbol == va_quantity.symbol, "va_max_take_quantity Symbol mismatch with quantity" );
     check( va_min_take_quantity.amount > 0 && va_min_take_quantity.amount <= va_quantity.amount, 
         "invalid va_min_take_quantity amount" );
+    check( va_max_take_quantity.amount > 0 && va_max_take_quantity.amount <= va_quantity.amount, 
+        "invalid va_max_take_quantity amount" );
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
@@ -175,8 +178,9 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
     order.va_quantity			    = va_quantity;
     order.stake_frozen              = stake_frozen;
     order.va_min_take_quantity      = va_min_take_quantity;
+    order.va_max_take_quantity      = va_max_take_quantity;
     order.memo                      = memo;
-    order.closed				    = false;
+    order.status				    = (uint8_t)order_status_t::RUNNING;
     order.created_at			    = time_point_sec(current_time_point());
     order.va_frozen_quantity       = asset(0, va_quantity.symbol);
     order.va_fulfilled_quantity    = asset(0, va_quantity.symbol);
@@ -212,7 +216,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     check( order_wrapper_ptr != nullptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();
     check( owner == order.owner, "have no access to close others' order");
-    check( !order.closed, "order already closed" );
+    check( (order_status_t)order.status == order_status_t::CLOSED, "order already closed" );
     check( order.va_frozen_quantity.amount == 0, "order being processed" );
     check( order.va_quantity >= order.va_fulfilled_quantity, "order quantity insufficient" );
 
@@ -225,7 +229,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     _add_fund_log(owner, "closeorder"_n, order.stake_frozen);  
 
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
-        row.closed = true;
+        row.status = (uint8_t)order_status_t::CLOSED;
         row.closed_at = time_point_sec(current_time_point());
     });
 
@@ -247,11 +251,12 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     const auto &order = order_wrapper_ptr->get_order();
     check( order.owner != taker, "taker can not be equal to maker");
     check( deal_quantity.symbol == order.va_quantity.symbol, "Token Symbol mismatch" );
-    check( !order.closed, "Order already closed" );
+    check( order.status != (uint8_t)order_status_t::RUNNING, "Order not runing" );
     check( order.va_quantity >= order.va_frozen_quantity + order.va_fulfilled_quantity + deal_quantity, 
         "Order's quantity insufficient" );
     // check( itr->price.amount * deal_quantity.amount >= itr->va_min_take_quantity.amount * 10000, "Order's min accept quantity not met!" );
     check( deal_quantity >= order.va_min_take_quantity, "Order's min accept quantity not met!" );
+    check( deal_quantity <= order.va_max_take_quantity, "Order's max accept quantity not met!" );
     
     asset order_price = order.va_price;
     // asset order_price_usd = itr->price_usd;
@@ -333,7 +338,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( order_wrapper_ptr != nullptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();    
 
-    check( !order.closed, "order already closed" );
+    check( (order_status_t)order.status == order_status_t::CLOSED, "order already closed" );
 
     auto action = deal_action_t::CLOSE;
     if ((account_type_t) account_type != account_type_t::ADMIN) {

@@ -83,6 +83,14 @@ enum class deal_action_t: uint8_t {
 };
 
 
+enum class order_status_t: uint8_t {
+    NONE                = 0,
+    RUNNING             = 1,
+    PAUSED              = 2,
+    CLOSED              = 3
+};
+
+
 enum class deal_status_t: uint8_t {
     NONE                = 0,
     CREATED             = 1,
@@ -110,7 +118,8 @@ enum  class merchant_status_t: uint8_t {
 
 struct OTCBOOK_TBL merchant_t {
     name owner;                     // owner account of merchant
-    string merchant_name;                    // merchant's name
+    string merchant_name;           // merchant's name
+    string merchant_detail;         // merchant's detail
     string email;                   // email
     string memo;                    // memo
     uint8_t status;                 // status, merchant_status_t
@@ -129,7 +138,7 @@ struct OTCBOOK_TBL merchant_t {
         indexed_by<"status"_n, const_mem_fun<merchant_t, uint64_t, &merchant_t::by_status> >
     > idx_t;
 
-    EOSLIB_SERIALIZE(merchant_t,  (owner)(merchant_name)
+    EOSLIB_SERIALIZE(merchant_t,  (owner)(merchant_name)(merchant_detail)
                                   (email)(memo)(status)(stake_free)(stake_frozen)
     )
 };
@@ -148,13 +157,14 @@ struct OTCBOOK_TBL order_t {
     asset va_price;                                 // va(virtual asset) quantity price, quote in fiat, see fiat_type
     asset va_quantity;                              // va(virtual asset) quantity, see conf.coin_type
     asset va_min_take_quantity;                     // va(virtual asset) min take quantity quantity for taker, symbol must equal to quantity's
+    asset va_max_take_quantity;                     // va(virtual asset) max take quantity quantity for taker, symbol must equal to quantity's
     asset va_frozen_quantity;                       // va(virtual asset) frozen quantity of sell/buy coin
     asset va_fulfilled_quantity;                    // va(virtual asset) fulfilled quantity of sell/buy coin, support partial fulfillment
     asset stake_frozen = asset(0, STAKE_SYMBOL);    // stake frozen asset
     asset total_fee = asset(0, STAKE_SYMBOL);
     string memo;                                    // memo
 
-    bool closed = false;                            // is closed
+    uint8_t status;                                // 
     time_point_sec created_at;                      // created time at
     time_point_sec closed_at;                       // closed time at
 
@@ -166,7 +176,7 @@ struct OTCBOOK_TBL order_t {
 
     // check this order can be took by user
     inline bool can_be_took() const {
-        return !closed && va_quantity >= va_frozen_quantity + va_fulfilled_quantity + va_min_take_quantity;
+        return (order_status_t)status == order_status_t::RUNNING && va_quantity >= va_frozen_quantity + va_fulfilled_quantity + va_min_take_quantity;
     }
 
     // sort by price, used by sell orders, can_be_took and lower price first
@@ -186,8 +196,8 @@ struct OTCBOOK_TBL order_t {
     // id: lower first
     // should use --revert option when get table by this index
     uint128_t by_maker_status() const {
-        uint128_t status =  closed ? 0 : !can_be_took() ? 1 : 2;
-        return (uint128_t)owner.value << 64 | status; 
+        uint128_t orderStatus = (status == (uint8_t)order_status_t::CLOSED) ? 0 : !can_be_took() ? 1 : 2;
+        return (uint128_t)owner.value << 64 | orderStatus; 
     }
     uint128_t by_coin() const {
         return can_be_took() ? (uint128_t)va_quantity.symbol.code().raw() << 64 | va_price.amount
@@ -195,8 +205,8 @@ struct OTCBOOK_TBL order_t {
     }
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(merchant_name)(accepted_payments)(va_price)(va_quantity)
-                                (va_min_take_quantity)(va_frozen_quantity)(va_fulfilled_quantity)
-                                (stake_frozen)(total_fee)(memo)(closed)(created_at)(closed_at))
+                                (va_min_take_quantity)(va_max_take_quantity)(va_frozen_quantity)(va_fulfilled_quantity)
+                                (stake_frozen)(total_fee)(memo)(status)(created_at)(closed_at))
 };
 
 /**
