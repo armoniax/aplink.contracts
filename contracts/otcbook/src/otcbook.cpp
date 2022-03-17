@@ -254,7 +254,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     check( order_wrapper_ptr != nullptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();
     check( owner == order.owner, "have no access to close others' order");
-    check( (order_status_t)order.status == order_status_t::CLOSED, "order already closed" );
+    check( (order_status_t)order.status != order_status_t::CLOSED, "order already closed" );
     check( order.va_frozen_quantity.amount == 0, "order being processed" );
     check( order.va_quantity >= order.va_fulfilled_quantity, "order quantity insufficient" );
 
