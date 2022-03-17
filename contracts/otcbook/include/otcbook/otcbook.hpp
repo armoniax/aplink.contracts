@@ -134,6 +134,28 @@ public:
     void openorder(const name& owner, const name& order_side,const set<name> &pay_methods, const asset& va_quantity, const asset& va_price, 
         const asset& va_min_take_quantity, const asset& va_max_take_quantity, const string &memo);
 
+
+    /**
+     * pause order by merchant
+     * all of the related deals must be closed
+     * @param owner merchant account name
+     * @param order_id order id, created in openorder()
+     * @note require owner auth
+     */
+    [[eosio::action]]
+    void pauseorder(const name& owner, const name& order_side, const uint64_t& order_id);
+
+    /**
+     * resume order by merchant
+     * all of the related deals must be closed
+     * @param owner merchant account name
+     * @param order_id order id, created in openorder()
+     * @note require owner auth
+     */
+    [[eosio::action]]
+    void resumeorder(const name& owner, const name& order_side, const uint64_t& order_id);
+
+
     /**
      * close order by merchant
      * all of the related deals must be closed
@@ -150,12 +172,18 @@ public:
      * @param order_id order id, created in openorder()
      * @param deal_quantity deal quantity of va
      * @param order_sn order_sn should be unique to locate current deal
+     * @param ss_hash shared secret's hash
+     * @param user_ss user shared secret encript by user's pub key
+     * @param merchant_ss user shared secret encript by merchant's pub key
      * @param session_msg session msg(message)
      * @note require taker auth
      */
     [[eosio::action]]
     void opendeal(const name& taker, const name& order_side, const uint64_t& order_id, 
-        const asset& deal_quantity, const uint64_t& order_sn, const string& session_msg);
+        const asset& deal_quantity, const uint64_t& order_sn,
+        const string& ss_hash , const string& user_ss,
+        const string& merchant_ss,
+        const string& session_msg);
 
     /**
      * close deal
@@ -182,6 +210,33 @@ public:
     [[eosio::action]]
     void processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
         uint8_t action, const string& session_msg);
+
+
+    /**
+     * user or merchant start arbit request
+     * @param account account name
+     * @param account_type account type, merchant(2) | user(3)
+     * @param deal_id deal_id, created by opendeal()
+     * @param arbiter arbiter's name
+     * @param arbiter_ss arbiter's shared secret
+     * @param session_msg session msg(message)
+     * @note require account auth
+     */
+     [[eosio::action]]
+    void startarbit(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
+        const name& arbiter, const string& arbiter_ss, const string& session_msg);
+    
+
+    /**
+     * arbiter close arbit request
+     * @param account account name
+     * @param account_type account type, merchant(2) | user(3)
+     * @param deal_id deal_id, created by opendeal()
+     * @param session_msg session msg(message)
+     * @note require account auth
+     */
+     [[eosio::action]]
+    void closearbit(const name& account, const uint64_t& deal_id, const uint8_t& arbit_result, const string& session_msg);
 
     /**
      * action trigger by transfer()
@@ -213,7 +268,7 @@ public:
      * @note require account auth
      */
     [[eosio::action]]
-    void reversedeal(const name& account, const uint64_t& deal_id, const string& session_msg);
+    void resetdeal(const name& account, const uint64_t& deal_id, const string& session_msg);
 
     // [[eosio::action]]
     // void timeoutdeal();

@@ -203,6 +203,44 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
     }
 }
 
+void otcbook::pauseorder(const name& owner, const name& order_side, const uint64_t& order_id) {
+    require_auth( owner );
+
+    merchant_t merchant(owner);
+    check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
+    check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
+
+    auto order_wrapper_ptr = (order_side == BUY_SIDE) ? 
+        buy_order_wrapper_t::get_from_db(_self, _self.value, order_id)
+        : sell_order_wrapper_t::get_from_db(_self, _self.value, order_id);
+    check( order_wrapper_ptr != nullptr, "order not found");
+    const auto &order = order_wrapper_ptr->get_order();
+    check( owner == order.owner, "have no access to close others' order");
+    check( (order_status_t)order.status != order_status_t::RUNNING, "order not running" );
+    order_wrapper_ptr->modify(_self, [&]( auto& row ) {
+        row.status = (uint8_t)order_status_t::PAUSED;
+    });
+}
+
+void otcbook::resumeorder(const name& owner, const name& order_side, const uint64_t& order_id) {
+    require_auth( owner );
+
+    merchant_t merchant(owner);
+    check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
+    check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
+
+    auto order_wrapper_ptr = (order_side == BUY_SIDE) ? 
+        buy_order_wrapper_t::get_from_db(_self, _self.value, order_id)
+        : sell_order_wrapper_t::get_from_db(_self, _self.value, order_id);
+    check( order_wrapper_ptr != nullptr, "order not found");
+    const auto &order = order_wrapper_ptr->get_order();
+    check( owner == order.owner, "have no access to close others' order");
+    check( (order_status_t)order.status != order_status_t::PAUSED, "order not paused" );
+    order_wrapper_ptr->modify(_self, [&]( auto& row ) {
+        row.status = (uint8_t)order_status_t::RUNNING;
+    });
+}
+
 void otcbook::closeorder(const name& owner, const name& order_side, const uint64_t& order_id) {
     require_auth( owner );
 
@@ -236,7 +274,10 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
 }
 
 void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t& order_id, 
-    const asset& deal_quantity, const uint64_t& order_sn, const string& session_msg
+    const asset& deal_quantity, const uint64_t& order_sn, 
+    const string& ss_hash , const string& user_ss,
+    const string& merchant_ss,
+    const string& session_msg
 ) {
     require_auth( taker );
 
@@ -286,6 +327,9 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
         row.deal_fee            = deal_fee;
+        row.ss_hash             = ss_hash;
+        row.user_ss             = user_ss;
+        row.merchant_ss         = merchant_ss;
 
         // row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
         row.session.push_back({(uint8_t)account_type_t::USER, taker, (uint8_t)deal_status_t::NONE, 
@@ -315,6 +359,8 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
     auto status = (deal_status_t)deal_itr->status;
     check( status != deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
+    auto arbit_status =  (arbit_status_t)deal_itr->arbit_status;
+    check( arbit_status != arbit_status_t::UNARBITTED, "deal already arbittted: " + to_string(deal_id) );
 
     switch ((account_type_t) account_type) {
     case account_type_t::MERCHANT: 
@@ -391,33 +437,38 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     case account_type_t::USER:
         check( deal_itr->order_taker == account, "taker account mismatched");
         break;
+    case account_type_t::ARBITER:
+        check( deal_itr->arbiter == account, "arbiter account mismatched");
+        break;
     default:
         check(false, "account type not supported: " + to_string(account_type));
         break;
     }
 
     auto status = (deal_status_t)deal_itr->status;
+    auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
     deal_status_t limited_status = deal_status_t::NONE;
     account_type_t limited_account_type = account_type_t::NONE;
+    arbit_status_t limit_arbit_status = arbit_status_t::UNARBITTED;
     deal_status_t next_status = deal_status_t::NONE;
     check( status != deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
 
-#define DEAL_ACTION_CASE(_action, _limited_account_type, _limited_status, _next_status) \
+#define DEAL_ACTION_CASE(_action, _limited_account_type, _limit_arbit_status,  _limited_status, _next_status) \
     case deal_action_t::_action:                                                        \
-        limited_account_type = account_type_t::_limited_account_type;                                   \
+        limited_account_type = account_type_t::_limited_account_type;                   \
+        limit_arbit_status = arbit_status_t::_limit_arbit_status;                        \
         limited_status = deal_status_t::_limited_status;                                \
         next_status = deal_status_t::_next_status;                                      \
         break;
 
     switch ((deal_action_t)action)
     {
-    // /*               action      account_type  limited_status   next_status  */
-    DEAL_ACTION_CASE(MAKER_ACCEPT,  MERCHANT,     CREATED,         MAKER_ACCEPTED)
-    DEAL_ACTION_CASE(TAKER_SEND,    USER,         MAKER_ACCEPTED,  TAKER_SENT)
-    DEAL_ACTION_CASE(MAKER_RECEIVE, MERCHANT,     TAKER_SENT,      MAKER_RECEIVED)
-    DEAL_ACTION_CASE(MAKER_SEND,    MERCHANT,     MAKER_RECEIVED,  MAKER_SENT)
-    DEAL_ACTION_CASE(TAKER_RECEIVE, USER,         MAKER_SENT,      TAKER_RECEIVED) 
-    DEAL_ACTION_CASE(ADD_SESSION_MSG,      NONE,         NONE,            NONE) 
+    // /*               action      account_type  arbit_status, limited_status   next_status  */
+    DEAL_ACTION_CASE(MAKER_ACCEPT,  MERCHANT,     UNARBITTED,   CREATED,         MAKER_ACCEPTED)
+    DEAL_ACTION_CASE(TAKER_SEND,    USER,         UNARBITTED,   MAKER_ACCEPTED,  TAKER_SENT)
+    DEAL_ACTION_CASE(MAKER_SEND,    MERCHANT,     UNARBITTED,   TAKER_SENT,      MAKER_RECV_AND_SENT)
+    DEAL_ACTION_CASE(TAKER_RECEIVE, USER,         UNARBITTED,   MAKER_RECV_AND_SENT, TAKER_RECEIVED) 
+    DEAL_ACTION_CASE(ADD_SESSION_MSG,      NONE,        NONE,   NONE,            NONE) 
     default: 
         check(false, "unsupported process deal action:" + to_string((uint8_t)action));
         break;
@@ -431,6 +482,10 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
             "can not process deal action:" + to_string((uint8_t)action) 
              + " by account_type: " + to_string((uint8_t)account_type) );
 
+    if ( (uint8_t)limit_arbit_status != (uint8_t)arbit_status_t::NONE)
+        check(arbit_status == limit_arbit_status, 
+            "can not process deal action:" + to_string((uint8_t)action) 
+             + " by arbit status: " + to_string((uint8_t)arbit_status) );
 
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
         if (next_status != deal_status_t::NONE) {
@@ -438,10 +493,88 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
         }
         row.session.push_back({account_type, account, (uint8_t)status, action, session_msg, now});
     });
-
 }
 
-void otcbook::reversedeal(const name& account, const uint64_t& deal_id, const string& session_msg){
+
+void otcbook::startarbit(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
+    const name& arbiter, const string& arbiter_ss, const string& session_msg) {
+    require_auth( account );
+
+    deal_t::idx_t deals(_self, _self.value);
+    auto deal_itr = deals.find(deal_id);
+    check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
+
+    auto order_wrapper_ptr = (deal_itr->order_side == BUY_SIDE) ? 
+        buy_order_wrapper_t::get_from_db(_self, _self.value, deal_itr->order_id)
+        : sell_order_wrapper_t::get_from_db(_self, _self.value, deal_itr->order_id);
+    check( order_wrapper_ptr != nullptr, "order not found");
+
+    auto now = time_point_sec(current_time_point());
+
+    switch ((account_type_t) account_type) {
+    case account_type_t::MERCHANT: 
+        check( deal_itr->order_maker == account, "maker account mismatched");
+        break;
+    case account_type_t::USER:
+        check( deal_itr->order_taker == account, "taker account mismatched");
+        break;
+    default:
+        check(false, "account type not supported: " + to_string(account_type));
+        break;
+    }
+    const auto& conf = _conf();
+    // check arbiter is vaild
+    check( conf.arbiters.count(arbiter) != 0, "arbiter illegal: " + arbiter.to_string() );
+
+    auto status = (deal_status_t)deal_itr->status;
+    auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
+    check( arbit_status != arbit_status_t::UNARBITTED, "arbit already started: " + to_string(deal_id) );
+   
+    set<deal_status_t> can_arbit_status = {deal_status_t::TAKER_SENT, deal_status_t::MAKER_RECV_AND_SENT, deal_status_t::TAKER_RECEIVED };    
+    check( can_arbit_status.count(status) != 0, "status illegal: " + to_string((uint8_t)status) );
+
+    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+        row.arbit_status = (uint8_t)arbit_status_t::ARBITING;
+        row.arbiter = arbiter;
+        row.arbiter_ss = arbiter_ss;
+        row.session.push_back({account_type, account, (uint8_t)status, (uint8_t)deal_action_t::START_ARBIT, session_msg, now});
+    });
+}
+
+void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uint8_t& arbit_result, const string& session_msg) {
+    require_auth( account );
+
+    deal_t::idx_t deals(_self, _self.value);
+    auto deal_itr = deals.find(deal_id);
+    check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
+
+    auto order_wrapper_ptr = (deal_itr->order_side == BUY_SIDE) ? 
+        buy_order_wrapper_t::get_from_db(_self, _self.value, deal_itr->order_id)
+        : sell_order_wrapper_t::get_from_db(_self, _self.value, deal_itr->order_id);
+    check( order_wrapper_ptr != nullptr, "order not found");
+
+    auto now = time_point_sec(current_time_point());
+    check( deal_itr->arbiter == account, "arbiter account mismatched");
+
+
+    auto status = (deal_status_t)deal_itr->status;
+    auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
+    check( arbit_status != arbit_status_t::ARBITING, "arbit isn't arbiting: " + to_string(deal_id) );
+
+    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+        row.arbit_status = (uint8_t)arbit_status_t::FINISHED;
+        row.session.push_back({(uint8_t)account_type_t::ARBITER, account, (uint8_t)status, (uint8_t)deal_action_t::FINISH_ARBIT, session_msg, now});
+    });
+
+    if (arbit_result == 0) {
+        //finished deal
+
+    } else {
+        //end deal
+    }
+}
+
+void otcbook::resetdeal(const name& account, const uint64_t& deal_id, const string& session_msg){
 
     require_auth( account );
 

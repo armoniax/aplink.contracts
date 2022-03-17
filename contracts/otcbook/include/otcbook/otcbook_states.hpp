@@ -79,7 +79,9 @@ enum class deal_action_t: uint8_t {
     TAKER_RECEIVE   = 6,
     CLOSE           = 7,
     ADD_SESSION_MSG = 8,
-    REVERSE         = 9
+    REVERSE         = 9,
+    START_ARBIT     =10,
+    FINISH_ARBIT    =11
 };
 
 
@@ -96,10 +98,9 @@ enum class deal_status_t: uint8_t {
     CREATED             = 1,
     MAKER_ACCEPTED      = 2,
     TAKER_SENT          = 3,
-    MAKER_RECEIVED      = 4,
-    MAKER_SENT          = 5,
-    TAKER_RECEIVED      = 6,
-    CLOSED              = 7
+    MAKER_RECV_AND_SENT = 4,
+    TAKER_RECEIVED      = 5,
+    CLOSED              = 6
 };
 
 // order sides
@@ -109,11 +110,18 @@ static const set<name> ORDER_SIDES = {
     BUY_SIDE, SELL_SIDE
 };
 
-enum  class merchant_status_t: uint8_t {
+enum class merchant_status_t: uint8_t {
     NONE        = 0,
     REGISTERED  = 1,
     DISABLED    = 2,
     ENABLED     = 3
+};
+
+enum class arbit_status_t: uint8_t {
+    NONE        =0,
+    UNARBITTED = 1,
+    ARBITING   = 2,
+    FINISHED   = 3
 };
 
 struct OTCBOOK_TBL merchant_t {
@@ -305,8 +313,16 @@ struct OTCBOOK_TBL deal_t {
     asset deal_fee;                 // deal fee
 
     uint8_t status = 0;             // status
+
+    uint8_t arbit_status = 0;       // arbit status
+    name arbiter;
+    string ss_hash;                 //plaint shared secret's hash 
+    string user_ss;                 // user's shared secret
+    string merchant_ss;             // merchant's shared secret
+    string arbiter_ss;              // arbiter's shared secret
     time_point_sec created_at;      // create time at
     time_point_sec closed_at;       // closed time at
+
 
     uint64_t order_sn = 0;          // order sn, created by external app
     // time_point_sec expired_at; // 订单到期时间
@@ -322,7 +338,9 @@ struct OTCBOOK_TBL deal_t {
     uint128_t by_order()     const { return (uint128_t)order_id << 64 | status; }
     uint128_t by_maker()     const { return (uint128_t)order_maker.value << 64 | status ; }
     uint128_t by_taker()     const { return (uint128_t)order_taker.value << 64 | status; }
-    uint64_t by_ordersn()   const { return order_sn;}
+    uint128_t by_arbiter()   const { return (uint128_t)arbiter.value << 64 | arbit_status; }
+    uint64_t by_ordersn()    const { return order_sn;}
+
 
     uint128_t by_order_id() const {
         return (uint128_t)order_side.value << 64 | order_id;
@@ -338,6 +356,7 @@ struct OTCBOOK_TBL deal_t {
         indexed_by<"order"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_order> >,
         indexed_by<"maker"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_maker> >,
         indexed_by<"taker"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_taker> >,
+        indexed_by<"arbiter"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_arbiter> >,
         indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >,
         indexed_by<"orderid"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_order_id> >,
         indexed_by<"coin"_n,    const_mem_fun<deal_t, uint128_t, &deal_t::by_coin> >

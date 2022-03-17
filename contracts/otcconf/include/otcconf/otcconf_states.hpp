@@ -74,6 +74,8 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
 
     set<name> pay_type = { CNYDPAY, BANK, WECHAT, ALIPAY, PAYPAL };
 
+    set<name> arbiters = {"amaxhu3t3tjd"_n };
+
     set<symbol> coin_type = { AMA, USDT_ERC20, USDT_TRC20, USDT_BEP20, CNYD_BEP20, CNYD_ARC20 };
     symbol fiat_type = CNY;
 
