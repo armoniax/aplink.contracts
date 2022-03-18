@@ -1,11 +1,18 @@
-updateContract(){
-  contractFilePath='/opt/mgp/node_devnet/data/otccontract'
-  updateContract="cleos set contract ${accountName} ${contractFilePath} ${otcFileName}.wasm ${otcFileName}.abi -p ${accountName}@active"
+initContract() {
+  updateContract="cleos push action ${otcAccountName} init '["'$confAccountName'"]' -p "${otcAccountName}@active""
+  echo "-------initContract--------------"
   ssh sh-misc "${remoteDockerScrip} '${updateContract}'"
 }
 
-accountName=$1
-otcFileName=$2
-remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
+setPermission() {
+  updateContract="cleos set account permission ${otcAccountName} active --add-code"
+  echo "-------setPermission--------------"
+  ssh sh-misc "${remoteDockerScrip} '${updateContract}'"
+}
 
-updateContract 
+remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
+otcAccountName=${1}.o
+confAccountName=${1}.h
+
+initContract 
+setPermission
