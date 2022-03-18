@@ -8,6 +8,7 @@ createKeyAndImport() {
     privKey=${ret:13:51}
     pubKey=`echo $ret | sed -n '1p'`
     pubKey=${pubKey:0-54:54}
+    
     importPriKeyScript="cleos wallet import --private-key ${privKey}"
     ret=`ssh sh-misc "${remoteDockerScrip} '${importPriKeyScript}'"`
     echo "${ret}"
