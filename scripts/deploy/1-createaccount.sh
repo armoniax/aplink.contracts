@@ -25,7 +25,8 @@ newAccountAndActive(){
 }
 
 
-contractName=$1
+# eg: deotc.2a
+accountName=$1
 remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
 
 ##create account
@@ -35,5 +36,5 @@ echo "--------------------------        createKey 函数结束执行            
 
 ##newAccountAndActive
 echo "--------------------------    newAccountAndActive  函数开始执行     --------------------------"
-newAccountAndActive "$contractName"
+newAccountAndActive "$accountName"
 echo "--------------------------    newAccountAndActive  函数结束执行     --------------------------"
