@@ -117,8 +117,9 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
         
     }
 
-    EOSLIB_SERIALIZE( global_t, (app_info)(pay_type)(fee_recv_addr)(fee_pct)(coin_type)(fiat_type)
-                                (buy_coins_conf)(sell_coins_conf)(prices_quote_cny)(arbiters)
+    EOSLIB_SERIALIZE( global_t, (app_info)(pay_type)(arbiters)(coin_type)
+                                (fiat_type)(fee_recv_addr)(fee_pct)
+                                (buy_coins_conf)(sell_coins_conf)(prices_quote_cny)
     )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
