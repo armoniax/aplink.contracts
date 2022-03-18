@@ -8,7 +8,7 @@ createContract() {
     ssh sh-misc "${remoteDockerScrip} '${unlockScript}'"
 
     contractFilePath='/opt/mgp/node_devnet/data/otccontract'
-    setContractScript="cleos set contract ${accountName} ${contractFilePath} ${otcFileName}.wasm ${otcFileName}.abi -p ${otcContractName}@active"
+    setContractScript="cleos set contract ${accountName} ${contractFilePath} ${otcFileName}.wasm ${otcFileName}.abi -p ${accountName}@active"
     ssh sh-misc "${remoteDockerScrip} '${setContractScript}'"
 }
 
