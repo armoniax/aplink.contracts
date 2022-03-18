@@ -17,7 +17,6 @@ createKeyAndImport() {
 #newAccountAndActive
 newAccountAndActive(){
   contractName=$1
-  pubKey=$2
   STAKE_NET='1.0000 MGP'
   STAKE_CPU='1.0000 MGP'
   newAccountAndActiveScript="cleos system newaccount eosio ${contractName} ${pubKey} ${pubKey} --stake-net \"${STAKE_NET}\" --stake-cpu \"${STAKE_CPU}\" --buy-ram-kbytes 1100"
@@ -74,7 +73,7 @@ echo "--------------------------        createKey 函数结束执行            
 
 ##newAccountAndActive
 echo "--------------------------    newAccountAndActive  函数开始执行     --------------------------"
-newAccountAndActive "$contractName" "$pubKey"
+newAccountAndActive "$contractName"
 echo "--------------------------    newAccountAndActive  函数结束执行     --------------------------"
 
 
