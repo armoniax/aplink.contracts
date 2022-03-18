@@ -4,7 +4,7 @@ unlock() {
 }
 
 initContract() {
-  updateContract="cleos push action ${confAccountName} init '[]' -p  ${confAccountName}@active"
+  updateContract="cleos push action ${confAccountName} init \"[]\" -p  ${confAccountName}@active"
   echo "-------initContract--------------"
   ssh sh-misc "${remoteDockerScrip} '${updateContract}'"
 }

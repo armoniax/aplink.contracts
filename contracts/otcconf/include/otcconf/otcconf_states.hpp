@@ -64,6 +64,7 @@ struct AppInfo_t {
 };
 
 typedef set<symbol> symbol_set;
+typedef set<name> name_set;
 
 struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     AppInfo_t app_info = { 
@@ -75,9 +76,9 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
 
     set<name> pay_type = { CNYDPAY, BANK, WECHAT, ALIPAY, PAYPAL };
 
-    set<name> arbiters = { ARBITER1 };
+    name_set arbiters;
 
-    set<symbol> coin_type = { AMA, USDT_ERC20, USDT_TRC20, USDT_BEP20, CNYD_BEP20, CNYD_ARC20 };
+    symbol_set coin_type = { AMA, USDT_ERC20, USDT_TRC20, USDT_BEP20, CNYD_BEP20, CNYD_ARC20 };
     symbol fiat_type = CNY;
 
     name fee_recv_addr="amaxhu3t3tjd"_n;
@@ -86,7 +87,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     /** 
      * crypto coins that OTC merchants can buy in orders 
      */
-    set<symbol> buy_coins_conf = {
+    symbol_set buy_coins_conf = {
         AMA,
         CNYD_BEP20, 
         CNYD_ARC20,
@@ -97,7 +98,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     /** 
      * crypto coins that OTC merchants can sell in orders
      */
-    set<symbol> sell_coins_conf = {
+    symbol_set sell_coins_conf = {
         AMA,
         CNYD_BEP20,
         CNYD_ARC20,  
@@ -116,8 +117,8 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
         
     }
 
-    EOSLIB_SERIALIZE( global_t, (app_info)(pay_type)(fee_recv_addr)(fee_pct)(arbiters)(coin_type)(fiat_type)
-                                (buy_coins_conf)(sell_coins_conf)(prices_quote_cny)
+    EOSLIB_SERIALIZE( global_t, (app_info)(pay_type)(fee_recv_addr)(fee_pct)(coin_type)(fiat_type)
+                                (buy_coins_conf)(sell_coins_conf)(prices_quote_cny)(arbiters)
     )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
