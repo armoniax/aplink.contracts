@@ -39,6 +39,7 @@ createContract() {
     otcFileName=$1
     otcContractName=$2
  
+    unlockScript='cleos wallet unlock --password PW5KQzzoYJcijs2wtMpF5Vqk4v8n9FNcxxHj1aqqcjpGJDEkdBrog'
     ssh sh-misc "${remoteDockerScrip} '${unlockScript}'"
 
     contractFilePath='/opt/mgp/node_devnet/data/otccontract'
@@ -65,16 +66,15 @@ contractName=$1
 remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
 otcFileName='otcbook'
 
-test
 ##create account
 echo "--------------------------        createKey 函数开始执行            --------------------------"
 otcContractName="${otcFileName}.${contractName}"
-#createKeyAndImport
+createKeyAndImport
 echo "--------------------------        createKey 函数结束执行            --------------------------"
 
 ##newAccountAndActive
 echo "--------------------------    newAccountAndActive  函数开始执行     --------------------------"
-#newAccountAndActive $contractName $pubKey
+newAccountAndActive "$contractName" "$pubKey"
 echo "--------------------------    newAccountAndActive  函数结束执行     --------------------------"
 
 
