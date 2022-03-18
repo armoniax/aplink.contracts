@@ -4,8 +4,11 @@ updateContract(){
   ssh sh-misc "${remoteDockerScrip} '${updateContract}'"
 }
 
-accountName=$1
-otcFileName=$2
 remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
+accountName=${1}.o
+otcFileName='otcbook'
+updateContract 
 
+accountName=${1}.h
+otcFileName='otcconf'
 updateContract 

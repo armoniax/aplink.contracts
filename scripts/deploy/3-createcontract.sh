@@ -13,11 +13,12 @@ createContract() {
 }
 
 
-accountName=$1
+accountName=${1}.h
 remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
 otcFileName='otcconf'
 createContract ${otcFileName} ${accountName}
 
+accountName=${1}.o
 otcFileName='otcbook'
 createContract ${otcFileName} ${accountName}
 

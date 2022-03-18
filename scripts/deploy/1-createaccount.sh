@@ -26,7 +26,7 @@ newAccountAndActive(){
 
 
 # eg: deotc.2a
-accountName=$1
+accountName=${1}.o
 remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
 
 ##create account
@@ -38,3 +38,19 @@ echo "--------------------------        createKey 函数结束执行            
 echo "--------------------------    newAccountAndActive  函数开始执行     --------------------------"
 newAccountAndActive "$accountName"
 echo "--------------------------    newAccountAndActive  函数结束执行     --------------------------"
+
+
+# eg: deotc.2a
+accountName=${1}.h
+remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
+
+##create account
+echo "--------------------------        createKey 函数开始执行            --------------------------"
+createKeyAndImport
+echo "--------------------------        createKey 函数结束执行            --------------------------"
+
+##newAccountAndActive
+echo "--------------------------    newAccountAndActive  函数开始执行     --------------------------"
+newAccountAndActive "$accountName"
+echo "--------------------------    newAccountAndActive  函数结束执行     --------------------------"
+
