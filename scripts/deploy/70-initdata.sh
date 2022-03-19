@@ -4,10 +4,10 @@ initData() {
   echo "-------import priv key--------------"
   ssh sh-misc "${remoteDockerScrip} '${importPrivkeyShell}'"
 
+  #设置商户
   setMerchantShell="cleos push action ${otcAccountName} setmerchant  \"[ '${merchant}' , '${merchant}' , '${merchant}' , 'xxxama.com', 'dddddddd']\" -p ${merchant}@active"
   ssh sh-misc "${remoteDockerScrip} '${setMerchantShell}'"
 }
-
 
 sh ./scripts/deploy/01-unlock.sh
 otcAccountName=${1}.o
