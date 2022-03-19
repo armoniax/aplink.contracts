@@ -1,7 +1,3 @@
-unlock() {
-  unlock="cleos wallet unlock --password PW5KQzzoYJcijs2wtMpF5Vqk4v8n9FNcxxHj1aqqcjpGJDEkdBrog"
-   ssh sh-misc "${remoteDockerScrip} '${unlock}'"
-}
 
 initDeotcContract() {
   updateContract="cleos push action ${otcAccountName} init \"[ '${confAccountName}']\" -p  ${otcAccountName}@active"
