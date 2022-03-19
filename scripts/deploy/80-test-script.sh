@@ -1,9 +1,5 @@
 initData() {
 
-  importPrivkeyShell="cleos wallet import --private-key ${privKey}"
-  echo "-------import priv key--------------"
-  ssh sh-misc "${remoteDockerScrip} '${importPrivkeyShell}'"
-
   setMerchantShell="cleos push action ${otcAccountName} setmerchant  \"[ '${merchant}' , '${merchant}' , '${merchant}' , 'xxxama.com', 'dddddddd']\" -p ${merchant}@active"
   ssh sh-misc "${remoteDockerScrip} '${setMerchantShell}'"
 }
