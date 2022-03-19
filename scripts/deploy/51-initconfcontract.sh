@@ -3,7 +3,7 @@ unlock() {
    ssh sh-misc "${remoteDockerScrip} '${unlock}'"
 }
 
-initContract() {
+initConfContract() {
   updateContract="cleos push action ${confAccountName} init \"[]\" -p  ${confAccountName}@active"
   echo "-------initContract--------------"
   ssh sh-misc "${remoteDockerScrip} '${updateContract}'"
@@ -20,5 +20,5 @@ otcAccountName=${1}.o
 confAccountName=${1}.h
 
 unlock
-initContract 
+initConfContract 
 setPermission
