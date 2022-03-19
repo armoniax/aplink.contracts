@@ -1,7 +1,3 @@
-unlock() {
-  unlock="cleos wallet unlock --password PW5KQzzoYJcijs2wtMpF5Vqk4v8n9FNcxxHj1aqqcjpGJDEkdBrog"
-   ssh sh-misc "${remoteDockerScrip} '${unlock}'"
-}
 
 initConfContract() {
   updateContract="cleos push action ${confAccountName} init \"[]\" -p  ${confAccountName}@active"
@@ -19,6 +15,6 @@ remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
 otcAccountName=${1}.o
 confAccountName=${1}.h
 
-unlock
+sh ./scripts/deploy/01-unlock.sh
 initConfContract 
 setPermission
