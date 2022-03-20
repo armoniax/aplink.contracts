@@ -324,6 +324,8 @@ struct OTCBOOK_TBL deal_t {
     time_point_sec closed_at;       // closed time at
 
 
+
+
     uint64_t order_sn = 0;          // order sn, created by external app
     // time_point_sec expired_at; // 订单到期时间
     // time_point_sec maker_expired_at; // 卖家操作到期时间
@@ -366,7 +368,9 @@ struct OTCBOOK_TBL deal_t {
     EOSLIB_SERIALIZE(deal_t,    (id)(order_side)(order_id)(order_price)(deal_quantity)
                                 (order_maker)(merchant_name)
                                 (order_taker)(deal_fee)
-                                (status)(created_at)(closed_at)(order_sn)
+                                (status)(arbit_status)(arbiter)
+                                (ss_hash)(user_ss)(merchant_ss)(arbiter_ss)
+                                (created_at)(closed_at)(order_sn)
                                 /*(expired_at)(maker_expired_at)*/
                                 (session))
 };

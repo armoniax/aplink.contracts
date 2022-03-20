@@ -2,6 +2,7 @@
 initConfContract() {
   updateContract="cleos push action ${confAccountName} init \"[]\" -p  ${confAccountName}@active"
   echo "-------initContract--------------"
+  echo ssh sh-misc "${remoteDockerScrip} '${updateContract}'"
   ssh sh-misc "${remoteDockerScrip} '${updateContract}'"
 }
 

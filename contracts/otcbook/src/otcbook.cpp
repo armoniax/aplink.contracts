@@ -323,7 +323,8 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.deal_quantity		= deal_quantity;
         row.order_maker			= order_maker;
         row.order_taker			= taker;
-        row.status				= (uint8_t)deal_status_t::CREATED;
+        row.status				=(uint8_t)deal_status_t::CREATED;
+        row.arbit_status        =(uint8_t)arbit_status_t::UNARBITTED;
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
         row.deal_fee            = deal_fee;
