@@ -4,6 +4,8 @@ updateContract(){
   ssh sh-misc "${remoteDockerScrip} '${updateContract}'"
 }
 
+sh ./scripts/deploy/01-unlock.sh
+
 remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
 accountName=${1}.o
 otcFileName='otcbook'

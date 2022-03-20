@@ -216,7 +216,7 @@ void otcbook::pauseorder(const name& owner, const name& order_side, const uint64
     check( order_wrapper_ptr != nullptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();
     check( owner == order.owner, "have no access to close others' order");
-    check( (order_status_t)order.status != order_status_t::RUNNING, "order not running" );
+    check( (order_status_t)order.status == order_status_t::RUNNING, "order not running" );
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.status = (uint8_t)order_status_t::PAUSED;
     });
@@ -235,7 +235,7 @@ void otcbook::resumeorder(const name& owner, const name& order_side, const uint6
     check( order_wrapper_ptr != nullptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();
     check( owner == order.owner, "have no access to close others' order");
-    check( (order_status_t)order.status != order_status_t::PAUSED, "order not paused" );
+    check( (order_status_t)order.status == order_status_t::PAUSED, "order not paused" );
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.status = (uint8_t)order_status_t::RUNNING;
     });
@@ -471,7 +471,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     DEAL_ACTION_CASE(TAKER_RECEIVE, USER,         UNARBITTED,   MAKER_RECV_AND_SENT, TAKER_RECEIVED) 
     DEAL_ACTION_CASE(ADD_SESSION_MSG,      NONE,        NONE,   NONE,            NONE) 
     default: 
-        check(false, "unsupported process deal action:" + to_string((uint8_t)action));
+        check(false, "unsupported process deal action:" + to_string((uint8_t)action)));
         break;
     }
 
@@ -529,7 +529,7 @@ void otcbook::startarbit(const name& account, const uint8_t& account_type, const
 
     auto status = (deal_status_t)deal_itr->status;
     auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
-    check( arbit_status != arbit_status_t::UNARBITTED, "arbit already started: " + to_string(deal_id) );
+    check( arbit_status == arbit_status_t::UNARBITTED, "arbit already started: " + to_string(deal_id) );
    
     set<deal_status_t> can_arbit_status = {deal_status_t::TAKER_SENT, deal_status_t::MAKER_RECV_AND_SENT, deal_status_t::TAKER_RECEIVED };    
     check( can_arbit_status.count(status) != 0, "status illegal: " + to_string((uint8_t)status) );
@@ -560,7 +560,7 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
 
     auto status = (deal_status_t)deal_itr->status;
     auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
-    check( arbit_status != arbit_status_t::ARBITING, "arbit isn't arbiting: " + to_string(deal_id) );
+    check( arbit_status == arbit_status_t::ARBITING, "arbit isn't arbiting: " + to_string(deal_id) );
 
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
         row.arbit_status = (uint8_t)arbit_status_t::FINISHED;

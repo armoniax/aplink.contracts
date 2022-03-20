@@ -10,7 +10,7 @@ merchant=joss1
 token="eosio.token"
 contract=deotcm.o
 order_id=0
-deal_id=0
+deal_id=3
 user=chenjunqiang
 merchant_t=2
 user_t=3
@@ -25,6 +25,11 @@ cleos push action ${contract} openorder '['${merchant}', "sell",  ["wechat"],"20
 
 cleos get table ${contract} ${contract} sellorders -l 100
 
+#暂停订单
+cleos push action ${contract} pauseorder '['${merchant}', "buy",'${order_id}' ]' -p ${merchant}
+cleos push action ${contract} resumeorder '['${merchant}', "buy",'${order_id}' ]' -p ${merchant}
+
+
 
 #用户吃单
 cleos push action ${contract} opendeal '['${user}', "buy",'${order_id}', "1.000000 CNYDARC", 1023, "pay_type:wechat","user_ss","merchant_ss","session_msg"]' -p ${user}@active
@@ -33,4 +38,8 @@ cleos push action ${contract} opendeal '['${user}', "sell",'${order_id}', "0.500
 cleos get table ${contract} ${contract} deals
 
 #商户吃单
-cleos push action ${contract} processdeal '['${merchant}', '${merchant_t}', '${deal_id}', 2, "pey_type:wechant:abcxxx"]' -p ${merchant}@active
+cleos push action ${contract} processdeal '['${merchant}', '${merchant_t}', '${deal_id}', 4, "pey_type:wechant:abcxxx"]' -p ${merchant}
+
+cleos push action ${contract} startarbit  '['${merchant}', '${merchant_t}', '${deal_id}', "amaxhu3t3tjd", "arbit_ss", "session_msg"]' -p ${merchant}
+
+
