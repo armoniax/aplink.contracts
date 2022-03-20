@@ -11,4 +11,4 @@ updateContract
 
 accountName=${1}.h
 otcFileName='otcconf'
-updateContract 
+# updateContract 

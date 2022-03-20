@@ -292,7 +292,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     const auto &order = order_wrapper_ptr->get_order();
     check( order.owner != taker, "taker can not be equal to maker");
     check( deal_quantity.symbol == order.va_quantity.symbol, "Token Symbol mismatch" );
-    check( order.status != (uint8_t)order_status_t::RUNNING, "Order not runing" );
+    check( order.status == (uint8_t)order_status_t::RUNNING, "Order not runing" );
     check( order.va_quantity >= order.va_frozen_quantity + order.va_fulfilled_quantity + deal_quantity, 
         "Order's quantity insufficient" );
     // check( itr->price.amount * deal_quantity.amount >= itr->va_min_take_quantity.amount * 10000, "Order's min accept quantity not met!" );
