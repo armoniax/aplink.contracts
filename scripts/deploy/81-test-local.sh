@@ -42,4 +42,4 @@ cleos push action ${contract} processdeal '['${merchant}', '${merchant_t}', '${d
 
 cleos push action ${contract} startarbit  '['${merchant}', '${merchant_t}', '${deal_id}', "amaxhu3t3tjd", "arbit_ss", "session_msg"]' -p ${merchant}
 
-
+cleos push action ${contract} closearbit  '["amaxhu3t3tjd", '${deal_id}', 0,"arbit_session_msg"]' -p "amaxhu3t3tjd"
