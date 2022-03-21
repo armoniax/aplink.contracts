@@ -232,6 +232,7 @@ public:
      * @param account account name
      * @param account_type account type, merchant(2) | user(3)
      * @param deal_id deal_id, created by opendeal()
+     * @param arbit_result 0:session
      * @param session_msg session msg(message)
      * @note require account auth
      */
@@ -280,6 +281,8 @@ private:
     asset _calc_order_stakes(const asset &quantity, const asset &price);
 
     asset _calc_deal_fee(const asset &quantity, const asset &price);
+
+    asset _calc_deal_amount(const asset &quantity, const asset &price);
 
     void _set_conf(const name &conf_contract);
 

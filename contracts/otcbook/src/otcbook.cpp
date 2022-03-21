@@ -47,6 +47,12 @@ asset otcbook::_calc_order_stakes(const asset &quantity, const asset &price) {
 }
 
 
+asset otcbook::_calc_deal_amount(const asset &quantity, const asset &price) {
+    auto value = multiply_decimal64( quantity.amount, price.amount, get_precision(price));
+    return asset(value, STAKE_SYMBOL);
+}
+
+
 asset otcbook::_calc_deal_fee(const asset &quantity, const asset &price) {
     // calc order quantity value by price
     auto value = multiply_decimal64( quantity.amount, price.amount, get_precision(price) );
@@ -263,6 +269,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     merchant.stake_frozen -= order.stake_frozen;
     merchant.stake_free += order.stake_frozen;
     merchant.stake_free -= order.total_fee;
+    merchant.stake_free -= order.fine_amount;
     _dbc.set( merchant );
     _add_fund_log(owner, "closeorder"_n, order.stake_frozen);  
 
@@ -464,14 +471,14 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
 
     switch ((deal_action_t)action)
     {
-    // /*               action      account_type  arbit_status, limited_status   next_status  */
-    DEAL_ACTION_CASE(MAKER_ACCEPT,  MERCHANT,     UNARBITTED,   CREATED,         MAKER_ACCEPTED)
-    DEAL_ACTION_CASE(TAKER_SEND,    USER,         UNARBITTED,   MAKER_ACCEPTED,  TAKER_SENT)
-    DEAL_ACTION_CASE(MAKER_SEND,    MERCHANT,     UNARBITTED,   TAKER_SENT,      MAKER_RECV_AND_SENT)
-    DEAL_ACTION_CASE(TAKER_RECEIVE, USER,         UNARBITTED,   MAKER_RECV_AND_SENT, TAKER_RECEIVED) 
-    DEAL_ACTION_CASE(ADD_SESSION_MSG,      NONE,        NONE,   NONE,            NONE) 
+    // /*               action              account_type  arbit_status, limited_status   next_status  */
+    DEAL_ACTION_CASE(MAKER_ACCEPT,          MERCHANT,     UNARBITTED,   CREATED,         MAKER_ACCEPTED)
+    DEAL_ACTION_CASE(TAKER_SEND,            USER,         UNARBITTED,   MAKER_ACCEPTED,  TAKER_SENT)
+    DEAL_ACTION_CASE(MAKER_RECV_AND_SENT,   MERCHANT,     UNARBITTED,   TAKER_SENT,      MAKER_RECV_AND_SENT)
+    DEAL_ACTION_CASE(TAKER_RECEIVE,         USER,         UNARBITTED,   MAKER_RECV_AND_SENT, TAKER_RECEIVED) 
+    DEAL_ACTION_CASE(ADD_SESSION_MSG,       NONE,         NONE,         NONE,            NONE) 
     default: 
-        check(false, "unsupported process deal action:" + to_string((uint8_t)action)));
+        check(false, "unsupported process deal action:" + to_string((uint8_t)action));
         break;
     }
 
@@ -562,18 +569,37 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
     auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
     check( arbit_status == arbit_status_t::ARBITING, "arbit isn't arbiting: " + to_string(deal_id) );
 
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
-        row.arbit_status = (uint8_t)arbit_status_t::FINISHED;
-        row.status = (uint8_t)deal_status_t::CLOSED;
-        row.closed_at = time_point_sec(current_time_point());
-        row.session.push_back({(uint8_t)account_type_t::ARBITER, account, (uint8_t)status, (uint8_t)deal_action_t::FINISH_ARBIT, session_msg, now});
-    });
+     deals.modify( *deal_itr, _self, [&]( auto& row ) {
+            row.arbit_status = (uint8_t)arbit_status_t::FINISHED;
+            row.status = (uint8_t)deal_status_t::CLOSED;
+            row.closed_at = time_point_sec(current_time_point());
+            row.session.push_back({(uint8_t)account_type_t::ARBITER, account, (uint8_t)status, (uint8_t)deal_action_t::FINISH_ARBIT, session_msg, now});
+        });
+
+    auto deal_quantity = deal_itr->deal_quantity;
+    auto deal_fee = deal_itr->deal_fee;
+    auto deal_price = deal_itr->order_price;
+    auto deal_amount = _calc_deal_amount(deal_quantity, deal_price);
+    auto order_id = deal_itr->order_id;
 
     if (arbit_result == 0) {
-        //finished deal
-
+        // finished deal-canceled
+        order_wrapper_ptr->modify(_self, [&]( auto& row ) {
+            row.va_frozen_quantity -= deal_quantity;
+        });
     } else {
-        //end deal
+        // end deal - finished 
+        order_wrapper_ptr->modify(_self, [&]( auto& row ) {
+            row.va_frozen_quantity -= deal_quantity;
+            row.va_fulfilled_quantity += deal_quantity;
+            row.total_fee += deal_fee;
+            deal_amount -= deal_fee;
+            row.fine_amount = deal_amount;
+        });
+        const auto &order_taker  = deal_itr->order_taker;
+       
+        //< send CNYD to user
+        TRANSFER( SYS_BANK, order_taker, deal_amount, to_string(order_id) + ":" +  to_string(deal_id));
     }
 }
 

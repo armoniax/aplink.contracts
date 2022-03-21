@@ -71,17 +71,17 @@ enum class account_type_t: uint8_t {
 };
 
 enum class deal_action_t: uint8_t {
-    CREATE          = 1,
-    MAKER_ACCEPT    = 2,
-    TAKER_SEND      = 3,
-    MAKER_RECEIVE   = 4,
-    MAKER_SEND      = 5,
-    TAKER_RECEIVE   = 6,
-    CLOSE           = 7,
-    ADD_SESSION_MSG = 8,
-    REVERSE         = 9,
-    START_ARBIT     =10,
-    FINISH_ARBIT    =11
+    CREATE              = 1,
+    MAKER_ACCEPT        = 2,
+    TAKER_SEND          = 3,
+    MAKER_RECV_AND_SENT = 4,
+    TAKER_RECEIVE       = 5,
+    CLOSE               = 6,
+    
+    REVERSE             = 10,
+    ADD_SESSION_MSG     = 11,
+    START_ARBIT         = 21,
+    FINISH_ARBIT        = 22
 };
 
 
@@ -169,10 +169,11 @@ struct OTCBOOK_TBL order_t {
     asset va_frozen_quantity;                       // va(virtual asset) frozen quantity of sell/buy coin
     asset va_fulfilled_quantity;                    // va(virtual asset) fulfilled quantity of sell/buy coin, support partial fulfillment
     asset stake_frozen = asset(0, STAKE_SYMBOL);    // stake frozen asset
-    asset total_fee = asset(0, STAKE_SYMBOL);
+    asset total_fee = asset(0, STAKE_SYMBOL);       
+    asset fine_amount= asset(0, STAKE_SYMBOL);      // aarbit fine amount, not contain fee
     string memo;                                    // memo
 
-    uint8_t status;                                // 
+    uint8_t status;                                 // 
     time_point_sec created_at;                      // created time at
     time_point_sec closed_at;                       // closed time at
 
@@ -214,7 +215,8 @@ struct OTCBOOK_TBL order_t {
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(merchant_name)(accepted_payments)(va_price)(va_quantity)
                                 (va_min_take_quantity)(va_max_take_quantity)(va_frozen_quantity)(va_fulfilled_quantity)
-                                (stake_frozen)(total_fee)(memo)(status)(created_at)(closed_at))
+                                (stake_frozen)(total_fee)(fine_amount)
+                                (memo)(status)(created_at)(closed_at))
 };
 
 /**
@@ -311,6 +313,7 @@ struct OTCBOOK_TBL deal_t {
     string merchant_name;           // merchant's name
     name order_taker;               // taker, user
     asset deal_fee;                 // deal fee
+    asset fine_amount;              // aarbit fine amount, not contain fee
 
     uint8_t status = 0;             // status
 
@@ -367,7 +370,7 @@ struct OTCBOOK_TBL deal_t {
 
     EOSLIB_SERIALIZE(deal_t,    (id)(order_side)(order_id)(order_price)(deal_quantity)
                                 (order_maker)(merchant_name)
-                                (order_taker)(deal_fee)
+                                (order_taker)(deal_fee)(fine_amount)
                                 (status)(arbit_status)(arbiter)
                                 (ss_hash)(user_ss)(merchant_ss)(arbiter_ss)
                                 (created_at)(closed_at)(order_sn)
