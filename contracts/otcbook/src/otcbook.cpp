@@ -130,7 +130,6 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
     const asset& va_min_take_quantity,  const asset& va_max_take_quantity, const string &memo
 ){
     require_auth( owner );
-
     check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
     check( va_quantity.is_valid(), "Invalid quantity");
     check( va_price.is_valid(), "Invalid va_price");
@@ -551,6 +550,7 @@ void otcbook::startarbit(const name& account, const uint8_t& account_type, const
 
 void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uint8_t& arbit_result, const string& session_msg) {
     require_auth( account );
+    eosio::print("closearbit: ", deal_id);
 
     deal_t::idx_t deals(_self, _self.value);
     auto deal_itr = deals.find(deal_id);
@@ -567,6 +567,8 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
 
     auto status = (deal_status_t)deal_itr->status;
     auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
+    const auto &order_taker  = deal_itr->order_taker;
+
     check( arbit_status == arbit_status_t::ARBITING, "arbit isn't arbiting: " + to_string(deal_id) );
 
      deals.modify( *deal_itr, _self, [&]( auto& row ) {
@@ -596,10 +598,12 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
             deal_amount -= deal_fee;
             row.fine_amount = deal_amount;
         });
-        const auto &order_taker  = deal_itr->order_taker;
        
         //< send CNYD to user
-        TRANSFER( SYS_BANK, order_taker, deal_amount, to_string(order_id) + ":" +  to_string(deal_id));
+        TRANSFER(SYS_BANK, order_taker, deal_amount, "");
+
+        const auto &fee_recv_addr  = _conf().fee_recv_addr;
+        TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
     }
 }
 
@@ -707,11 +711,17 @@ void otcbook::withdraw(const name& owner, asset quantity){
  * This happens when a merchant decides to open sell orders
  */
 void otcbook::deposit(name from, name to, asset quantity, string memo) {
-    if (to != _self) return;
-
+    eosio::print("from: ", from, ", to:", to, ", quantity:" , quantity, ", memo:" , memo);
+    if(_self == from ){
+        return;
+    }
+    if (to != _self)
+        return;
+    // check( false, "deposit check test , from:" + from.to_string()+ ",to:" + to.to_string());
+    
     if (get_first_receiver() == SYS_BANK && quantity.symbol == CNYD_SYMBOL){
         merchant_t merchant(from);
-        check(_dbc.get( merchant ),"merchant not set");
+        check(_dbc.get( merchant ),"merchant is not set, from:" + from.to_string()+ ",to:" + to.to_string());
         check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
             "merchant not enabled");
         merchant.stake_free += quantity;
@@ -719,6 +729,7 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
         _add_fund_log(from, "deposit"_n, quantity);
     }
 }
+
 
 /**
  * 进行数据清除，测试用，发布正式环境去除

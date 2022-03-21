@@ -8,7 +8,7 @@ confContract=${2}.0
 cleos wallet unlock --password PW5KQzzoYJcijs2wtMpF5Vqk4v8n9FNcxxHj1aqqcjpGJDEkdBrog
 merchant=joss1
 token="eosio.token"
-contract=deotcn.o
+contract=deotcr.o
 order_id=0
 deal_id=0
 user=chenjunqiang
@@ -46,4 +46,4 @@ cleos push action ${contract} processdeal '['${user}', '${user_t}', '${deal_id}'
 ####仲裁#####
 cleos push action ${contract} startarbit  '['${merchant}', '${merchant_t}', '${deal_id}', "amaxhu3t3tjd", "arbit_ss", "session_msg"]' -p ${merchant}
 
-cleos push action ${contract} closearbit  '["amaxhu3t3tjd", '${deal_id}', 0,"arbit_session_msg"]' -p "amaxhu3t3tjd"
+cleos push action ${contract} closearbit  '["amaxhu3t3tjd", '${deal_id}', 1,"arbit_session_msg"]' -p "amaxhu3t3tjd"

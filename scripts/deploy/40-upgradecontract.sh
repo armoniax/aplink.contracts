@@ -1,6 +1,7 @@
 updateContract(){
   contractFilePath='/opt/mgp/node_devnet/data/otccontract'
   updateContract="cleos set contract ${accountName} ${contractFilePath} ${otcFileName}.wasm ${otcFileName}.abi -p ${accountName}@active"
+  echo   ssh sh-misc "${remoteDockerScrip} '${updateContract}'"
   ssh sh-misc "${remoteDockerScrip} '${updateContract}'"
 }
 

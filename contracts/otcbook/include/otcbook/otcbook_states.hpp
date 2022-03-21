@@ -49,15 +49,15 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     // asset min_sell_order_quantity;
     // asset min_pos_stake_frozen;
     // uint64_t withhold_expire_sec = 600;   // the amount hold will be unfrozen upon expiry
-    name transaction_fee_receiver;  // receiver account to transaction fees
-    uint64_t transaction_fee_ratio = 0; // fee ratio boosted by 10000
+    // name transaction_fee_receiver;  // receiver account to transaction fees
+    // uint64_t transaction_fee_ratio = 0; // fee ratio boosted by 10000
     name admin;             // default is contract self
     name conf_contract      = "otcconf"_n;
     bool initialized        = false; 
 
     EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
-                                /*(withhold_expire_sec)*/(transaction_fee_receiver)
-                                (transaction_fee_ratio)(admin)(conf_contract)(initialized)
+                                /*(withhold_expire_sec)(transaction_fee_receiver)
+                                (transaction_fee_ratio)*/(admin)(conf_contract)(initialized)
     )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
