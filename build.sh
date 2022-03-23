@@ -5,7 +5,7 @@ set -eo pipefail
 . ./scripts/.environment
 . ./scripts/helper.sh
 
-# Prompt user for location of eosio.cdt.
+# Prompt user for location of amax.cdt.
 cdt-directory-prompt
 
 # Include CDT_INSTALL_DIR in CMAKE_FRAMEWORK_PATH

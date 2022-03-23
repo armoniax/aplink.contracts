@@ -90,7 +90,7 @@ function cdt-directory-prompt() {
     echo 'No EOSIO.CDT location was specified.'
     while true; do
       if [[ $NONINTERACTIVE != true ]]; then
-        printf "Is EOSIO.CDT installed in the default location? /usr/local/eosio.cdt (y/n)" && read -p " " PROCEED
+        printf "Is EOSIO.CDT installed in the default location? /usr/local/amax.cdt (y/n)" && read -p " " PROCEED
       fi
       echo ""
       case $PROCEED in
@@ -107,7 +107,7 @@ function cdt-directory-prompt() {
       esac
     done
   fi
-  export CDT_INSTALL_DIR="${CDT_DIR_PROMPT:-/usr/local/eosio.cdt}"
+  export CDT_INSTALL_DIR="${CDT_DIR_PROMPT:-/usr/local/amax.cdt}"
 }
 
 
