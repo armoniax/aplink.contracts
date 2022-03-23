@@ -11,4 +11,4 @@ export EOSIO_MAX_VERSION="${EOSIO_MAX_VERSION:-$(echo $EOSIO_SOFT_MAX_MAJOR.999)
 export EOSIO_MAX_VERSION_MAJOR=$(echo $EOSIO_MAX_VERSION | cut -f1 -d '.')
 export EOSIO_MAX_VERSION_MINOR=$(echo $EOSIO_MAX_VERSION | cut -f2 -d '.')
 
-export CDT_DIR_PROMPT="/usr/local/eosio.cdt"
+export CDT_DIR_PROMPT="/usr/local/amax.cdt"

@@ -5,8 +5,8 @@ project(contracts)
 include(${CONTRACT_VERSION_FILE})
 message(STATUS "Contract Version: ${CONTRACT_VERSION}")
 
-set(EOSIO_WASM_OLD_BEHAVIOR "Off")
-find_package(eosio.cdt)
+set(AMAX_WASM_OLD_BEHAVIOR "Off")
+find_package(amax.cdt)
 
 set(ICON_BASE_URL "http://127.0.0.1/ricardian_assets/mgp.contracts/icons")
 
