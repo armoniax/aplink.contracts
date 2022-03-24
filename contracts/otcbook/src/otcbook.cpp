@@ -365,7 +365,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     auto deal_itr = deals.find(deal_id);
     check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
     auto status = (deal_status_t)deal_itr->status;
-    check( status != deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
+    check( status == deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
     auto arbit_status =  (arbit_status_t)deal_itr->arbit_status;
     check( arbit_status == arbit_status_t::UNARBITTED, "deal already arbittted: " + to_string(deal_id) );
 
@@ -391,7 +391,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( order_wrapper_ptr != nullptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();    
 
-    check( (order_status_t)order.status == order_status_t::CLOSED, "order already closed" );
+    check( (uint8_t)order.status == (uint8_t)order_status_t::CLOSED, "order already closed" );
 
     auto action = deal_action_t::CLOSE;
     if ((account_type_t) account_type != account_type_t::ADMIN) {
