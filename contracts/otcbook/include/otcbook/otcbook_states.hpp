@@ -75,8 +75,7 @@ enum class deal_action_t: uint8_t {
     MAKER_ACCEPT        = 2,
     TAKER_SEND          = 3,
     MAKER_RECV_AND_SENT = 4,
-    TAKER_RECEIVE       = 5,
-    CLOSE               = 6,
+    CLOSE               = 5,
     
     REVERSE             = 10,
     ADD_SESSION_MSG     = 11,
@@ -99,8 +98,7 @@ enum class deal_status_t: uint8_t {
     MAKER_ACCEPTED      = 2,
     TAKER_SENT          = 3,
     MAKER_RECV_AND_SENT = 4,
-    TAKER_RECEIVED      = 5,
-    CLOSED              = 6
+    CLOSED              = 5
 };
 
 // order sides
@@ -325,9 +323,6 @@ struct OTCBOOK_TBL deal_t {
     string arbiter_ss;              // arbiter's shared secret
     time_point_sec created_at;      // create time at
     time_point_sec closed_at;       // closed time at
-
-
-
 
     uint64_t order_sn = 0;          // order sn, created by external app
     // time_point_sec expired_at; // 订单到期时间

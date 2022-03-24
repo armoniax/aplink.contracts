@@ -47,3 +47,16 @@ cleos push action ${contract} processdeal '['${user}', '${user_t}', '${deal_id}'
 cleos push action ${contract} startarbit  '['${merchant}', '${merchant_t}', '${deal_id}', "amaxhu3t3tjd", "arbit_ss", "session_msg"]' -p ${merchant}
 
 cleos push action ${contract} closearbit  '["amaxhu3t3tjd", '${deal_id}', 1,"arbit_session_msg"]' -p "amaxhu3t3tjd"
+
+
+#### 添加CNYD
+cleos push action ${token} transfer '["eosio", "user3", "1000.000000 CNYD", ""]' -p eosio@active
+### 添加MGP
+cleos push action ${token} transfer '["eosio", "user3", "1000.0000 MGP", ""]' -p eosio@active
+
+#激活
+cleos create account eosio ${user} ${pubKey} -p eosio@active
+
+STAKE_NET='1.0000 MGP'
+STAKE_CPU='1.0000 MGP'
+cleos system newaccount eosio ${user} ${pubKey} ${pubKey} --stake-net "${STAKE_NET}" --stake-cpu "${STAKE_CPU}" --buy-ram-kbytes 1800

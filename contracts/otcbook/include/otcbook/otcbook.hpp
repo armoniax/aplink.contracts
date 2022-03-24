@@ -187,7 +187,7 @@ public:
 
     /**
      * close deal
-     * merchat/user can close deal when status in [CREATED | TAKER_RECEIVED]
+     * merchat/user can close deal when status in [CREATED | MAKER_RECV_AND_SENT]
      * admin can close deal in any status except [CLOSE]
      * @param account account name
      * @param account_type account type, admin(1) | merchant(2) | user(3)

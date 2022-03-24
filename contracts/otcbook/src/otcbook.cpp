@@ -367,7 +367,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     auto status = (deal_status_t)deal_itr->status;
     check( status != deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
     auto arbit_status =  (arbit_status_t)deal_itr->arbit_status;
-    check( arbit_status != arbit_status_t::UNARBITTED, "deal already arbittted: " + to_string(deal_id) );
+    check( arbit_status == arbit_status_t::UNARBITTED, "deal already arbittted: " + to_string(deal_id) );
 
     switch ((account_type_t) account_type) {
     case account_type_t::MERCHANT: 
@@ -395,7 +395,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
 
     auto action = deal_action_t::CLOSE;
     if ((account_type_t) account_type != account_type_t::ADMIN) {
-        check(deal_status_t::CREATED == status || deal_status_t::TAKER_RECEIVED == status, 
+        check(deal_status_t::CREATED == status || deal_status_t::MAKER_RECV_AND_SENT == status, 
             "can not process deal action:" + to_string((uint8_t)action) 
                 + " at status: " + to_string((uint8_t)status) );
     }
@@ -474,7 +474,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     DEAL_ACTION_CASE(MAKER_ACCEPT,          MERCHANT,     UNARBITTED,   CREATED,         MAKER_ACCEPTED)
     DEAL_ACTION_CASE(TAKER_SEND,            USER,         UNARBITTED,   MAKER_ACCEPTED,  TAKER_SENT)
     DEAL_ACTION_CASE(MAKER_RECV_AND_SENT,   MERCHANT,     UNARBITTED,   TAKER_SENT,      MAKER_RECV_AND_SENT)
-    DEAL_ACTION_CASE(TAKER_RECEIVE,         USER,         UNARBITTED,   MAKER_RECV_AND_SENT, TAKER_RECEIVED) 
+    DEAL_ACTION_CASE(TAKER_RECEIVE,         USER,         UNARBITTED,   MAKER_RECV_AND_SENT, CLOSED) 
     DEAL_ACTION_CASE(ADD_SESSION_MSG,       NONE,         NONE,         NONE,            NONE) 
     default: 
         check(false, "unsupported process deal action:" + to_string((uint8_t)action));
@@ -537,7 +537,7 @@ void otcbook::startarbit(const name& account, const uint8_t& account_type, const
     auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
     check( arbit_status == arbit_status_t::UNARBITTED, "arbit already started: " + to_string(deal_id) );
    
-    set<deal_status_t> can_arbit_status = {deal_status_t::TAKER_SENT, deal_status_t::MAKER_RECV_AND_SENT, deal_status_t::TAKER_RECEIVED };    
+    set<deal_status_t> can_arbit_status = {deal_status_t::TAKER_SENT, deal_status_t::MAKER_RECV_AND_SENT };    
     check( can_arbit_status.count(status) != 0, "status illegal: " + to_string((uint8_t)status) );
 
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
