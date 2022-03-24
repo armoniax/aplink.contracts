@@ -474,7 +474,6 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     DEAL_ACTION_CASE(MAKER_ACCEPT,          MERCHANT,     UNARBITTED,   CREATED,         MAKER_ACCEPTED)
     DEAL_ACTION_CASE(TAKER_SEND,            USER,         UNARBITTED,   MAKER_ACCEPTED,  TAKER_SENT)
     DEAL_ACTION_CASE(MAKER_RECV_AND_SENT,   MERCHANT,     UNARBITTED,   TAKER_SENT,      MAKER_RECV_AND_SENT)
-    DEAL_ACTION_CASE(TAKER_RECEIVE,         USER,         UNARBITTED,   MAKER_RECV_AND_SENT, CLOSED) 
     DEAL_ACTION_CASE(ADD_SESSION_MSG,       NONE,         NONE,         NONE,            NONE) 
     default: 
         check(false, "unsupported process deal action:" + to_string((uint8_t)action));
@@ -729,8 +728,6 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
         _add_fund_log(from, "deposit"_n, quantity);
     }
 }
-
-
 /**
  * 进行数据清除，测试用，发布正式环境去除
  */
