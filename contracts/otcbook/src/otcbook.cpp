@@ -259,7 +259,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     check( order_wrapper_ptr != nullptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();
     check( owner == order.owner, "have no access to close others' order");
-    check( (order_status_t)order.status == order_status_t::CLOSED, "order already closed" );
+    check( ((uint8_t))order.status == (uint8_t)order_status_t::CLOSED, "order already closed" );
     check( order.va_frozen_quantity.amount == 0, "order being processed" );
     check( order.va_quantity >= order.va_fulfilled_quantity, "order quantity insufficient" );
 
@@ -365,9 +365,9 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     auto deal_itr = deals.find(deal_id);
     check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
     auto status = (deal_status_t)deal_itr->status;
-    check( status == deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
+    check( (uint8_t)status == (uint8_t)deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
     auto arbit_status =  (arbit_status_t)deal_itr->arbit_status;
-    check( arbit_status == arbit_status_t::UNARBITTED, "deal already arbittted: " + to_string(deal_id) );
+    check( (uint8_t)arbit_status == (uint8_t)arbit_status_t::UNARBITTED, "deal already arbittted: " + to_string(deal_id) );
 
     switch ((account_type_t) account_type) {
     case account_type_t::MERCHANT: 
