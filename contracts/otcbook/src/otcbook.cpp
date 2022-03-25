@@ -391,7 +391,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( order_wrapper_ptr != nullptr, "order not found");
     const auto &order = order_wrapper_ptr->get_order();    
 
-    check( (uint8_t)order.status == (uint8_t)order_status_t::CLOSED, "order already closed" );
+    check( (uint8_t)order.status != (uint8_t)order_status_t::CLOSED, "order already closed" );
 
     auto action = deal_action_t::CLOSE;
     if ((account_type_t) account_type != account_type_t::ADMIN) {
