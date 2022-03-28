@@ -182,18 +182,18 @@ struct OTCBOOK_TBL order_t {
     // uint64_t scope() const { return price.symbol.code().raw(); } //not in use actually
 
     // check this order can be took by user
-    inline bool can_be_took() const {
+    inline bool can_be_taken() const {
         return (order_status_t)status == order_status_t::RUNNING && va_quantity >= va_frozen_quantity + va_fulfilled_quantity + va_min_take_quantity;
     }
 
     // sort by price, used by sell orders, can_be_took and lower price first
     uint64_t by_price() const {
-        return can_be_took() ? va_price.amount : std::numeric_limits<uint64_t>::max();
+        return can_be_taken() ? va_price.amount : std::numeric_limits<uint64_t>::max();
     } 
     
     // sort by price, used by buy orders, can_be_took and higher price first
     uint64_t by_invprice() const { 
-        return can_be_took() ? std::numeric_limits<uint64_t>::max() - va_price.amount
+        return can_be_taken() ? std::numeric_limits<uint64_t>::max() - va_price.amount
                     : std::numeric_limits<uint64_t>::max(); 
     } 
 
@@ -203,11 +203,11 @@ struct OTCBOOK_TBL order_t {
     // id: lower first
     // should use --revert option when get table by this index
     uint128_t by_maker_status() const {
-        uint128_t orderStatus = (status == (uint8_t)order_status_t::CLOSED) ? 0 : !can_be_took() ? 1 : 2;
+        uint128_t orderStatus = (status == (uint8_t)order_status_t::CLOSED) ? 0 : !can_be_taken() ? 1 : 2;
         return (uint128_t)owner.value << 64 | orderStatus; 
     }
     uint128_t by_coin() const {
-        return can_be_took() ? (uint128_t)va_quantity.symbol.code().raw() << 64 | va_price.amount
+        return can_be_taken() ? (uint128_t)va_quantity.symbol.code().raw() << 64 | va_price.amount
                     : std::numeric_limits<uint128_t>::max();
     }
   
