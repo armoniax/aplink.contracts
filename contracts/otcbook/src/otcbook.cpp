@@ -536,7 +536,7 @@ void otcbook::startarbit(const name& account, const uint8_t& account_type, const
     auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
     check( arbit_status == arbit_status_t::UNARBITTED, "arbit already started: " + to_string(deal_id) );
    
-    set<deal_status_t> can_arbit_status = {deal_status_t::TAKER_SENT, deal_status_t::MAKER_RECV_AND_SENT };    
+    set<deal_status_t> can_arbit_status = {deal_status_t::MAKER_ACCEPTED, deal_status_t::TAKER_SENT, deal_status_t::MAKER_RECV_AND_SENT };    
     check( can_arbit_status.count(status) != 0, "status illegal: " + to_string((uint8_t)status) );
 
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
