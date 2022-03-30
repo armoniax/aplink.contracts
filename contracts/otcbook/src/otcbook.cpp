@@ -594,7 +594,6 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
             row.va_frozen_quantity -= deal_quantity;
             row.va_fulfilled_quantity += deal_quantity;
             row.total_fee += deal_fee;
-            deal_amount -= deal_fee;
             row.fine_amount = deal_amount;
         });
        
