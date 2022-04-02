@@ -370,14 +370,14 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
 
    
     switch ((account_type_t) account_type) {
-    case account_type_t::MERCHANT: 
-        check( deal_itr->order_maker == account, "maker account mismatched");
-        break;
     case account_type_t::USER:
         check( deal_itr->order_taker == account, "taker account mismatched");
         break;
     case account_type_t::ADMIN:
         check( deal_itr->order_taker == account, "admin account mismatched");
+        break;
+    case account_type_t::ARBITER:
+        check( deal_itr->arbiter == account, "abiter account mismatched");
         break;
     default:
         check(false, "account type not supported: " + to_string(account_type));
@@ -394,7 +394,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( (uint8_t)order.status != (uint8_t)order_status_t::CLOSED, "order already closed" );
 
     auto action = deal_action_t::CLOSE;
-    if ((account_type_t) account_type != account_type_t::ADMIN) {
+    if ((account_type_t) account_type == account_type_t::USER) {
         
         check( (uint8_t)arbit_status == (uint8_t)arbit_status_t::UNARBITTED, "deal already arbittted: " + to_string(deal_id) );
 
