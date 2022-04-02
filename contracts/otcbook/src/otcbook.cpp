@@ -367,8 +367,8 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     auto status = (deal_status_t)deal_itr->status;
     check( (uint8_t)status != (uint8_t)deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
     auto arbit_status =  (arbit_status_t)deal_itr->arbit_status;
-    check( (uint8_t)arbit_status == (uint8_t)arbit_status_t::UNARBITTED, "deal already arbittted: " + to_string(deal_id) );
 
+   
     switch ((account_type_t) account_type) {
     case account_type_t::MERCHANT: 
         check( deal_itr->order_maker == account, "maker account mismatched");
@@ -395,6 +395,9 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
 
     auto action = deal_action_t::CLOSE;
     if ((account_type_t) account_type != account_type_t::ADMIN) {
+        
+        check( (uint8_t)arbit_status == (uint8_t)arbit_status_t::UNARBITTED, "deal already arbittted: " + to_string(deal_id) );
+
         check(deal_status_t::CREATED == status || deal_status_t::MAKER_RECV_AND_SENT == status, 
             "can not process deal action:" + to_string((uint8_t)action) 
                 + " at status: " + to_string((uint8_t)status) );
