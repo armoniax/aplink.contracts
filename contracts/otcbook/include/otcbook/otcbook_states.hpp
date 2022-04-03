@@ -128,24 +128,24 @@ struct OTCBOOK_TBL merchant_t {
     string merchant_detail;         // merchant's detail
     string email;                   // email
     string memo;                    // memo
-    uint8_t status;                 // status, merchant_state_t
+    uint8_t state;                 // status, merchant_state_t
     asset stake_free = asset(0, STAKE_SYMBOL);      // staked and free to make orders
     asset stake_frozen = asset(0, STAKE_SYMBOL);     // staked and frozen in orders
 
     merchant_t() {}
     merchant_t(const name& o): owner(o) {}
 
-    uint64_t by_status()     const { return status; }
+    uint64_t by_state()     const { return state; }
 
     uint64_t primary_key()const { return owner.value; }
     uint64_t scope()const { return 0; }
 
     typedef eosio::multi_index<"merchants"_n, merchant_t,
-        indexed_by<"status"_n, const_mem_fun<merchant_t, uint64_t, &merchant_t::by_status> >
+        indexed_by<"status"_n, const_mem_fun<merchant_t, uint64_t, &merchant_t::by_state> >
     > idx_t;
 
     EOSLIB_SERIALIZE(merchant_t,  (owner)(merchant_name)(merchant_detail)
-                                  (email)(memo)(status)(stake_free)(stake_frozen)
+                                  (email)(memo)(state)(stake_free)(stake_frozen)
     )
 };
 
