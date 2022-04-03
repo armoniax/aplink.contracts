@@ -108,7 +108,7 @@ static const set<name> ORDER_SIDES = {
     BUY_SIDE, SELL_SIDE
 };
 
-enum class merchant_status_t: uint8_t {
+enum class merchant_state_t: uint8_t {
     NONE        = 0,
     REGISTERED  = 1,
     DISABLED    = 2,
@@ -128,7 +128,7 @@ struct OTCBOOK_TBL merchant_t {
     string merchant_detail;         // merchant's detail
     string email;                   // email
     string memo;                    // memo
-    uint8_t status;                 // status, merchant_status_t
+    uint8_t status;                 // status, merchant_state_t
     asset stake_free = asset(0, STAKE_SYMBOL);      // staked and free to make orders
     asset stake_frozen = asset(0, STAKE_SYMBOL);     // staked and frozen in orders
 

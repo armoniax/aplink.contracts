@@ -87,23 +87,30 @@ void otcbook::setadmin(const name& admin) {
     _gstate.admin = admin;
 }
 
-void otcbook::setmerchant(const name& owner, const string &merchant_name, const string &merchant_detail, const string& email, const string& memo) {
+void otcbook::setmerchant(const name& owner, const name& merchant, const string &merchant_name, const string &merchant_detail, const string& email, const string& memo) {
+
     require_auth( owner );
+    auto isAdmin = (owner == _gstate.admin);
+    check( !isAdmin && owner == merchant, "non-admin not allowed to set merchant" );
+
     check(email.size() < 64, "email size too large: " + to_string(email.size()) );
     check(memo.size() < max_memo_size, "memo size too large: " + to_string(memo.size()) );
     const auto& conf = _conf();
 
-    merchant_t merchant(owner);
-    if (!_dbc.get(merchant)) {
+    merchant_t merchant_raw(merchant);
+    if (!_dbc.get(merchant_raw)) {
         // first register, init
-        merchant.status = (uint8_t)merchant_status_t::REGISTERED;
+        if(isAdmin)
+            merchant_raw.state = (uint8_t)merchant_state_t::ENABLED;
+        else 
+            merchant_raw.state = (uint8_t)merchant_state_t::REGISTERED;
     }
-    merchant.merchant_name = merchant_name;
-    merchant.merchant_detail = merchant_detail;
-    merchant.email = email;
-    merchant.memo = memo;
+    merchant_raw.merchant_name = merchant_name;
+    merchant_raw.merchant_detail = merchant_detail;
+    merchant_raw.email = email;
+    merchant_raw.memo = memo;
 
-    _dbc.set( merchant );
+    _dbc.set( merchant_raw );
 }
 
 void otcbook::enbmerchant(const name& owner, bool is_enabled) {
@@ -112,13 +119,13 @@ void otcbook::enbmerchant(const name& owner, bool is_enabled) {
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
     if (is_enabled) {
-        check((merchant_status_t)merchant.status != merchant_status_t::ENABLED,
+        check((merchant_state_t)merchant.state != merchant_state_t::ENABLED,
             "merchant has been enabled");
-        merchant.status = (uint8_t)merchant_status_t::ENABLED;
+        merchant.state = (uint8_t)merchant_state_t::ENABLED;
     } else {
-        check((merchant_status_t)merchant.status != merchant_status_t::DISABLED,
+        check((merchant_state_t)merchant.state != merchant_state_t::DISABLED,
             "merchant has been disabled");
-        merchant.status = (uint8_t)merchant_status_t::DISABLED;
+        merchant.state = (uint8_t)merchant_state_t::DISABLED;
     }
     _dbc.set( merchant );
 }
@@ -158,7 +165,7 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
-    check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
+    check((merchant_state_t)merchant.state == merchant_state_t::ENABLED,
         "merchant not enabled");
     
     auto stake_frozen = _calc_order_stakes(va_quantity, va_price); // TODO: process 70% used-rate of stake
@@ -374,7 +381,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         check( deal_itr->order_taker == account, "taker account mismatched");
         break;
     case account_type_t::ADMIN:
-        check( deal_itr->order_taker == account, "admin account mismatched");
+        check( deal_itr->order_taker == _gstate.admin, "admin account mismatched");
         break;
     case account_type_t::ARBITER:
         check( deal_itr->arbiter == account, "abiter account mismatched");
@@ -643,7 +650,7 @@ void otcbook::withdraw(const name& owner, asset quantity){
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
-    check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
+    check((merchant_state_t)merchant.state == merchant_state_t::ENABLED,
     "merchant not enabled");
     check( merchant.stake_free >= quantity, "The withdrawl amount must be less than the balance" );
     merchant.stake_free -= quantity;
@@ -723,7 +730,7 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
     if (get_first_receiver() == SYS_BANK && quantity.symbol == CNYD_SYMBOL){
         merchant_t merchant(from);
         check(_dbc.get( merchant ),"merchant is not set, from:" + from.to_string()+ ",to:" + to.to_string());
-        check((merchant_status_t)merchant.status == merchant_status_t::ENABLED,
+        check((merchant_state_t)merchant.state == merchant_state_t::ENABLED,
             "merchant not enabled");
         merchant.stake_free += quantity;
         _dbc.set( merchant );
