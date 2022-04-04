@@ -13,7 +13,7 @@ echo "Using EOSIO.CDT installation at: $CDT_INSTALL_DIR"
 export CMAKE_FRAMEWORK_PATH="${CDT_INSTALL_DIR}:${CMAKE_FRAMEWORK_PATH}"
 
 
-printf "\t=========== Building mgp.contracts ===========\n\n"
+printf "\t=========== Building amax.contracts ===========\n\n"
 RED='\033[0;31m'
 NC='\033[0m'
 CPU_CORES=$(getconf _NPROCESSORS_ONLN)

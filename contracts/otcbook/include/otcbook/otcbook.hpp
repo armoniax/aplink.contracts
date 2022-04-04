@@ -14,7 +14,7 @@
 
 using namespace wasm::db;
 
-namespace mgp {
+namespace amax {
 
 using eosio::asset;
 using eosio::check;

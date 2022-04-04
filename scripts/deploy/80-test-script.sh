@@ -7,4 +7,4 @@ initData() {
 
 sh ./scripts/deploy/01-unlock.sh
 otcAccountName=${1}.o
-remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
+remoteDockerScrip='docker exec -i amax-devnet /bin/bash -c'

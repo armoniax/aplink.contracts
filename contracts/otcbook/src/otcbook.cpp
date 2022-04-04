@@ -1,5 +1,5 @@
 #include <eosio.token/eosio.token.hpp>
-#include <otcbook/mgp_math.hpp>
+#include <otcbook/amax_math.hpp>
 #include <otcbook/otcbook.hpp>
 #include <otcbook/utils.hpp>
 
@@ -8,7 +8,7 @@ using namespace eosio;
 using namespace std;
 using std::string;
 
-namespace mgp {
+namespace amax {
 
 using namespace std;
 using namespace eosio;
@@ -842,4 +842,4 @@ void otcbook::_add_fund_log(const name& owner, const name & action, const asset 
     }); 
 }
 
-}  //end of namespace:: mgpbpvoting
+}  //end of namespace:: amaxbpvoting

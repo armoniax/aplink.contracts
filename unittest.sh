@@ -1,7 +1,7 @@
 cl='bash /root/eosio-wallet/cleos.sh'
 
 function setcode {
-    $cl set contract $con ./build/contracts/mgp.bpvoting/
+    $cl set contract $con ./build/contracts/amax.bpvoting/
     $cl set account permission $con active '{"threshold": 1,"keys": [{"key": "'$pubkey'","weight": 1}],"accounts": [{"permission":{"actor":"'$con'","permission":"eosio.code"},"weight":1}]}' owner -p $con
 }
 

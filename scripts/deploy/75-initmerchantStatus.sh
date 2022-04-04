@@ -18,7 +18,7 @@ sh ./scripts/deploy/01-unlock.sh
 otcAccountName=${1}.o
 token="eosio.token"
 
-remoteDockerScript='docker exec -i mgp-devnet /bin/bash -c'
+remoteDockerScript='docker exec -i amax-devnet /bin/bash -c'
 
 array=("joss1"
         "chenjunqiang"

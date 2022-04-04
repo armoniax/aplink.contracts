@@ -13,7 +13,7 @@
 #include <set>
 #include <type_traits>
 
-namespace mgp {
+namespace amax {
 
 using namespace std;
 using namespace eosio;

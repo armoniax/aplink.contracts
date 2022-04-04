@@ -7,14 +7,14 @@ createContract() {
     unlockScript='cleos wallet unlock --password PW5KQzzoYJcijs2wtMpF5Vqk4v8n9FNcxxHj1aqqcjpGJDEkdBrog'
     ssh sh-misc "${remoteDockerScrip} '${unlockScript}'"
 
-    contractFilePath='/opt/mgp/node_devnet/data/otccontract'
+    contractFilePath='/opt/amax/node_devnet/data/otccontract'
     setContractScript="cleos set contract ${accountName} ${contractFilePath} ${otcFileName}.wasm ${otcFileName}.abi -p ${accountName}@active"
     ssh sh-misc "${remoteDockerScrip} '${setContractScript}'"
 }
 
 
 accountName=${1}.h
-remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
+remoteDockerScrip='docker exec -i amax-devnet /bin/bash -c'
 otcFileName='otcconf'
 createContract ${otcFileName} ${accountName}
 

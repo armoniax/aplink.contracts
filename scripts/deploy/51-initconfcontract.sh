@@ -12,7 +12,7 @@ setPermission() {
   ssh sh-misc "${remoteDockerScrip} '${updateContract}'"
 }
 
-remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
+remoteDockerScrip='docker exec -i amax-devnet /bin/bash -c'
 otcAccountName=${1}.o
 confAccountName=${1}.h
 

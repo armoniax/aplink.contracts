@@ -11,7 +11,7 @@ initData() {
 
 sh ./scripts/deploy/01-unlock.sh
 otcAccountName=${1}.o
-remoteDockerScrip='docker exec -i mgp-devnet /bin/bash -c'
+remoteDockerScrip='docker exec -i amax-devnet /bin/bash -c'
 
 array=("5KJyakfLhb1JGcLPqx9sFoWNoeBGvSk9NBTBCY45rHVXXitGqnT:joss1"
         "5JZNkpLZdb7USfCea44wBsqPsm8us2bDKDXCmGjiDJ96o6pHtjt:chenjunqiang"
