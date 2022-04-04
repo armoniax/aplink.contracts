@@ -200,6 +200,20 @@ public:
     void closedeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& session_msg);
     
     /**
+     * close deal
+     * merchat/user can close deal when status in [CREATED | MAKER_RECV_AND_SENT]
+     * admin can close deal in any status except [CLOSE]
+     * @param account account name
+     * @param account_type account type, admin(1) | merchant(2) | user(3)
+     * @param deal_id deal_id, created by opendeal()
+     * @param session_msg session msg(message)
+     * @note require account auth
+     */
+    [[eosio::action]]
+    void canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& session_msg);
+
+
+    /**
      * process deal
      * @param account account name
      * @param account_type account type, merchant(2) | user(3)

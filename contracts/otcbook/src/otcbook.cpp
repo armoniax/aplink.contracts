@@ -373,7 +373,6 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     auto status = (deal_status_t)deal_itr->status;
     check( (uint8_t)status != (uint8_t)deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
     auto arbit_status =  (arbit_status_t)deal_itr->arbit_status;
-
    
     switch ((account_type_t) account_type) {
     case account_type_t::USER:
@@ -400,15 +399,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( (uint8_t)order.status != (uint8_t)order_status_t::CLOSED, "order already closed" );
 
     auto action = deal_action_t::CLOSE;
-    if ((account_type_t) account_type == account_type_t::USER) {
-        
-        check( (uint8_t)arbit_status == (uint8_t)arbit_status_t::UNARBITTED, "deal already arbittted: " + to_string(deal_id) );
-
-        check(deal_status_t::CREATED == status || deal_status_t::MAKER_RECV_AND_SENT == status, 
-            "can not process deal action:" + to_string((uint8_t)action) 
-                + " at status: " + to_string((uint8_t)status) );
-    }
-    
+    const auto &order_maker  = deal_itr->order_maker;
 
     auto deal_quantity = deal_itr->deal_quantity;
     check( order.va_frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
@@ -428,7 +419,66 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
 
     const auto &fee_recv_addr  = _conf().fee_recv_addr;
     TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
+    _add_fund_log(order_maker, "dealfee"_n, -deal_fee); 
 }
+
+
+void otcbook::canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& session_msg){
+    require_auth( account );
+    
+    deal_t::idx_t deals(_self, _self.value);
+    auto deal_itr = deals.find(deal_id);
+    check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
+    auto status = (deal_status_t)deal_itr->status;
+    auto arbit_status =  (arbit_status_t)deal_itr->arbit_status;
+   
+    switch ((account_type_t) account_type) {
+    case account_type_t::USER:
+        check( (uint8_t)status == (uint8_t)deal_status_t::CREATED ||  (uint8_t)status == (uint8_t)deal_status_t::MAKER_ACCEPTED,
+                     "deal already status need CREATED or MAKER_ACCEPTED " + to_string(deal_id));
+        check( deal_itr->order_taker == account, "taker account mismatched");
+        break;
+    case account_type_t::MERCHANT:
+        check( (uint8_t)status == (uint8_t)deal_status_t::CREATED, 
+                     "deal already status need CREATED or MAKER_ACCEPTED " + to_string(deal_id));
+        check( deal_itr->order_maker == account, "merchant account mismatched");
+        break;
+    case account_type_t::ADMIN:
+        check( deal_itr->order_taker == _gstate.admin, "admin account mismatched");
+        break;
+    case account_type_t::ARBITER:
+        check( deal_itr->arbiter == account, "abiter account mismatched");
+        break;
+    default:
+        check(false, "account type not supported: " + to_string(account_type));
+        break;
+    }
+
+    auto order_id = deal_itr->order_id;
+    auto order_wrapper_ptr = (deal_itr->order_side == BUY_SIDE) ? 
+        buy_order_wrapper_t::get_from_db(_self, _self.value, order_id)
+        : sell_order_wrapper_t::get_from_db(_self, _self.value, order_id);
+    check( order_wrapper_ptr != nullptr, "order not found");
+    const auto &order = order_wrapper_ptr->get_order();    
+
+    check( (uint8_t)order.status != (uint8_t)order_status_t::CLOSED, "order already closed" );
+
+    auto action = deal_action_t::CLOSE;
+    
+    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+            row.arbit_status = (uint8_t)arbit_status_t::FINISHED;
+            row.status = (uint8_t)deal_status_t::CLOSED;
+            row.closed_at = time_point_sec(current_time_point());
+            row.session.push_back({(uint8_t)account_type_t::ARBITER, account, (uint8_t)status, (uint8_t)deal_action_t::FINISH_ARBIT, session_msg, row.closed_at});
+        });
+
+    auto deal_quantity = deal_itr->deal_quantity;
+    // finished deal-canceled
+    order_wrapper_ptr->modify(_self, [&]( auto& row ) {
+        row.va_frozen_quantity -= deal_quantity;
+    });
+}
+
 
 void otcbook::processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
     uint8_t action, const string& session_msg
@@ -576,7 +626,7 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
     auto status = (deal_status_t)deal_itr->status;
     auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
     const auto &order_taker  = deal_itr->order_taker;
-
+    const auto &order_maker  = deal_itr->order_maker;
     check( arbit_status == arbit_status_t::ARBITING, "arbit isn't arbiting: " + to_string(deal_id) );
 
      deals.modify( *deal_itr, _self, [&]( auto& row ) {
@@ -611,6 +661,7 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
 
         const auto &fee_recv_addr  = _conf().fee_recv_addr;
         TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
+        _add_fund_log(order_maker, "dealfee"_n, -deal_fee);  
     }
 }
 
