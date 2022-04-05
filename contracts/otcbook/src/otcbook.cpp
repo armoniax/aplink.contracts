@@ -58,7 +58,7 @@ asset otcbook::_calc_deal_fee(const asset &quantity, const asset &price) {
 
     const auto & fee_pct = _conf().fee_pct;
     int64_t amount = multiply_decimal64(value, fee_pct, percent_boost);
-    amount = multiply_decimal64(value, get_precision(STAKE_SYMBOL), get_precision(quantity));
+    amount = multiply_decimal64(amount, get_precision(STAKE_SYMBOL), get_precision(quantity));
 
     return asset(amount, STAKE_SYMBOL);
 }
