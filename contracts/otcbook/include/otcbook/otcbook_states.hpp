@@ -24,9 +24,8 @@ static constexpr eosio::name active_perm{"active"_n};
 static constexpr eosio::name SYS_BANK{"eosio.token"_n};
 
 // crypto assets
-static constexpr symbol   SYS_SYMBOL            = SYMBOL("MGP", 4);
 static constexpr symbol   CNYD_SYMBOL           = SYMBOL("CNYD", 6);
-static constexpr symbol   CNY                   = SYMBOL("CNY", 4);
+static constexpr symbol   CNY                   = SYMBOL("CNY", 6);
 static constexpr symbol   STAKE_SYMBOL          = CNYD_SYMBOL;
 
 static constexpr uint64_t percent_boost     = 10000;
@@ -427,4 +426,4 @@ struct OTCBOOK_TBL fund_log_t {
 //         indexed_by<"expiry"_n,    const_mem_fun<deal_expiry_t, uint64_t, &deal_expiry_t::by_expired_at>   >
 //     > deal_expiry_tbl;
 
-} // MGP
+} // AMA

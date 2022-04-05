@@ -51,12 +51,12 @@ cleos push action ${contract} closearbit  '["amaxhu3t3tjd", '${deal_id}', 1,"arb
 
 #### 添加CNYD
 cleos push action ${token} transfer '["eosio", "user3", "1000.000000 CNYD", ""]' -p eosio@active
-### 添加MGP
-cleos push action ${token} transfer '["eosio", "user3", "1000.0000 MGP", ""]' -p eosio@active
+### 添加AMA
+cleos push action ${token} transfer '["eosio", "user3", "1000.0000 AMA", ""]' -p eosio@active
 
 #激活
 cleos create account eosio ${user} ${pubKey} -p eosio@active
 
-STAKE_NET='1.0000 MGP'
-STAKE_CPU='1.0000 MGP'
+STAKE_NET='1.0000 AMA'
+STAKE_CPU='1.0000 AMA'
 cleos system newaccount eosio ${user} ${pubKey} ${pubKey} --stake-net "${STAKE_NET}" --stake-cpu "${STAKE_CPU}" --buy-ram-kbytes 1800

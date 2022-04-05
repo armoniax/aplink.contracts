@@ -30,7 +30,7 @@ static constexpr bool DEBUG = true;
 
 #define WASM_FUNCTION_PRINT_LENGTH 50
 
-#define MGP_LOG( debug, exception, ... ) {  \
+#define AMA_LOG( debug, exception, ... ) {  \
 if ( debug ) {                               \
    std::string str = std::string(__FILE__); \
    str += std::string(":");                 \

@@ -8,65 +8,65 @@ function setcode {
 function init {
   echo "0. conf & init"
   echo ""
-  $cl push action $con config '[20,30,50,21,60,600,1,"100.0000 MGP","200.0000 MGP","10.0000 MGP"]' -p $con
+  $cl push action $con config '[20,30,50,21,60,600,1,"100.0000 AMA","200.0000 AMA","10.0000 AMA"]' -p $con
   $cl push action $con init '[]' -p $con
 }
 
 function reward {
   echo "1. send rewards (300)"
   echo ""
-  $cl transfer eosio $con "300.0000 MGP"
+  $cl transfer eosio $con "300.0000 AMA"
 }
 
 function list {
   echo "2. list masteraychen, richard.chen, raymond.chen"
   echo ""
-  $cl transfer masteraychen $con "100.0000 MGP" "list:2000"
-  $cl transfer richard.chen $con "100.0000 MGP" "list:3000"
-  $cl transfer raymond.chen $con "100.0000 MGP" "list:5000"
+  $cl transfer masteraychen $con "100.0000 AMA" "list:2000"
+  $cl transfer richard.chen $con "100.0000 AMA" "list:3000"
+  $cl transfer raymond.chen $con "100.0000 AMA" "list:5000"
 }
 
 function vote {
   echo "3. cast votes..."
   echo ""
-  $cl transfer eosio $con "300.0000 MGP" "vote:raymond.chen"
-  $cl transfer masteraychen $con "60.0000 MGP" "vote:richard.chen"
+  $cl transfer eosio $con "300.0000 AMA" "vote:raymond.chen"
+  $cl transfer masteraychen $con "60.0000 AMA" "vote:richard.chen"
 }
 
 function r0 {
   echo "Conduct round-0..."
-  echo "1) reward w 200 MGP"
-  $cl transfer eosio $con "200.0000 MGP"
+  echo "1) reward w 200 AMA"
+  $cl transfer eosio $con "200.0000 AMA"
   echo "2) lists"
-  $cl transfer masteraychen $con "10.0000 MGP" "list:2000"
-  $cl transfer richard.chen $con "20.0000 MGP" "list:2000"
-  $cl transfer raymond.chen $con "100.0000 MGP" "list:4000"
+  $cl transfer masteraychen $con "10.0000 AMA" "list:2000"
+  $cl transfer richard.chen $con "20.0000 AMA" "list:2000"
+  $cl transfer raymond.chen $con "100.0000 AMA" "list:4000"
   sleep 3
   echo "3) votes"
-  $cl transfer eosio $con "10.0000 MGP" "vote:masteraychen"
-  $cl transfer masteraychen $con "30.0000 MGP" "vote:richard.chen"
-  $cl transfer masteraychen $con "100.0000 MGP" "vote:raymond.chen"
+  $cl transfer eosio $con "10.0000 AMA" "vote:masteraychen"
+  $cl transfer masteraychen $con "30.0000 AMA" "vote:richard.chen"
+  $cl transfer masteraychen $con "100.0000 AMA" "vote:raymond.chen"
 }
 
 function r1 {
   echo "Conduct round-1..."
-  echo "1) reward w 300 MGP"
-  $cl transfer eosio $con "300.0000 MGP"
+  echo "1) reward w 300 AMA"
+  $cl transfer eosio $con "300.0000 AMA"
   echo "2) lists - none"
   echo "3) votes"
-  $cl transfer eosio $con "10.0000 MGP" "vote:masteraychen"
-  $cl transfer masteraychen $con "150.0000 MGP" "vote:richard.chen"
-  $cl transfer masteraychen $con "100.0000 MGP" "vote:raymond.chen"
+  $cl transfer eosio $con "10.0000 AMA" "vote:masteraychen"
+  $cl transfer masteraychen $con "150.0000 AMA" "vote:richard.chen"
+  $cl transfer masteraychen $con "100.0000 AMA" "vote:raymond.chen"
 }
 
 function r2 {
   echo "Conduct round-2..."
-  echo "1) reward w 200 MGP"
-  $cl transfer eosio $con "200.0000 MGP"
+  echo "1) reward w 200 AMA"
+  $cl transfer eosio $con "200.0000 AMA"
   echo "2) lists - none"
   echo "3) votes"
-  $cl transfer masteraychen $con "100.0000 MGP" "vote:richard.chen"
-  $cl transfer masteraychen $con "100.0000 MGP" "vote:raymond.chen"
+  $cl transfer masteraychen $con "100.0000 AMA" "vote:richard.chen"
+  $cl transfer masteraychen $con "100.0000 AMA" "vote:raymond.chen"
   $cl push action $con unvote '["raymond.chen", 5]' -p @masteraychen
 }
 

@@ -18,8 +18,8 @@ createKeyAndImport() {
 #newAccountAndActive
 newAccountAndActive(){
   contractName=$1
-  STAKE_NET='1.0000 MGP'
-  STAKE_CPU='1.0000 MGP'
+  STAKE_NET='1.0000 AMA'
+  STAKE_CPU='1.0000 AMA'
   newAccountAndActiveScript="cleos system newaccount eosio ${contractName} ${pubKey} ${pubKey} --stake-net \"${STAKE_NET}\" --stake-cpu \"${STAKE_CPU}\" --buy-ram-kbytes 1800"
   ret=`ssh sh-misc "${remoteDockerScrip} '${newAccountAndActiveScript}' "`
   echo "newAccountAndActive output: $ret"

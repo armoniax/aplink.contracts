@@ -46,19 +46,19 @@ asset otcbook::_calc_order_stakes(const asset &quantity, const asset &price) {
     return asset(amount, STAKE_SYMBOL);
 }
 
-
 asset otcbook::_calc_deal_amount(const asset &quantity, const asset &price) {
     auto value = multiply_decimal64( quantity.amount, price.amount, get_precision(price));
-    return asset(value, STAKE_SYMBOL);
+    int64_t amount = multiply_decimal64(value, get_precision(STAKE_SYMBOL), get_precision(quantity));
+    return asset(amount, STAKE_SYMBOL);
 }
-
 
 asset otcbook::_calc_deal_fee(const asset &quantity, const asset &price) {
     // calc order quantity value by price
-    auto value = multiply_decimal64( quantity.amount, price.amount, get_precision(price) );
+    auto value = multiply_decimal64(quantity.amount, price.amount, get_precision(price));
 
-    const auto & prices_quote_cny = _conf().fee_pct;
-    int64_t amount = multiply_decimal64(value, prices_quote_cny, percent_boost);
+    const auto & fee_pct = _conf().fee_pct;
+    int64_t amount = multiply_decimal64(value, fee_pct, percent_boost);
+    amount = multiply_decimal64(value, get_precision(STAKE_SYMBOL), get_precision(quantity));
 
     return asset(amount, STAKE_SYMBOL);
 }
