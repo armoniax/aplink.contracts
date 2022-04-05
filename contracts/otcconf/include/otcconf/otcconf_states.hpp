@@ -39,7 +39,7 @@ static constexpr symbol ETH        = SYMBOL("ETH", 8);
 static constexpr symbol CNYD       = SYMBOL("CNYD", 6);
 
 // fiat currency symbols
-static constexpr symbol   CNY      = SYMBOL("CNY", 4);
+static constexpr symbol   CNY      = SYMBOL("CNY", 6);
 static constexpr symbol   USD      = SYMBOL("USD", 4);
 static constexpr symbol   EUR      = SYMBOL("EUR", 4);
 static constexpr symbol   INR      = SYMBOL("INR", 4);
