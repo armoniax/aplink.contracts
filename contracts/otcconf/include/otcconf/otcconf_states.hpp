@@ -75,7 +75,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
         false 
     };
 
-    set<name> pay_type = { CNYDPAY, BANK, WECHAT, ALIPAY, PAYPAL };
+    set<name> pay_type = { CNYDPAY, BANK, WECHAT, ALIPAY };
 
     name_set arbiters;
 
