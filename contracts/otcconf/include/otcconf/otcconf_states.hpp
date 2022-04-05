@@ -33,6 +33,7 @@ static constexpr symbol USDT_BEP20 = SYMBOL("USDTBEP", 6);
 static constexpr symbol CNYD_BEP20 = SYMBOL("CNYDBEP", 6);
 static constexpr symbol CNYD_ARC20 = SYMBOL("CNYDARC", 6);
 static constexpr symbol AMA        = SYMBOL("AMA", 8);
+static constexpr symbol AMAX_ARC20 = SYMBOL("AMAXARC", 8);
 static constexpr symbol BTC        = SYMBOL("BTC", 8);
 static constexpr symbol ETH        = SYMBOL("ETH", 8);
 static constexpr symbol CNYD       = SYMBOL("CNYD", 6);
@@ -78,35 +79,34 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
 
     name_set arbiters;
 
-    symbol_set coin_type = { AMA, USDT_ERC20, USDT_TRC20, USDT_BEP20, CNYD_BEP20, CNYD_ARC20 };
+    symbol_set coin_type = { AMAX_ARC20, CNYD_ARC20, USDT_ERC20, USDT_TRC20, USDT_BEP20 };
     symbol fiat_type = CNY;
 
     name fee_recv_addr="amaxhu3t3tjd"_n;
-    uint64_t fee_pct   = 80;
+    uint64_t fee_pct   = 50;
 
     /** 
      * crypto coins that OTC merchants can buy in orders 
      */
     symbol_set buy_coins_conf = {
-        AMA,
-        CNYD_BEP20, 
-        CNYD_ARC20,
-        BTC,
-        ETH
+        AMAX_ARC20,
+        CNYD_ARC20, 
+        USDT_ERC20,
+        USDT_TRC20,
+        USDT_BEP20
     };
 
     /** 
      * crypto coins that OTC merchants can sell in orders
      */
     symbol_set sell_coins_conf = {
-        AMA,
-        CNYD_BEP20,
-        CNYD_ARC20,  
-        USDT_ERC20, 
-        USDT_BEP20,
-        BTC,
-        ETH
+        AMAX_ARC20,
+        CNYD_ARC20, 
+        USDT_ERC20,
+        USDT_TRC20,
+        USDT_BEP20
     };
+
 
     map<symbol, asset> prices_quote_cny {
         { USD,  ASSET(6.3000, CNY) },
