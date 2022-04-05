@@ -13,7 +13,7 @@
 #include <set>
 #include <type_traits>
 
-namespace mgp {
+namespace amax {
 
 using namespace std;
 using namespace eosio;
@@ -24,9 +24,8 @@ static constexpr eosio::name active_perm{"active"_n};
 static constexpr eosio::name SYS_BANK{"eosio.token"_n};
 
 // crypto assets
-static constexpr symbol   SYS_SYMBOL            = SYMBOL("MGP", 4);
 static constexpr symbol   CNYD_SYMBOL           = SYMBOL("CNYD", 6);
-static constexpr symbol   CNY                   = SYMBOL("CNY", 4);
+static constexpr symbol   CNY                   = SYMBOL("CNY", 6);
 static constexpr symbol   STAKE_SYMBOL          = CNYD_SYMBOL;
 
 static constexpr uint64_t percent_boost     = 10000;
@@ -49,15 +48,15 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     // asset min_sell_order_quantity;
     // asset min_pos_stake_frozen;
     // uint64_t withhold_expire_sec = 600;   // the amount hold will be unfrozen upon expiry
-    name transaction_fee_receiver;  // receiver account to transaction fees
-    uint64_t transaction_fee_ratio = 0; // fee ratio boosted by 10000
+    // name transaction_fee_receiver;  // receiver account to transaction fees
+    // uint64_t transaction_fee_ratio = 0; // fee ratio boosted by 10000
     name admin;             // default is contract self
     name conf_contract      = "otcconf"_n;
     bool initialized        = false; 
 
     EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
-                                /*(withhold_expire_sec)*/(transaction_fee_receiver)
-                                (transaction_fee_ratio)(admin)(conf_contract)(initialized)
+                                /*(withhold_expire_sec)(transaction_fee_receiver)
+                                (transaction_fee_ratio)*/(admin)(conf_contract)(initialized)
     )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
@@ -71,15 +70,24 @@ enum class account_type_t: uint8_t {
 };
 
 enum class deal_action_t: uint8_t {
-    CREATE          = 1,
-    MAKER_ACCEPT    = 2,
-    TAKER_SEND      = 3,
-    MAKER_RECEIVE   = 4,
-    MAKER_SEND      = 5,
-    TAKER_RECEIVE   = 6,
-    CLOSE           = 7,
-    ADD_SESSION_MSG = 8,
-    REVERSE         = 9
+    CREATE              = 1,
+    MAKER_ACCEPT        = 2,
+    TAKER_SEND          = 3,
+    MAKER_RECV_AND_SENT = 4,
+    CLOSE               = 5,
+    
+    REVERSE             = 10,
+    ADD_SESSION_MSG     = 11,
+    START_ARBIT         = 21,
+    FINISH_ARBIT        = 22
+};
+
+
+enum class order_status_t: uint8_t {
+    NONE                = 0,
+    RUNNING             = 1,
+    PAUSED              = 2,
+    CLOSED              = 3
 };
 
 
@@ -88,10 +96,8 @@ enum class deal_status_t: uint8_t {
     CREATED             = 1,
     MAKER_ACCEPTED      = 2,
     TAKER_SENT          = 3,
-    MAKER_RECEIVED      = 4,
-    MAKER_SENT          = 5,
-    TAKER_RECEIVED      = 6,
-    CLOSED              = 7
+    MAKER_RECV_AND_SENT = 4,
+    CLOSED              = 5
 };
 
 // order sides
@@ -101,36 +107,44 @@ static const set<name> ORDER_SIDES = {
     BUY_SIDE, SELL_SIDE
 };
 
-enum  class merchant_status_t: uint8_t {
+enum class merchant_state_t: uint8_t {
     NONE        = 0,
     REGISTERED  = 1,
     DISABLED    = 2,
     ENABLED     = 3
 };
 
+enum class arbit_status_t: uint8_t {
+    NONE        =0,
+    UNARBITTED = 1,
+    ARBITING   = 2,
+    FINISHED   = 3
+};
+
 struct OTCBOOK_TBL merchant_t {
     name owner;                     // owner account of merchant
-    string merchant_name;                    // merchant's name
+    string merchant_name;           // merchant's name
+    string merchant_detail;         // merchant's detail
     string email;                   // email
     string memo;                    // memo
-    uint8_t status;                 // status, merchant_status_t
+    uint8_t state;                 // status, merchant_state_t
     asset stake_free = asset(0, STAKE_SYMBOL);      // staked and free to make orders
     asset stake_frozen = asset(0, STAKE_SYMBOL);     // staked and frozen in orders
 
     merchant_t() {}
     merchant_t(const name& o): owner(o) {}
 
-    uint64_t by_status()     const { return status; }
+    uint64_t by_state()     const { return state; }
 
     uint64_t primary_key()const { return owner.value; }
     uint64_t scope()const { return 0; }
 
     typedef eosio::multi_index<"merchants"_n, merchant_t,
-        indexed_by<"status"_n, const_mem_fun<merchant_t, uint64_t, &merchant_t::by_status> >
+        indexed_by<"status"_n, const_mem_fun<merchant_t, uint64_t, &merchant_t::by_state> >
     > idx_t;
 
-    EOSLIB_SERIALIZE(merchant_t,  (owner)(merchant_name)
-                                  (email)(memo)(status)(stake_free)(stake_frozen)
+    EOSLIB_SERIALIZE(merchant_t,  (owner)(merchant_name)(merchant_detail)
+                                  (email)(memo)(state)(stake_free)(stake_frozen)
     )
 };
 
@@ -148,13 +162,15 @@ struct OTCBOOK_TBL order_t {
     asset va_price;                                 // va(virtual asset) quantity price, quote in fiat, see fiat_type
     asset va_quantity;                              // va(virtual asset) quantity, see conf.coin_type
     asset va_min_take_quantity;                     // va(virtual asset) min take quantity quantity for taker, symbol must equal to quantity's
+    asset va_max_take_quantity;                     // va(virtual asset) max take quantity quantity for taker, symbol must equal to quantity's
     asset va_frozen_quantity;                       // va(virtual asset) frozen quantity of sell/buy coin
     asset va_fulfilled_quantity;                    // va(virtual asset) fulfilled quantity of sell/buy coin, support partial fulfillment
     asset stake_frozen = asset(0, STAKE_SYMBOL);    // stake frozen asset
-    asset total_fee = asset(0, STAKE_SYMBOL);
+    asset total_fee = asset(0, STAKE_SYMBOL);       
+    asset fine_amount= asset(0, STAKE_SYMBOL);      // aarbit fine amount, not contain fee
     string memo;                                    // memo
 
-    bool closed = false;                            // is closed
+    uint8_t status;                                 // 
     time_point_sec created_at;                      // created time at
     time_point_sec closed_at;                       // closed time at
 
@@ -165,18 +181,18 @@ struct OTCBOOK_TBL order_t {
     // uint64_t scope() const { return price.symbol.code().raw(); } //not in use actually
 
     // check this order can be took by user
-    inline bool can_be_took() const {
-        return !closed && va_quantity >= va_frozen_quantity + va_fulfilled_quantity + va_min_take_quantity;
+    inline bool can_be_taken() const {
+        return (order_status_t)status == order_status_t::RUNNING && va_quantity >= va_frozen_quantity + va_fulfilled_quantity + va_min_take_quantity;
     }
 
     // sort by price, used by sell orders, can_be_took and lower price first
     uint64_t by_price() const {
-        return can_be_took() ? va_price.amount : std::numeric_limits<uint64_t>::max();
+        return can_be_taken() ? va_price.amount : std::numeric_limits<uint64_t>::max();
     } 
     
     // sort by price, used by buy orders, can_be_took and higher price first
     uint64_t by_invprice() const { 
-        return can_be_took() ? std::numeric_limits<uint64_t>::max() - va_price.amount
+        return can_be_taken() ? std::numeric_limits<uint64_t>::max() - va_price.amount
                     : std::numeric_limits<uint64_t>::max(); 
     } 
 
@@ -186,17 +202,18 @@ struct OTCBOOK_TBL order_t {
     // id: lower first
     // should use --revert option when get table by this index
     uint128_t by_maker_status() const {
-        uint128_t status =  closed ? 0 : !can_be_took() ? 1 : 2;
-        return (uint128_t)owner.value << 64 | status; 
+        uint128_t orderStatus = (status == (uint8_t)order_status_t::CLOSED) ? 0 : !can_be_taken() ? 1 : 2;
+        return (uint128_t)owner.value << 64 | orderStatus; 
     }
     uint128_t by_coin() const {
-        return can_be_took() ? (uint128_t)va_quantity.symbol.code().raw() << 64 | va_price.amount
+        return can_be_taken() ? (uint128_t)va_quantity.symbol.code().raw() << 64 | va_price.amount
                     : std::numeric_limits<uint128_t>::max();
     }
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(merchant_name)(accepted_payments)(va_price)(va_quantity)
-                                (va_min_take_quantity)(va_frozen_quantity)(va_fulfilled_quantity)
-                                (stake_frozen)(total_fee)(memo)(closed)(created_at)(closed_at))
+                                (va_min_take_quantity)(va_max_take_quantity)(va_frozen_quantity)(va_fulfilled_quantity)
+                                (stake_frozen)(total_fee)(fine_amount)
+                                (memo)(status)(created_at)(closed_at))
 };
 
 /**
@@ -293,8 +310,16 @@ struct OTCBOOK_TBL deal_t {
     string merchant_name;           // merchant's name
     name order_taker;               // taker, user
     asset deal_fee;                 // deal fee
+    asset fine_amount;              // aarbit fine amount, not contain fee
 
     uint8_t status = 0;             // status
+
+    uint8_t arbit_status = 0;       // arbit status
+    name arbiter;
+    string ss_hash;                 //plaint shared secret's hash 
+    string user_ss;                 // user's shared secret
+    string merchant_ss;             // merchant's shared secret
+    string arbiter_ss;              // arbiter's shared secret
     time_point_sec created_at;      // create time at
     time_point_sec closed_at;       // closed time at
 
@@ -312,7 +337,9 @@ struct OTCBOOK_TBL deal_t {
     uint128_t by_order()     const { return (uint128_t)order_id << 64 | status; }
     uint128_t by_maker()     const { return (uint128_t)order_maker.value << 64 | status ; }
     uint128_t by_taker()     const { return (uint128_t)order_taker.value << 64 | status; }
-    uint64_t by_ordersn()   const { return order_sn;}
+    uint128_t by_arbiter()   const { return (uint128_t)arbiter.value << 64 | arbit_status; }
+    uint64_t by_ordersn()    const { return order_sn;}
+
 
     uint128_t by_order_id() const {
         return (uint128_t)order_side.value << 64 | order_id;
@@ -328,6 +355,7 @@ struct OTCBOOK_TBL deal_t {
         indexed_by<"order"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_order> >,
         indexed_by<"maker"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_maker> >,
         indexed_by<"taker"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_taker> >,
+        indexed_by<"arbiter"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_arbiter> >,
         indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >,
         indexed_by<"orderid"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_order_id> >,
         indexed_by<"coin"_n,    const_mem_fun<deal_t, uint128_t, &deal_t::by_coin> >
@@ -336,8 +364,10 @@ struct OTCBOOK_TBL deal_t {
 
     EOSLIB_SERIALIZE(deal_t,    (id)(order_side)(order_id)(order_price)(deal_quantity)
                                 (order_maker)(merchant_name)
-                                (order_taker)(deal_fee)
-                                (status)(created_at)(closed_at)(order_sn)
+                                (order_taker)(deal_fee)(fine_amount)
+                                (status)(arbit_status)(arbiter)
+                                (ss_hash)(user_ss)(merchant_ss)(arbiter_ss)
+                                (created_at)(closed_at)(order_sn)
                                 /*(expired_at)(maker_expired_at)*/
                                 (session))
 };
@@ -354,15 +384,19 @@ struct OTCBOOK_TBL fund_log_t {
 
     fund_log_t() {}
     fund_log_t(uint64_t i): id(i) {}
-
     uint64_t primary_key() const { return id; }
     uint64_t scope() const { return /*order_price.symbol.code().raw()*/ 0; }
 
     uint64_t by_owner()     const { return owner.value; }
 
+    uint128_t by_action()     const {
+        return (uint128_t)action.value << 64 || owner.value;
+    }
+
     typedef eosio::multi_index
     <"fundlog"_n, fund_log_t,
-        indexed_by<"owner"_n,   const_mem_fun<fund_log_t, uint64_t, &fund_log_t::by_owner> > 
+        indexed_by<"owner"_n,   const_mem_fun<fund_log_t, uint64_t, &fund_log_t::by_owner> > ,
+        indexed_by<"action"_n,   const_mem_fun<fund_log_t, uint128_t, &fund_log_t::by_action> >
     > table_t;
 
     EOSLIB_SERIALIZE(fund_log_t,    (id)(owner)(action)(quantity)(log_at) )
@@ -392,4 +426,4 @@ struct OTCBOOK_TBL fund_log_t {
 //         indexed_by<"expiry"_n,    const_mem_fun<deal_expiry_t, uint64_t, &deal_expiry_t::by_expired_at>   >
 //     > deal_expiry_tbl;
 
-} // MGP
+} // AMA
