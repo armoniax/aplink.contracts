@@ -264,7 +264,7 @@ public:
      * @param memo memo
      * @note require from auth
      */
-    [[eosio::on_notify("eosio.token::transfer")]]
+    [[eosio::on_notify("cnyd.token::transfer")]]
     void deposit(name from, name to, asset quantity, string memo);
    
     /**

@@ -21,7 +21,7 @@ using namespace eosio;
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
 
 static constexpr eosio::name active_perm{"active"_n};
-static constexpr eosio::name SYS_BANK{"eosio.token"_n};
+static constexpr eosio::name SYS_BANK{"cnyd.token"_n};
 
 // crypto assets
 static constexpr symbol   CNYD_SYMBOL           = SYMBOL("CNYD", 6);

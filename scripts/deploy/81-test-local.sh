@@ -1,13 +1,13 @@
 
 merchant=$1
-token="eosio.token"
+token="cnyd.token"
 contract=${2}.o
 confContract=${2}.0
 
 
 cleos wallet unlock --password PW5KQzzoYJcijs2wtMpF5Vqk4v8n9FNcxxHj1aqqcjpGJDEkdBrog
 merchant=joss1
-token="eosio.token"
+token="cnyd.token"
 contract=deotcr.o
 order_id=0
 deal_id=0
