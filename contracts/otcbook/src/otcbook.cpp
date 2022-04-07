@@ -404,6 +404,12 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     auto deal_quantity = deal_itr->deal_quantity;
     check( order.va_frozen_quantity >= deal_quantity, "Err: order frozen quantity smaller than deal quantity" );
     auto deal_fee= deal_itr->deal_fee;
+ 
+    if ((account_type_t) account_type == account_type_t::MERCHANT || (account_type_t) account_type == account_type_t::USER) {
+        check( deal_status_t::MAKER_RECV_AND_SENT == status, 
+            "can not process deal action:" + to_string((uint8_t)action) 
+                + " at status: " + to_string((uint8_t)status) );
+    }
 
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.va_frozen_quantity -= deal_quantity;
