@@ -91,8 +91,9 @@ void otcbook::setmerchant(const name& owner, const name& merchant, const string 
 
     require_auth( owner );
     auto isAdmin = (owner == _gstate.admin);
-
-    check( !isAdmin && owner == merchant, "non-admin not allowed to set merchant" );
+    if(!isAdmin) {
+        check(owner == merchant, "non-admin not allowed to set merchant" );
+    }
     check(email.size() < 64, "email size too large: " + to_string(email.size()) );
     check(memo.size() < max_memo_size, "memo size too large: " + to_string(memo.size()) );
 
