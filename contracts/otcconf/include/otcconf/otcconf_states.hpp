@@ -82,7 +82,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     symbol_set coin_type = { AMAX_ARC20, CNYD_ARC20, USDT_ERC20, USDT_TRC20, USDT_BEP20 };
     symbol fiat_type = CNY;
 
-    name fee_recv_addr="amaxhu3t3tjd"_n;
+    name fee_recv_addr="oxo.feeadmin"_n;
     uint64_t fee_pct   = 50;
 
     /** 
