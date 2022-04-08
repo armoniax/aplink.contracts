@@ -8,7 +8,7 @@ initData() {
 
 deposit() {
   echo "merchant ${merchant} dipsoit 1000 CNYD"
-  depositShell="cleos push action ${token} transfer \"['${merchant}', '${otcAccountName}', '1000.000000 CNYD', 'deposit']\" -p ${merchant}"
+  depositShell="cleos push action ${token} transfer \"['${merchant}', '${otcAccountName}', '1000.0000 CNYD', 'deposit']\" -p ${merchant}"
   echo $depositShell
   ssh sh-misc "${remoteDockerScript} '${depositShell}'"
 

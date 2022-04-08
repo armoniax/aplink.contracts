@@ -24,8 +24,8 @@ static constexpr eosio::name active_perm{"active"_n};
 static constexpr eosio::name SYS_BANK{"cnyd.token"_n};
 
 // crypto assets
-static constexpr symbol   CNYD_SYMBOL           = SYMBOL("CNYD", 6);
-static constexpr symbol   CNY                   = SYMBOL("CNY", 6);
+static constexpr symbol   CNYD_SYMBOL           = SYMBOL("CNYD", 4);
+static constexpr symbol   CNY                   = SYMBOL("CNY", 4);
 static constexpr symbol   STAKE_SYMBOL          = CNYD_SYMBOL;
 
 static constexpr uint64_t percent_boost     = 10000;
