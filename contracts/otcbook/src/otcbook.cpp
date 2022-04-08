@@ -476,7 +476,7 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
             row.arbit_status = (uint8_t)arbit_status_t::UNARBITTED;
             row.status = (uint8_t)deal_status_t::CLOSED;
             row.closed_at = time_point_sec(current_time_point());
-            row.session.push_back({(uint8_t)account_type_t::ARBITER, account, (uint8_t)status, (uint8_t)deal_action_t::FINISH_ARBIT, session_msg, row.closed_at});
+            row.session.push_back({account_type, account, (uint8_t)status, (uint8_t)deal_action_t::FINISH_ARBIT, session_msg, row.closed_at});
         });
 
     auto deal_quantity = deal_itr->deal_quantity;
