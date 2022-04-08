@@ -16,7 +16,7 @@ using namespace wasm::safemath;
  * reset the global with default values
  */
 void otcconf::init() {
-    _gstate = {}
+    _gstate = {};
 }
 
 

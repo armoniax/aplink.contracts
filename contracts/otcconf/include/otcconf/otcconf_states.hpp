@@ -79,8 +79,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
 
     name_set arbiters {
         "casharbitoo1"_n
-    }
-
+    };
 
     symbol_set coin_type = { AMAX_ARC20, CNYD_ARC20, USDT_ERC20, USDT_TRC20, USDT_BEP20 };
     symbol fiat_type = CNY;
