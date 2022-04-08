@@ -16,16 +16,16 @@ using namespace wasm::safemath;
  * reset the global with default values
  */
 void otcconf::init() {
-    _gstate.arbiters.insert("casharbitoo1"_n);
+    _gstate = {}
 }
 
 
 /**
  * update price
- */ 
+ */
 void otcconf::setrate(const map<symbol, asset>& prices_quote_cny) {
     require_auth( _self );
-    
+
     check(!prices_quote_cny.empty(), "prices_quote_cny empty");
     for (const auto& item : prices_quote_cny) {
         CHECK( item.first != CNY, "base symbol can not equal to quote symbol");
