@@ -380,7 +380,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         check( deal_itr->order_taker == account, "taker account mismatched");
         break;
     case account_type_t::ADMIN:
-        check( deal_itr->order_taker == _gstate.admin, "admin account mismatched");
+        check( _gstate.admin == account, "admin account mismatched");
         break;
     case account_type_t::ARBITER:
         check( deal_itr->arbiter == account, "abiter account mismatched");
@@ -451,7 +451,7 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
         check( deal_itr->order_maker == account, "merchant account mismatched");
         break;
     case account_type_t::ADMIN:
-        check( deal_itr->order_taker == _gstate.admin, "admin account mismatched");
+        check( _gstate.admin == account, "admin account mismatched");
         break;
     case account_type_t::ARBITER:
         check( deal_itr->arbiter == account, "abiter account mismatched");
