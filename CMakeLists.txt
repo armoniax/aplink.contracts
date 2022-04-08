@@ -30,8 +30,8 @@ find_package(amax.cdt)
 
 message(STATUS "Building deotc v${VERSION_FULL}")
 
-set(AMAX_CDT_VERSION_MIN "0.1")
-set(AMAX_CDT_VERSION_SOFT_MAX "0.5")
+set(AMAX_CDT_VERSION_MIN "1.7")
+set(AMAX_CDT_VERSION_SOFT_MAX "1.9")
 #set(AMAX_CDT_VERSION_HARD_MAX "")
 
 ### Check the version of amax.cdt
@@ -60,7 +60,7 @@ ExternalProject_Add(
    contracts_project
    SOURCE_DIR ${CMAKE_SOURCE_DIR}/contracts
    BINARY_DIR ${CMAKE_BINARY_DIR}/contracts
-   CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=${AMAX_CDT_ROOT}/lib/cmake/amax.cdt/AmaxWasmToolchain.cmake 
+   CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=${AMAX_CDT_ROOT}/lib/cmake/amax.cdt/AmaxWasmToolchain.cmake
               -DCONTRACT_VERSION_FILE=${CONTRACT_VERSION_FILE}
    DEPENDS evaluate_every_build
    UPDATE_COMMAND ""
