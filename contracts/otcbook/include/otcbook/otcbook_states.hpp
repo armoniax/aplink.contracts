@@ -122,6 +122,7 @@ enum class arbit_status_t: uint8_t {
 };
 
 struct OTCBOOK_TBL merchant_t {
+    uint64_t id = 0;     
     name owner;                     // owner account of merchant
     string merchant_name;           // merchant's name
     string merchant_detail;         // merchant's detail
@@ -130,6 +131,7 @@ struct OTCBOOK_TBL merchant_t {
     uint8_t state;                 // status, merchant_state_t
     asset stake_free = asset(0, STAKE_SYMBOL);      // staked and free to make orders
     asset stake_frozen = asset(0, STAKE_SYMBOL);     // staked and frozen in orders
+    time_point_sec updated_at;
 
     merchant_t() {}
     merchant_t(const name& o): owner(o) {}
@@ -138,13 +140,17 @@ struct OTCBOOK_TBL merchant_t {
 
     uint64_t primary_key()const { return owner.value; }
     uint64_t scope()const { return 0; }
+    uint128_t by_update_time() const {
+        return (uint128_t)updated_at << 64 | id;
+    }
 
     typedef eosio::multi_index<"merchants"_n, merchant_t,
-        indexed_by<"status"_n, const_mem_fun<merchant_t, uint64_t, &merchant_t::by_state> >
+        indexed_by<"status"_n, const_mem_fun<merchant_t, uint64_t, &merchant_t::by_state> >,
+        indexed_by<"updatedat"_n, const_mem_fun<merchant_t, uint128_t, &merchant_t::by_update_time> >
     > idx_t;
 
-    EOSLIB_SERIALIZE(merchant_t,  (owner)(merchant_name)(merchant_detail)
-                                  (email)(memo)(state)(stake_free)(stake_frozen)
+    EOSLIB_SERIALIZE(merchant_t,  (id)(owner)(merchant_name)(merchant_detail)
+                                  (email)(memo)(state)(stake_free)(stake_frozen)(updated_at)
     )
 };
 
@@ -173,6 +179,7 @@ struct OTCBOOK_TBL order_t {
     uint8_t status;                                 // 
     time_point_sec created_at;                      // created time at
     time_point_sec closed_at;                       // closed time at
+    time_point_sec updated_at;
 
     order_t() {}
     order_t(const uint64_t& i): id(i) {}
@@ -209,11 +216,14 @@ struct OTCBOOK_TBL order_t {
         return can_be_taken() ? (uint128_t)va_quantity.symbol.code().raw() << 64 | va_price.amount
                     : std::numeric_limits<uint128_t>::max();
     }
+    uint128_t by_update_time() const {
+        return (uint128_t)updated_at << 64 | id;
+    }
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(merchant_name)(accepted_payments)(va_price)(va_quantity)
                                 (va_min_take_quantity)(va_max_take_quantity)(va_frozen_quantity)(va_fulfilled_quantity)
                                 (stake_frozen)(total_fee)(fine_amount)
-                                (memo)(status)(created_at)(closed_at))
+                                (memo)(status)(created_at)(closed_at)(updated_at))
 };
 
 /**
@@ -225,7 +235,8 @@ typedef eosio::multi_index
 < "buyorders"_n,  order_t,
     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_invprice> >,
     indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >,
-    indexed_by<"coin"_n, const_mem_fun<order_t, uint128_t, &order_t::by_coin> >
+    indexed_by<"coin"_n, const_mem_fun<order_t, uint128_t, &order_t::by_coin> >,
+    indexed_by<"updatedat"_n, const_mem_fun<order_t, uint128_t, &order_t::by_update_time> >
 > buy_order_table_t;
 
 /**
@@ -237,7 +248,8 @@ typedef eosio::multi_index
 < "sellorders"_n, order_t,
     indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_price> >,
     indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >,
-    indexed_by<"coin"_n, const_mem_fun<order_t, uint128_t, &order_t::by_coin> >
+    indexed_by<"coin"_n, const_mem_fun<order_t, uint128_t, &order_t::by_coin> >,
+    indexed_by<"updatedat"_n, const_mem_fun<order_t, uint128_t, &order_t::by_update_time> >
 > sell_order_table_t;
 
 
@@ -322,6 +334,7 @@ struct OTCBOOK_TBL deal_t {
     string arbiter_ss;              // arbiter's shared secret
     time_point_sec created_at;      // create time at
     time_point_sec closed_at;       // closed time at
+    time_point_sec updated_at;
 
     uint64_t order_sn = 0;          // order sn, created by external app
     // time_point_sec expired_at; // 订单到期时间
@@ -347,6 +360,9 @@ struct OTCBOOK_TBL deal_t {
     uint128_t by_coin() const {
         return (uint128_t)deal_quantity.symbol.code().raw() << 64 | order_price.amount;
     }
+    uint128_t by_update_time() const {
+        return (uint128_t)updated_at << 64 | id;
+    }
     // uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
     // uint64_t by_maker_expired_at() const    { return uint64_t(maker_expired_at.sec_since_epoch()); }
 
@@ -358,7 +374,8 @@ struct OTCBOOK_TBL deal_t {
         indexed_by<"arbiter"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_arbiter> >,
         indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >,
         indexed_by<"orderid"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_order_id> >,
-        indexed_by<"coin"_n,    const_mem_fun<deal_t, uint128_t, &deal_t::by_coin> >
+        indexed_by<"coin"_n,    const_mem_fun<deal_t, uint128_t, &deal_t::by_coin> >,
+        indexed_by<"updatedat"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_update_time> >
         // indexed_by<"expiry"_n,  const_mem_fun<deal_t, uint64_t, &deal_t::by_expired_at> >
     > idx_t;
 
@@ -367,7 +384,7 @@ struct OTCBOOK_TBL deal_t {
                                 (order_taker)(deal_fee)(fine_amount)
                                 (status)(arbit_status)(arbiter)
                                 (ss_hash)(user_ss)(merchant_ss)(arbiter_ss)
-                                (created_at)(closed_at)(order_sn)
+                                (created_at)(closed_at)(updated_at)(order_sn)
                                 /*(expired_at)(maker_expired_at)*/
                                 (session))
 };
@@ -381,6 +398,7 @@ struct OTCBOOK_TBL fund_log_t {
     name action;            // operation action, [deposit, withdraw, openorder, closeorder]
     asset quantity;         // maybe positive(plus) or negative(minus)
     time_point_sec log_at;  // log time at 
+    time_point_sec updated_at;
 
     fund_log_t() {}
     fund_log_t(uint64_t i): id(i) {}
@@ -392,14 +410,18 @@ struct OTCBOOK_TBL fund_log_t {
     uint128_t by_action()     const {
         return (uint128_t)action.value << 64 || owner.value;
     }
+    uint128_t by_update_time() const {
+        return (uint128_t)updated_at << 64 | id;
+    }
 
     typedef eosio::multi_index
     <"fundlog"_n, fund_log_t,
         indexed_by<"owner"_n,   const_mem_fun<fund_log_t, uint64_t, &fund_log_t::by_owner> > ,
-        indexed_by<"action"_n,   const_mem_fun<fund_log_t, uint128_t, &fund_log_t::by_action> >
+        indexed_by<"action"_n,   const_mem_fun<fund_log_t, uint128_t, &fund_log_t::by_action> >,
+        indexed_by<"updatedat"_n, const_mem_fun<fund_log_t, uint128_t, &fund_log_t::by_update_time> >
     > table_t;
 
-    EOSLIB_SERIALIZE(fund_log_t,    (id)(owner)(action)(quantity)(log_at) )
+    EOSLIB_SERIALIZE(fund_log_t,    (id)(owner)(action)(quantity)(log_at)(updated_at) )
 };
 
 // /**
