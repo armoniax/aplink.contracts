@@ -122,8 +122,7 @@ enum class arbit_status_t: uint8_t {
 };
 
 struct OTCBOOK_TBL merchant_t {
-    uint64_t id = 0;     
-    name owner;                     // owner account of merchant
+    uint64_t owner;                     // owner account of merchant
     string merchant_name;           // merchant's name
     string merchant_detail;         // merchant's detail
     string email;                   // email
@@ -138,10 +137,10 @@ struct OTCBOOK_TBL merchant_t {
 
     uint64_t by_state()     const { return state; }
 
-    uint64_t primary_key()const { return owner.value; }
+    uint64_t primary_key()const { return value; }
     uint64_t scope()const { return 0; }
     uint128_t by_update_time() const {
-        return (uint128_t) updated_at.utc_seconds << 64 | id;
+        return (uint128_t) updated_at.utc_seconds << 64 | owner;
     }
 
     typedef eosio::multi_index<"merchants"_n, merchant_t,
@@ -149,7 +148,7 @@ struct OTCBOOK_TBL merchant_t {
         indexed_by<"updatedat"_n, const_mem_fun<merchant_t, uint128_t, &merchant_t::by_update_time> >
     > idx_t;
 
-    EOSLIB_SERIALIZE(merchant_t,  (id)(owner)(merchant_name)(merchant_detail)
+    EOSLIB_SERIALIZE(merchant_t,  (owner)(merchant_name)(merchant_detail)
                                   (email)(memo)(state)(stake_free)(stake_frozen)(updated_at)
     )
 };
