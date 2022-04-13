@@ -141,7 +141,7 @@ struct OTCBOOK_TBL merchant_t {
     uint64_t primary_key()const { return owner.value; }
     uint64_t scope()const { return 0; }
     uint128_t by_update_time() const {
-        return (uint128_t)updated_at << 64 | id;
+        return (uint128_t) updated_at.utc_seconds << 64 | id;
     }
 
     typedef eosio::multi_index<"merchants"_n, merchant_t,
@@ -217,7 +217,7 @@ struct OTCBOOK_TBL order_t {
                     : std::numeric_limits<uint128_t>::max();
     }
     uint128_t by_update_time() const {
-        return (uint128_t)updated_at << 64 | id;
+        return (uint128_t) updated_at.utc_seconds << 64 | id;
     }
   
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(merchant_name)(accepted_payments)(va_price)(va_quantity)
@@ -361,7 +361,7 @@ struct OTCBOOK_TBL deal_t {
         return (uint128_t)deal_quantity.symbol.code().raw() << 64 | order_price.amount;
     }
     uint128_t by_update_time() const {
-        return (uint128_t)updated_at << 64 | id;
+        return (uint128_t) updated_at.utc_seconds << 64 | id;
     }
     // uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
     // uint64_t by_maker_expired_at() const    { return uint64_t(maker_expired_at.sec_since_epoch()); }
@@ -411,7 +411,7 @@ struct OTCBOOK_TBL fund_log_t {
         return (uint128_t)action.value << 64 || owner.value;
     }
     uint128_t by_update_time() const {
-        return (uint128_t)updated_at << 64 | id;
+        return (uint128_t) updated_at.utc_seconds << 64 | id;
     }
 
     typedef eosio::multi_index
