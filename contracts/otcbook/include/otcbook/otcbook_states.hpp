@@ -137,7 +137,7 @@ struct OTCBOOK_TBL merchant_t {
 
     uint64_t by_state()     const { return state; }
 
-    uint64_t primary_key()const { return value; }
+    uint64_t primary_key()const { return owner.value; }
     uint64_t scope()const { return 0; }
     uint128_t by_update_time() const {
         return (uint128_t) updated_at.utc_seconds ;
