@@ -122,7 +122,7 @@ enum class arbit_status_t: uint8_t {
 };
 
 struct OTCBOOK_TBL merchant_t {
-    uint64_t owner;                     // owner account of merchant
+    name owner;                     // owner account of merchant
     string merchant_name;           // merchant's name
     string merchant_detail;         // merchant's detail
     string email;                   // email
@@ -140,7 +140,7 @@ struct OTCBOOK_TBL merchant_t {
     uint64_t primary_key()const { return value; }
     uint64_t scope()const { return 0; }
     uint128_t by_update_time() const {
-        return (uint128_t) updated_at.utc_seconds << 64 | owner;
+        return (uint128_t) updated_at.utc_seconds ;
     }
 
     typedef eosio::multi_index<"merchants"_n, merchant_t,
