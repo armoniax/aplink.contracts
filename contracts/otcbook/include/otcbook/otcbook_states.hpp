@@ -411,7 +411,7 @@ struct OTCBOOK_TBL fund_log_t {
     uint128_t by_action()     const {
         return (uint128_t)action.value << 64 | owner.value;
     }
-    uint128_t by_update_time() const {
+    uint64_t by_update_time() const {
         return (uint64_t) updated_at.utc_seconds << 64 ;
     }
 
