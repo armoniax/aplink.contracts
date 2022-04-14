@@ -287,9 +287,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
 }
 
 void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t& order_id, 
-    const asset& deal_quantity, const uint64_t& order_sn, 
-    const string& ss_hash , const string& user_ss,
-    const string& merchant_ss,
+    const asset& deal_quantity, const uint64_t& order_sn,
     const string& session_msg
 ) {
     require_auth( taker );
@@ -341,10 +339,6 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.created_at			= created_at;
         row.order_sn 			= order_sn;
         row.deal_fee            = deal_fee;
-        row.ss_hash             = ss_hash;
-        row.user_ss             = user_ss;
-        row.merchant_ss         = merchant_ss;
-
         // row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
         row.session.push_back({(uint8_t)account_type_t::USER, taker, (uint8_t)deal_status_t::NONE, 
             (uint8_t)deal_action_t::CREATE, session_msg, created_at});
@@ -569,7 +563,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
 
 
 void otcbook::startarbit(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
-    const name& arbiter, const string& arbiter_ss, const string& session_msg) {
+    const name& arbiter, const string& session_msg) {
     require_auth( account );
 
     deal_t::idx_t deals(_self, _self.value);
@@ -608,7 +602,6 @@ void otcbook::startarbit(const name& account, const uint8_t& account_type, const
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
         row.arbit_status = (uint8_t)arbit_status_t::ARBITING;
         row.arbiter = arbiter;
-        row.arbiter_ss = arbiter_ss;
         row.session.push_back({account_type, account, (uint8_t)status, (uint8_t)deal_action_t::START_ARBIT, session_msg, now});
     });
 }

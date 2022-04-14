@@ -327,10 +327,10 @@ struct OTCBOOK_TBL deal_t {
 
     uint8_t arbit_status = 0;       // arbit status
     name arbiter;
-    string ss_hash;                 //plaint shared secret's hash 
-    string user_ss;                 // user's shared secret
-    string merchant_ss;             // merchant's shared secret
-    string arbiter_ss;              // arbiter's shared secret
+    // string ss_hash;                 //plaint shared secret's hash 
+    // string user_ss;                 // user's shared secret
+    // string merchant_ss;             // merchant's shared secret
+    // string arbiter_ss;              // arbiter's shared secret
     time_point_sec created_at;      // create time at
     time_point_sec closed_at;       // closed time at
     time_point_sec updated_at;
@@ -382,7 +382,7 @@ struct OTCBOOK_TBL deal_t {
                                 (order_maker)(merchant_name)
                                 (order_taker)(deal_fee)(fine_amount)
                                 (status)(arbit_status)(arbiter)
-                                (ss_hash)(user_ss)(merchant_ss)(arbiter_ss)
+                                /*(ss_hash)(user_ss)(merchant_ss)(arbiter_ss)*/
                                 (created_at)(closed_at)(updated_at)(order_sn)
                                 /*(expired_at)(maker_expired_at)*/
                                 (session))
@@ -393,6 +393,8 @@ struct OTCBOOK_TBL deal_t {
  */
 struct OTCBOOK_TBL fund_log_t {
     uint64_t id = 0;        // PK: available_primary_key, auto increase
+    uint64_t order_id;
+    name order_side;
     name owner;             // merchant
     name action;            // operation action, [deposit, withdraw, openorder, closeorder]
     asset quantity;         // maybe positive(plus) or negative(minus)
@@ -420,7 +422,7 @@ struct OTCBOOK_TBL fund_log_t {
         indexed_by<"updatedat"_n, const_mem_fun<fund_log_t, uint128_t, &fund_log_t::by_update_time> >
     > table_t;
 
-    EOSLIB_SERIALIZE(fund_log_t,    (id)(owner)(action)(quantity)(log_at)(updated_at) )
+    EOSLIB_SERIALIZE(fund_log_t,    (id)(owner)(order_id)(order_side)(action)(quantity)(log_at)(updated_at) )
 };
 
 // /**

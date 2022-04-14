@@ -173,17 +173,12 @@ public:
      * @param order_id order id, created in openorder()
      * @param deal_quantity deal quantity of va
      * @param order_sn order_sn should be unique to locate current deal
-     * @param ss_hash shared secret's hash
-     * @param user_ss user shared secret encript by user's pub key
-     * @param merchant_ss user shared secret encript by merchant's pub key
      * @param session_msg session msg(message)
      * @note require taker auth
      */
     [[eosio::action]]
     void opendeal(const name& taker, const name& order_side, const uint64_t& order_id, 
         const asset& deal_quantity, const uint64_t& order_sn,
-        const string& ss_hash , const string& user_ss,
-        const string& merchant_ss,
         const string& session_msg);
 
     /**
@@ -233,13 +228,12 @@ public:
      * @param account_type account type, merchant(2) | user(3)
      * @param deal_id deal_id, created by opendeal()
      * @param arbiter arbiter's name
-     * @param arbiter_ss arbiter's shared secret
      * @param session_msg session msg(message)
      * @note require account auth
      */
      [[eosio::action]]
     void startarbit(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
-        const name& arbiter, const string& arbiter_ss, const string& session_msg);
+        const name& arbiter, const string& session_msg);
     
 
     /**
