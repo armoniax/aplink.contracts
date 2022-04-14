@@ -1,3 +1,11 @@
+/*
+ * @Author: your name
+ * @Date: 2022-04-13 15:58:25
+ * @LastEditTime: 2022-04-14 15:40:31
+ * @LastEditors: Please set LastEditors
+ * @Description: 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ * @FilePath: /deotc.contracts/contracts/otcconf/include/otcconf/otcconf.hpp
+ */
 #pragma once
 
 #include <eosio/eosio.hpp>
@@ -49,6 +57,9 @@ public:
 
     [[eosio::action]]
     void setrate(const map<symbol, asset>& prices_quote_cny);
+
+    [[eosio::action]]
+    void setotcname(const name& otc_name);
 private:
 };
 

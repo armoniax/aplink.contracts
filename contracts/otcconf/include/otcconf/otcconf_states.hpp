@@ -68,7 +68,7 @@ typedef set<symbol> symbol_set;
 typedef set<name> name_set;
 
 struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
-    name deotc_name = "oxo.cash1"_n;
+    name otc_name = "oxo.cash1"_n;
 
     AppInfo_t app_info = {
         "0.1.0",
@@ -121,7 +121,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
 
     }
 
-    EOSLIB_SERIALIZE( global_t, (deotc_name)(app_info)(pay_type)(arbiters)(coin_type)
+    EOSLIB_SERIALIZE( global_t, (otc_name)(app_info)(pay_type)(arbiters)(coin_type)
                                 (fiat_type)(fee_recv_addr)(fee_pct)
                                 (buy_coins_conf)(sell_coins_conf)(prices_quote_cny)
     )
