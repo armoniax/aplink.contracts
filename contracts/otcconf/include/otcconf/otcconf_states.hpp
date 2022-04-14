@@ -68,6 +68,8 @@ typedef set<symbol> symbol_set;
 typedef set<name> name_set;
 
 struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
+    name deotc_name = "oxo.cash1"_n;
+
     AppInfo_t app_info = {
         "0.1.0",
         "https://ipfs.io/ipfs/QmZUmzu96uKBLcCjNcnbD12hmjtMnaTs7ymLDHio3qbeDi",
