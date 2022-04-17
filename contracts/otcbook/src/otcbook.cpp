@@ -109,6 +109,7 @@ void otcbook::setmerchant(const name& owner, const name& merchant, const string 
     merchant_raw.merchant_detail = merchant_detail;
     merchant_raw.email = email;
     merchant_raw.memo = memo;
+    merchant.updated_at = time_point_sec(current_time_point());
 
     _dbc.set( merchant_raw );
 }
@@ -198,6 +199,7 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
     order.va_fulfilled_quantity    = asset(0, va_quantity.symbol);
     order.accepted_payments         = pay_methods;
     order.merchant_name             = merchant.merchant_name;
+    order.updated_at                = time_point_sec(current_time_point());
 
 
     if (order_side == BUY_SIDE) {
@@ -231,6 +233,7 @@ void otcbook::pauseorder(const name& owner, const name& order_side, const uint64
     check( (order_status_t)order.status == order_status_t::RUNNING, "order not running" );
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.status = (uint8_t)order_status_t::PAUSED;
+        row.updated_at = time_point_sec(current_time_point());
     });
 }
 
@@ -250,6 +253,7 @@ void otcbook::resumeorder(const name& owner, const name& order_side, const uint6
     check( (order_status_t)order.status == order_status_t::PAUSED, "order not paused" );
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.status = (uint8_t)order_status_t::RUNNING;
+        row.updated_at = time_point_sec(current_time_point());
     });
 }
 
@@ -282,6 +286,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.status = (uint8_t)order_status_t::CLOSED;
         row.closed_at = time_point_sec(current_time_point());
+        row.updated_at  = time_point_sec(current_time_point());
     });
 
 }
@@ -324,6 +329,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     auto deal_fee = _calc_deal_fee(deal_quantity, order_price);
 
     auto created_at = time_point_sec(current_time_point());
+    auto updated_at = time_point_sec(current_time_point());
     auto deal_id = deals.available_primary_key();
     deals.emplace( _self, [&]( auto& row ) {
         row.id 					= deal_id;
@@ -337,6 +343,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.status				=(uint8_t)deal_status_t::CREATED;
         row.arbit_status        =(uint8_t)arbit_status_t::UNARBITTED;
         row.created_at			= created_at;
+        row.updated_at          = updated_at;
         row.order_sn 			= order_sn;
         row.deal_fee            = deal_fee;
         // row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
@@ -410,11 +417,13 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         row.va_frozen_quantity -= deal_quantity;
         row.va_fulfilled_quantity += deal_quantity;
         row.total_fee += deal_fee;
+        row.updated_at = time_point_sec(current_time_point());
     });
 
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
         row.status = (uint8_t)deal_status_t::CLOSED;
         row.closed_at = time_point_sec(current_time_point());
+        row.updated_at = time_point_sec(current_time_point());
         row.session.push_back({account_type, account, (uint8_t)status, (uint8_t)action, session_msg, row.closed_at});
     });
 
@@ -470,6 +479,7 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
             row.arbit_status = (uint8_t)arbit_status_t::UNARBITTED;
             row.status = (uint8_t)deal_status_t::CLOSED;
             row.closed_at = time_point_sec(current_time_point());
+            row.updated_at = time_point_sec(current_time_point());
             row.session.push_back({account_type, account, (uint8_t)status, (uint8_t)deal_action_t::FINISH_ARBIT, session_msg, row.closed_at});
         });
 
@@ -477,6 +487,7 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
     // finished deal-canceled
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.va_frozen_quantity -= deal_quantity;
+        row.updated_at = time_point_sec(current_time_point());
     });
 }
 
@@ -556,6 +567,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
         if (next_status != deal_status_t::NONE) {
             row.status = (uint8_t)next_status;
+            row.updated_at = time_point_sec(current_time_point());
         }
         row.session.push_back({account_type, account, (uint8_t)status, action, session_msg, now});
     });
@@ -682,6 +694,7 @@ void otcbook::resetdeal(const name& account, const uint64_t& deal_id, const stri
     auto now = time_point_sec(current_time_point());
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
         row.status = (uint8_t)deal_status_t::CREATED;
+        row.updated_at = time_point_sec(current_time_point());
         row.session.push_back({(uint8_t)account_type_t::ADMIN, account, (uint8_t)status, 
             (uint8_t)deal_action_t::REVERSE, session_msg, now});
     });
@@ -839,6 +852,7 @@ void otcbook::_add_fund_log(const name& owner, const name & action, const asset 
         row.action			    = action;
         row.quantity		    = quantity;
         row.log_at			    = now;
+        row.updated_at          = time_point_sec(current_time_point());
     }); 
 }
 
