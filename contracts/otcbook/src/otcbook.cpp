@@ -109,7 +109,6 @@ void otcbook::setmerchant(const name& owner, const name& merchant, const string 
     merchant_raw.merchant_detail = merchant_detail;
     merchant_raw.email = email;
     merchant_raw.memo = memo;
-    merchant.updated_at = time_point_sec(current_time_point());
 
     _dbc.set( merchant_raw );
 }
