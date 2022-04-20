@@ -48,7 +48,7 @@ public:
     void claimreward(const name& newbie);
 
     [[eosio::action]]
-    void setstate(const bool&  enable, const asset& claimreward_value);
+    void setstate(const bool& enable, const asset& newbie_reward);
 
     using claimreward_action = eosio::action_wrapper<"claimreward"_n, &rewardnewbie::claimreward>;
     using setstate_action = eosio::action_wrapper<"setstate"_n, &rewardnewbie::setstate>;
