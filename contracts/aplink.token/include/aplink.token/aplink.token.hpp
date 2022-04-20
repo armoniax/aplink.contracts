@@ -9,7 +9,7 @@ namespace eosiosystem {
    class system_contract;
 }
 using namespace eosio;
-static constexpr symbol   APL_SYMBOL            = symbol(symbol_code("APLINK"), 8);
+static constexpr symbol   APL_SYMBOL            = symbol(symbol_code("APL"), 4);
 
 namespace eosio {
 
