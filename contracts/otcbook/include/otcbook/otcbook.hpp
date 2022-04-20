@@ -45,14 +45,13 @@ if ( debug ) {                               \
 class [[eosio::contract("otcbook")]] otcbook: public eosio::contract {
     using conf_t = otc::global_t;
     using conf_table_t = otc::global_singleton;
+
 private:
     dbc                 _dbc;
     global_singleton    _global;
     global_t            _gstate;
     std::unique_ptr<conf_table_t> _conf_tbl_ptr;
     std::unique_ptr<conf_t> _conf_ptr;
-    // global2_singleton   _global2;
-    // global2_t           _gstate2;
     
 public:
     using contract::contract;
