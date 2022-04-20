@@ -25,7 +25,7 @@ public:
         auto scope = record.scope();
         if (scope == 0) scope = code.value;
 
-        typename RecordType::idx_t tbl(code, scope);
+        typename RecordType::tbl_t tbl(code, scope);
         if (tbl.find(record.primary_key()) == tbl.end())
             return false;
 
@@ -38,7 +38,7 @@ public:
         auto scope = record.scope();
         if (scope == 0) scope = code.value;
 
-        typename RecordType::idx_t tbl(code, scope);
+        typename RecordType::tbl_t tbl(code, scope);
         return tbl;
     }
 
@@ -47,7 +47,7 @@ public:
         auto scope = record.scope();
         if (scope == 0) scope = code.value;
 
-        typename RecordType::idx_t tbl(code, scope);
+        typename RecordType::tbl_t tbl(code, scope);
         auto itr = tbl.find( record.primary_key() );
         if ( itr != tbl.end()) {
             tbl.modify( itr, code, [&]( auto& item ) {
@@ -68,7 +68,7 @@ public:
         auto scope = record.scope();
         if (scope == 0) scope = code.value;
 
-        typename RecordType::idx_t tbl(code, scope);
+        typename RecordType::tbl_t tbl(code, scope);
         auto itr = tbl.find(record.primary_key());
         if ( itr != tbl.end() ) {
             tbl.erase(itr);

@@ -56,7 +56,7 @@ void stake::_token_transfer(const name& to, const uint8_t& type, const asset &qu
 
 void stake::_add_reward_log(const name& owner, const uint8_t& type, const asset &quantity) {
     auto now = time_point_sec(current_time_point());
-    reward_t::table_t stake_log_tbl(_self, _self.value);
+    reward_t::tbl_t stake_log_tbl(_self, _self.value);
     auto id = stake_log_tbl.available_primary_key();
     
     stake_log_tbl.emplace( _self, [&]( auto& row ) {

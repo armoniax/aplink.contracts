@@ -81,6 +81,8 @@ struct STAKE_TBL staking_t {
 
     EOSLIB_SERIALIZE(staking_t, (owner)(amount)(stake_days)
                                 (created_at)(expired_time)(status))
+
+    typedef eosio::multi_index <"staking"_n, staking_t> tbl_t;
 };
 
 /**
@@ -102,7 +104,7 @@ struct STAKE_TBL reward_t {
     typedef eosio::multi_index
     <"staking"_n, reward_t,
         indexed_by<"owner"_n,   const_mem_fun<reward_t, uint64_t, &reward_t::by_owner> >
-    > table_t;
+    > tbl_t;
 
     EOSLIB_SERIALIZE(reward_t, (id)(owner)(type)(amount)(created_at))
 };
