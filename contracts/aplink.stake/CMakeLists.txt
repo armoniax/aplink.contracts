@@ -1,10 +1,10 @@
-add_contract(aplink.stake stake
+add_contract(aplink.stake aplink.stake
    ${CMAKE_CURRENT_SOURCE_DIR}/src/stake.cpp
 )
 
 target_include_directories(aplink.stake
    PUBLIC
-   ${CMAKE_CURRENT_SOURCE_DIR}/include
+   ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set_target_properties(aplink.stake
    PROPERTIES
