@@ -5,7 +5,7 @@ using namespace eosio;
 using namespace std;
 using std::string;
 
-namespace mgp {
+namespace amax {
 
 using namespace std;
 using namespace eosio;
@@ -90,4 +90,4 @@ void stake::redeem(const name& owner){
     TRANSFER( SYS_BANK, owner, staking_raw.amount, "redeem" );
 }
 
-}  //end of namespace:: mgpbpvoting
+}  //end of namespace

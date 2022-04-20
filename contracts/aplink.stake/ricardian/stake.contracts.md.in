@@ -3,7 +3,7 @@
 ---
 spec_version: "0.1.0"
 title: initialize otcbook
-summary: 'Init MGP OTCStore'
+summary: 'Init AMAX OTCStore'
 icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 ---
 Initialize otcbook
