@@ -9,7 +9,7 @@ namespace amax {
 
 using namespace std;
 using namespace eosio;
-using namespace wasm::safemath;
+
 
 /**
  * This happens when a merchant decides to open sell orders
@@ -24,7 +24,7 @@ void stake::deposit(name from, name to, asset quantity, string memo) {
     check(_gstate.status == 0, "stake already closed");
     check(get_first_receiver() == SYS_BANK, "receiver is error: " + get_first_receiver().to_string());
     check(quantity.symbol == CNYD_SYMBOL, "transfer coin symbol error");
-    check(_gstate.stake_amount == quanity, "stake amount is not matched");
+    check(_gstate.stake_amount == quantity, "stake amount is not matched");
    
     staking_t staking_raw(from);
     check(!_dbc.get( staking_raw ),"staking is already exsited.");
@@ -36,27 +36,22 @@ void stake::deposit(name from, name to, asset quantity, string memo) {
     staking_raw.status = (uint8_t)staking_status_t::STAKING;
     _dbc.set(staking_raw);
 
-    _token_transfer(first_reward, STAKING_REWRARD, _gstate.stake_reward);
+    _token_transfer(from, (uint8_t)reward_type_t::STAKING_REWRARD, _gstate.stake_reward);
    
     name first_reward = get_account_creator(from);
-    _token_transfer(first_reward, FIRST_LEVEL_REWARD, _gstate.first_level_reward);
+    _token_transfer(first_reward,  (uint8_t)reward_type_t::FIRST_LEVEL_REWARD, _gstate.first_level_reward);
 
     name second_reward = get_account_creator(first_reward);
     if(second_reward) {
-        _token_transfer(second_reward, SECOND_LEVEL_REWARD, _gstate.second_level_reward);   
+        _token_transfer(second_reward,  (uint8_t)reward_type_t::SECOND_LEVEL_REWARD, _gstate.second_level_reward);   
     }
 }
 
 void stake::_token_transfer(const name& to, const uint8_t& type, const asset &quantity) {
-    vector<permission_level> p;
-    p.push_back(permission_level{get_self(), "active"_n }); 
-    action(
-        p, 
-        APLINK_TOKEN, 
-        "transfer"_n, 
-        std::make_tuple(get_self(), to, quantity, std::string("memo") )
-    ).send();
-     _add_reward_log(to, type, quantity);
+    
+    TRANSFER( APL_BANK, to, quantity, "memo" )
+
+    _add_reward_log(to, type, quantity);
 }
 
 void stake::_add_reward_log(const name& owner, const uint8_t& type, const asset &quantity) {
@@ -68,7 +63,7 @@ void stake::_add_reward_log(const name& owner, const uint8_t& type, const asset 
         row.id 					= id;
         row.owner 			    = owner;
         row.type			    = type;
-        row.amount		        = amount;
+        row.amount		        = quantity;
         row.created_at		    = now;
     }); 
 }

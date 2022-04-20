@@ -42,8 +42,6 @@ if ( debug ) {                               \
    eosio::print( __VA_ARGS__ ); }}
 
 class [[eosio::contract("stake")]] stake: public eosio::contract {
-    using conf_t = otc::global_t;
-    using conf_table_t = otc::global_singleton;
 private:
     dbc                 _dbc;
     global_singleton    _global;
@@ -88,11 +86,6 @@ public:
      */
     [[eosio::action]]
     void redeem(const name& owner);
-
-    __attribute__((eosio_wasm_import))
-    name get_account_creator(name accout) {
-        return name(internal_use_do_not_use::get_account_creator(account.value))
-    }
     
 private:
     void _token_transfer(const name& to, const uint8_t& type, const asset &quantity);
