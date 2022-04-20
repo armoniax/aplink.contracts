@@ -133,8 +133,8 @@ namespace eosio {
       private:
          struct [[eosio::table]] account {
             asset    balance;
-            bool     can_send = false;
-            bool     can_recv = false;
+            bool     allow_send = false;
+            bool     allow_recv = false;
             uint64_t primary_key()const { return balance.symbol.code().raw(); }
          };
          
@@ -151,6 +151,14 @@ namespace eosio {
 
          void sub_balance( const name& owner, const asset& value );
          void add_balance( const name& owner, const asset& value, const name& ram_payer );
+
+         inline void require_issuer(const name& issuer, const symbol& sym) {
+            stats statstable( get_self(), sym.code().raw() );
+            auto existing = statstable.find( sym.code().raw() );
+            check( existing != statstable.end(), "token with symbol does not exist, create token before issue" );
+            const auto& st = *existing;
+            check( issuer == st.issuer, "can only be executed by issuer account" );
+          }
    };
 
 }

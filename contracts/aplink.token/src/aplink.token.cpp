@@ -5,49 +5,49 @@ namespace eosio {
 void token::create( const name&   issuer,
                     const asset&  maximum_supply )
 {
-    require_auth( get_self() );
+  require_auth( get_self() );
 
-    auto sym = maximum_supply.symbol;
-    check( sym.is_valid(), "invalid symbol name" );
-    check( maximum_supply.is_valid(), "invalid supply");
-    check( maximum_supply.amount > 0, "max-supply must be positive");
+  auto sym = maximum_supply.symbol;
+  check( sym.is_valid(), "invalid symbol name" );
+  check( maximum_supply.is_valid(), "invalid supply");
+  check( maximum_supply.amount > 0, "max-supply must be positive");
 
-    stats statstable( get_self(), sym.code().raw() );
-    auto existing = statstable.find( sym.code().raw() );
-    check( existing == statstable.end(), "token with symbol already exists" );
+  stats statstable( get_self(), sym.code().raw() );
+  auto existing = statstable.find( sym.code().raw() );
+  check( existing == statstable.end(), "token with symbol already exists" );
 
-    statstable.emplace( get_self(), [&]( auto& s ) {
-       s.supply.symbol = maximum_supply.symbol;
-       s.max_supply    = maximum_supply;
-       s.issuer        = issuer;
-    });
+  statstable.emplace( get_self(), [&]( auto& s ) {
+      s.supply.symbol = maximum_supply.symbol;
+      s.max_supply    = maximum_supply;
+      s.issuer        = issuer;
+  });
 }
 
 
 void token::issue( const name& to, const asset& quantity, const string& memo )
 {
-    auto sym = quantity.symbol;
-    check( sym.is_valid(), "invalid symbol name" );
-    check( memo.size() <= 256, "memo has more than 256 bytes" );
+  require_auth( to );
+  auto sym = quantity.symbol;
 
-    stats statstable( get_self(), sym.code().raw() );
-    auto existing = statstable.find( sym.code().raw() );
-    check( existing != statstable.end(), "token with symbol does not exist, create token before issue" );
-    const auto& st = *existing;
-    check( to == st.issuer, "tokens can only be issued to issuer account" );
+  check( sym.is_valid(), "invalid symbol name" );
+  check( memo.size() <= 256, "memo has more than 256 bytes" );
+  stats statstable( get_self(), sym.code().raw() );
+  auto existing = statstable.find( sym.code().raw() );
+  check( existing != statstable.end(), "token with symbol does not exist, create token before issue" );
+  const auto& st = *existing;
+  check( to == st.issuer, "can only be executed by issuer account" );
 
-    require_auth( st.issuer );
-    check( quantity.is_valid(), "invalid quantity" );
-    check( quantity.amount > 0, "must issue positive quantity" );
+  check( quantity.is_valid(), "invalid quantity" );
+  check( quantity.amount > 0, "must issue positive quantity" );
 
-    check( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
-    check( quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
+  check( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
+  check( quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
 
-    statstable.modify( st, same_payer, [&]( auto& s ) {
-       s.supply += quantity;
-    });
+  statstable.modify( st, same_payer, [&]( auto& s ) {
+      s.supply += quantity;
+  });
 
-    add_balance( st.issuer, quantity, st.issuer );
+  add_balance( st.issuer, quantity, st.issuer );
 }
 
 void token::retire( const asset& quantity, const string& memo )
@@ -96,8 +96,8 @@ void token::transfer( const name&    from,
     accounts to_acnts( get_self(), to.value );
     auto to_acnt = to_acnts.find( quantity.symbol.code().raw());
 
-    if(from_acnt == from_acnts.end() || !from_acnt->can_send) {
-       check( to_acnt != to_acnts.end() && to_acnt->can_recv, "no permistion for transfer" );
+    if(from_acnt == from_acnts.end() || !from_acnt->allow_send) {
+       check( to_acnt != to_acnts.end() && to_acnt->allow_recv, "no permistion for transfer" );
     }
 
     check( quantity.is_valid(), "invalid quantity" );
@@ -167,8 +167,11 @@ void token::close( const name& owner, const symbol& symbol )
    acnts.erase( it );
 }
 
-void token::setacctperms(const name& owner, const name& to, const symbol& symbol,  const bool& cansend, const bool& canrecv) {
-    require_auth( owner );
+void token::setacctperms(const name& issuer, const name& to, const symbol& symbol,  const bool& allowsend, const bool& allowrecv) {
+    require_auth( issuer );
+
+    require_issuer(issuer, symbol);
+    
     check( is_account( to ), "to account does not exist");
     check(symbol == APL_SYMBOL, "invalid APL symbol");
 
@@ -177,13 +180,13 @@ void token::setacctperms(const name& owner, const name& to, const symbol& symbol
      if( it == acnts.end() ) {
         acnts.emplace( to, [&]( auto& a ){
         a.balance = asset(0, APL_SYMBOL);
-        a.can_send = cansend;
-        a.can_recv = canrecv;
+        a.allow_send = allowsend;
+        a.allow_recv = allowrecv;
       });
    } else {
       acnts.modify( it, to, [&]( auto& a ) {
-        a.can_send = cansend;
-        a.can_recv = canrecv;
+        a.allow_send = allowsend;
+        a.allow_recv = allowrecv;
       });
    }
 
