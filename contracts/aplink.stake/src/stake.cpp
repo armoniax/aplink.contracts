@@ -49,7 +49,7 @@ void stake::deposit(name from, name to, asset quantity, string memo) {
 
 void stake::_token_transfer(const name& to, const uint8_t& type, const asset &quantity) {
     
-    TRANSFER( APL_BANK, to, quantity, "memo" )
+    TRANSFER( APL_BANK, to, quantity, "stake" )
 
     _add_reward_log(to, type, quantity);
 }
