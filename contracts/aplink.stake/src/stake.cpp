@@ -1,5 +1,8 @@
 #include <eosio.token/eosio.token.hpp>
+#include <eosio/permission.hpp>
+
 #include <stake/stake.hpp>
+
 
 using namespace eosio;
 using namespace std;
