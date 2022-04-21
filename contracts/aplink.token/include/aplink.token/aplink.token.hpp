@@ -11,7 +11,7 @@ namespace eosiosystem {
 using namespace eosio;
 static constexpr symbol   APL_SYMBOL            = symbol(symbol_code("APL"), 4);
 
-namespace eosio {
+namespace aplink {
 
    using std::string;
 
@@ -107,7 +107,10 @@ namespace eosio {
          * set account status
          **/
          [[eosio::action]]
-         void setacctperms(const name& owner, const name& to, const symbol& symbol,  const bool& cansend, const bool& canrecv);
+         void setacctperms(const name& issuer, const name& to, const symbol& symbol,  const bool& allowsend, const bool& allowrecv);
+
+         [[eosio::action]]
+         void burn(const name& from, const symbol& symbol, const name& to);
 
          static asset get_supply( const name& token_contract_account, const symbol_code& sym_code )
          {
@@ -135,6 +138,8 @@ namespace eosio {
             asset    balance;
             bool     allow_send = false;
             bool     allow_recv = false;
+            asset    total_balance;
+            time_point expired_at;
             uint64_t primary_key()const { return balance.symbol.code().raw(); }
          };
          

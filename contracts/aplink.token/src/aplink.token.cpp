@@ -1,6 +1,17 @@
 #include <aplink.token/aplink.token.hpp>
+#include <aplink.token/safemath.hpp>
+#include <aplink.token/utils.hpp>
+#include <eosio/system.hpp>
+#include <eosio/time.hpp>
 
-namespace eosio {
+static constexpr uint64_t REWARD_PECENT       = 5000;
+static constexpr uint64_t YEAR_SECONDS        = 365 * 24 * 3600;
+
+namespace aplink {
+
+using namespace eosio;
+using namespace wasm;
+using namespace wasm::safemath;
 
 void token::create( const name&   issuer,
                     const asset&  maximum_supply )
@@ -74,6 +85,44 @@ void token::retire( const asset& quantity, const string& memo )
     sub_balance( st.issuer, quantity );
 }
 
+void token::burn(const name&        from,
+                 const symbol&      symbol,
+                 const name&        to)
+{
+  require_auth( from );
+
+  accounts acnts( get_self(), to.value );
+  auto acnt_itr = acnts.find( symbol.code().raw() );
+
+  auto quantity = acnt_itr->balance;
+  check( acnt_itr->expired_at <  current_time_point(), "premature to burn" );
+
+  check( quantity.is_valid(), "invalid quantity" );
+  check( quantity.amount > 0, "must burn positive quantity" );
+
+  uint64_t to_reward = mul( quantity.amount, REWARD_PECENT );
+  uint64_t to_burn = quantity.amount - to_reward;
+  check( to_reward > 0, "reward quantity must be positive");
+  auto reward_quantity  = ASSET( to_reward, quantity.symbol );
+  auto burn_quantity    = ASSET( to_burn, quantity.symbol );
+
+  auto sym = quantity.symbol;
+  check( sym.is_valid(), "invalid symbol" );
+
+  stats statstable( get_self(), sym.code().raw() );
+  auto existing = statstable.find( sym.code().raw() );
+  check( existing != statstable.end(), "token with symbol does not exist" );
+  const auto& st = *existing;
+  check( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
+
+  sub_balance( to, quantity );
+  add_balance( from, reward_quantity, from);
+
+  statstable.modify( st, same_payer, [&]( auto& s ) {
+      s.supply -= burn_quantity;
+  });
+}
+
 
 void token::transfer( const name&    from,
                       const name&    to,
@@ -112,49 +161,55 @@ void token::transfer( const name&    from,
 }
 
 void token::sub_balance( const name& owner, const asset& value ) {
-   accounts from_acnts( get_self(), owner.value );
+  accounts from_acnts( get_self(), owner.value );
 
-   const auto& from = from_acnts.get( value.symbol.code().raw(), "no balance object found" );
-   check( from.balance.amount >= value.amount, "overdrawn balance" );
+  const auto& from = from_acnts.get( value.symbol.code().raw(), "no balance object found" );
+  check( from.balance.amount >= value.amount, "overdrawn balance" );
 
-   from_acnts.modify( from, owner, [&]( auto& a ) {
-         a.balance -= value;
-      });
+  from_acnts.modify( from, owner, [&]( auto& a ) {
+    a.balance -= value;
+    if (a.balance.amount != 0) {
+      a.expired_at = current_time_point() + seconds(YEAR_SECONDS); 
+    }
+  });
 }
 
 void token::add_balance( const name& owner, const asset& value, const name& ram_payer )
 {
-   accounts to_acnts( get_self(), owner.value );
-   auto to = to_acnts.find( value.symbol.code().raw() );
-   if( to == to_acnts.end() ) {
-      to_acnts.emplace( ram_payer, [&]( auto& a ){
-        a.balance = value;
-      });
-   } else {
-      to_acnts.modify( to, same_payer, [&]( auto& a ) {
-        a.balance += value;
-      });
-   }
+  accounts to_acnts( get_self(), owner.value );
+  auto to = to_acnts.find( value.symbol.code().raw() );
+  if( to == to_acnts.end() ) {
+    to_acnts.emplace( ram_payer, [&]( auto& a ){
+      a.balance = value;
+      a.total_balance = value;
+      a.expired_at = current_time_point() + seconds(YEAR_SECONDS); 
+    });
+  } else {
+    to_acnts.modify( to, same_payer, [&]( auto& a ) {
+      a.balance += value;
+      a.total_balance += value;
+      a.expired_at = current_time_point() + seconds(YEAR_SECONDS); 
+    });
+  }
 }
 
 void token::open( const name& owner, const symbol& symbol, const name& ram_payer )
 {
-   require_auth( ram_payer );
+  require_auth( ram_payer );
+  check( is_account( owner ), "owner account does not exist" );
 
-   check( is_account( owner ), "owner account does not exist" );
+  auto sym_code_raw = symbol.code().raw();
+  stats statstable( get_self(), sym_code_raw );
+  const auto& st = statstable.get( sym_code_raw, "symbol does not exist" );
+  check( st.supply.symbol == symbol, "symbol precision mismatch" );
 
-   auto sym_code_raw = symbol.code().raw();
-   stats statstable( get_self(), sym_code_raw );
-   const auto& st = statstable.get( sym_code_raw, "symbol does not exist" );
-   check( st.supply.symbol == symbol, "symbol precision mismatch" );
-
-   accounts acnts( get_self(), owner.value );
-   auto it = acnts.find( sym_code_raw );
-   if( it == acnts.end() ) {
-      acnts.emplace( ram_payer, [&]( auto& a ){
-        a.balance = asset{0, symbol};
-      });
-   }
+  accounts acnts( get_self(), owner.value );
+  auto it = acnts.find( sym_code_raw );
+  if( it == acnts.end() ) {
+    acnts.emplace( ram_payer, [&]( auto& a ){
+      a.balance = asset{0, symbol};
+    });
+  }
 }
 
 void token::close( const name& owner, const symbol& symbol )
@@ -169,7 +224,6 @@ void token::close( const name& owner, const symbol& symbol )
 
 void token::setacctperms(const name& issuer, const name& to, const symbol& symbol,  const bool& allowsend, const bool& allowrecv) {
     require_auth( issuer );
-
     require_issuer(issuer, symbol);
     
     check( is_account( to ), "to account does not exist");
@@ -177,16 +231,19 @@ void token::setacctperms(const name& issuer, const name& to, const symbol& symbo
 
     accounts acnts( get_self(), to.value );
     auto it = acnts.find( symbol.code().raw() );
-     if( it == acnts.end() ) {
-        acnts.emplace( issuer, [&]( auto& a ){
+    if( it == acnts.end() ) {
+      acnts.emplace( issuer, [&]( auto& a ){
         a.balance = asset(0, APL_SYMBOL);
         a.allow_send = allowsend;
         a.allow_recv = allowrecv;
+        a.total_balance = asset(0, APL_SYMBOL);
+        a.expired_at = current_time_point() + seconds(YEAR_SECONDS);
       });
    } else {
       acnts.modify( it, issuer, [&]( auto& a ) {
         a.allow_send = allowsend;
         a.allow_recv = allowrecv;
+        a.expired_at = current_time_point() + seconds(YEAR_SECONDS);
       });
    }
 
