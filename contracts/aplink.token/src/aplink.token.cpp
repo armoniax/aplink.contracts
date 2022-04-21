@@ -178,13 +178,13 @@ void token::setacctperms(const name& issuer, const name& to, const symbol& symbo
     accounts acnts( get_self(), to.value );
     auto it = acnts.find( symbol.code().raw() );
      if( it == acnts.end() ) {
-        acnts.emplace( to, [&]( auto& a ){
+        acnts.emplace( issuer, [&]( auto& a ){
         a.balance = asset(0, APL_SYMBOL);
         a.allow_send = allowsend;
         a.allow_recv = allowrecv;
       });
    } else {
-      acnts.modify( it, to, [&]( auto& a ) {
+      acnts.modify( it, issuer, [&]( auto& a ) {
         a.allow_send = allowsend;
         a.allow_recv = allowrecv;
       });
