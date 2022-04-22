@@ -10,14 +10,14 @@ void rewardnewbie::claimreward(const name& newbie)
     
     claim_t claim(newbie);
     CHECK( !_db.get(claim), "newbie reward already claimed by: " + newbie.to_string() )
-    TRANSFER( APL_BANK, newbie, _gstate.newbie_reward, "newbie reward" )
+    TRANSFER( _gstate.contract_name, newbie, _gstate.newbie_reward, "newbie reward" )
 
     claim.claimed_at = current_time_point();
     _db.set( claim );
 
 }
 
-void rewardnewbie::setstate(const bool& enable, const asset& newbie_reward)
+void rewardnewbie::setstate(const bool& enable, const asset& newbie_reward, const name& contract_name)
 {
     require_auth( _self );
 
@@ -26,4 +26,5 @@ void rewardnewbie::setstate(const bool& enable, const asset& newbie_reward)
     
     _gstate.newbie_reward = newbie_reward;
     _gstate.enable = enable;
+    _gstate.contract_name = contract_name;
 }

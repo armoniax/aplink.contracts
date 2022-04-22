@@ -17,7 +17,7 @@ using namespace eosio;
 
 static constexpr name active_perm               {"active"_n};
 static constexpr symbol APL_SYMBOL              = SYMBOL("APL", 4);
-static constexpr name   APL_BANK                { "aplink.token"_n };   //NTT token
+// static constexpr name   APL_BANK                { "aplink.token"_n };   //NTT token
 
 namespace wasm { namespace db {
 
@@ -29,11 +29,12 @@ using namespace wasm;
 
 struct [[eosio::table("global"), eosio::contract("rewardnewbie")]] global_t {            
     asset               newbie_reward;  //"100.0000 APL"
+    name                contract_name;
     bool                enable = false;
 
     global_t() {}
 
-    EOSLIB_SERIALIZE( global_t, (newbie_reward)(enable) )
+    EOSLIB_SERIALIZE( global_t, (newbie_reward)(contract_name)(enable) )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
