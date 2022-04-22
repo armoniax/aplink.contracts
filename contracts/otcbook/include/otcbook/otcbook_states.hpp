@@ -184,6 +184,10 @@ struct OTCBOOK_TBL order_t {
     uint64_t primary_key() const { return id; }
     // uint64_t scope() const { return price.symbol.code().raw(); } //not in use actually
 
+    // check this order can be took by user
+    inline bool can_be_taken() const {
+        return (order_status_t)status == order_status_t::RUNNING && va_quantity >= va_frozen_quantity + va_fulfilled_quantity + va_min_take_quantity;
+    }
 
     // sort by order maker account + status(is closed) + id
     // owner: lower first
@@ -315,13 +319,15 @@ struct OTCBOOK_TBL deal_t {
     uint64_t scope() const { return /*order_price.symbol.code().raw()*/ 0; }
 
     uint128_t by_order()     const { return (uint128_t)order_id << 64 | status; }
+    uint64_t by_ordersn()    const { return order_sn;}
     uint64_t by_update_time() const {
         return (uint64_t) updated_at.utc_seconds ;
     }
     typedef eosio::multi_index
     <"deals"_n, deal_t,
         indexed_by<"updatedat"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_update_time> >,
-        indexed_by<"order"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_order> >
+        indexed_by<"order"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_order> >,
+        indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >
     > idx_t;
 
     EOSLIB_SERIALIZE(deal_t,    (id)(order_side)(order_id)(order_price)(deal_quantity)
