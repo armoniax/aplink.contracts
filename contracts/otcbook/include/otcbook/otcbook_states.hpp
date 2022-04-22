@@ -135,7 +135,6 @@ struct OTCBOOK_TBL merchant_t {
     merchant_t() {}
     merchant_t(const name& o): owner(o) {}
 
-    uint64_t by_state()     const { return state; }
 
     uint64_t primary_key()const { return owner.value; }
     uint64_t scope()const { return 0; }
@@ -144,7 +143,6 @@ struct OTCBOOK_TBL merchant_t {
     }
 
     typedef eosio::multi_index<"merchants"_n, merchant_t,
-        indexed_by<"status"_n, const_mem_fun<merchant_t, uint64_t, &merchant_t::by_state> >,
         indexed_by<"updatedat"_n, const_mem_fun<merchant_t, uint64_t, &merchant_t::by_update_time> >
     > idx_t;
 
@@ -186,21 +184,6 @@ struct OTCBOOK_TBL order_t {
     uint64_t primary_key() const { return id; }
     // uint64_t scope() const { return price.symbol.code().raw(); } //not in use actually
 
-    // check this order can be took by user
-    inline bool can_be_taken() const {
-        return (order_status_t)status == order_status_t::RUNNING && va_quantity >= va_frozen_quantity + va_fulfilled_quantity + va_min_take_quantity;
-    }
-
-    // sort by price, used by sell orders, can_be_took and lower price first
-    uint64_t by_price() const {
-        return can_be_taken() ? va_price.amount : std::numeric_limits<uint64_t>::max();
-    } 
-    
-    // sort by price, used by buy orders, can_be_took and higher price first
-    uint64_t by_invprice() const { 
-        return can_be_taken() ? std::numeric_limits<uint64_t>::max() - va_price.amount
-                    : std::numeric_limits<uint64_t>::max(); 
-    } 
 
     // sort by order maker account + status(is closed) + id
     // owner: lower first
@@ -209,12 +192,9 @@ struct OTCBOOK_TBL order_t {
     // should use --revert option when get table by this index
     uint128_t by_maker_status() const {
         uint128_t orderStatus = (status == (uint8_t)order_status_t::CLOSED) ? 0 : !can_be_taken() ? 1 : 2;
-        return (uint128_t)owner.value << 64 | orderStatus; 
+        return (uint128_t)owner.value << 64 | orderStatus;
     }
-    uint128_t by_coin() const {
-        return can_be_taken() ? (uint128_t)va_quantity.symbol.code().raw() << 64 | va_price.amount
-                    : std::numeric_limits<uint128_t>::max();
-    }
+
     uint64_t by_update_time() const {
         return (uint64_t) updated_at.utc_seconds ;
     }
@@ -232,10 +212,8 @@ struct OTCBOOK_TBL order_t {
  */
 typedef eosio::multi_index
 < "buyorders"_n,  order_t,
-    indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_invprice> >,
-    indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >,
-    indexed_by<"coin"_n, const_mem_fun<order_t, uint128_t, &order_t::by_coin> >,
-    indexed_by<"updatedat"_n, const_mem_fun<order_t, uint64_t, &order_t::by_update_time> >
+    indexed_by<"updatedat"_n, const_mem_fun<order_t, uint64_t, &order_t::by_update_time> >,
+    indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >
 > buy_order_table_t;
 
 /**
@@ -245,10 +223,8 @@ typedef eosio::multi_index
  */
 typedef eosio::multi_index
 < "sellorders"_n, order_t,
-    indexed_by<"price"_n, const_mem_fun<order_t, uint64_t, &order_t::by_price> >,
-    indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >,
-    indexed_by<"coin"_n, const_mem_fun<order_t, uint128_t, &order_t::by_coin> >,
-    indexed_by<"updatedat"_n, const_mem_fun<order_t, uint64_t, &order_t::by_update_time> >
+    indexed_by<"updatedat"_n, const_mem_fun<order_t, uint64_t, &order_t::by_update_time> >,
+    indexed_by<"maker"_n, const_mem_fun<order_t, uint128_t, &order_t::by_maker_status> >
 > sell_order_table_t;
 
 
@@ -322,22 +298,14 @@ struct OTCBOOK_TBL deal_t {
     name order_taker;               // taker, user
     asset deal_fee;                 // deal fee
     asset fine_amount;              // aarbit fine amount, not contain fee
-
     uint8_t status = 0;             // status
-
     uint8_t arbit_status = 0;       // arbit status
     name arbiter;
-    // string ss_hash;                 //plaint shared secret's hash 
-    // string user_ss;                 // user's shared secret
-    // string merchant_ss;             // merchant's shared secret
-    // string arbiter_ss;              // arbiter's shared secret
     time_point_sec created_at;      // create time at
     time_point_sec closed_at;       // closed time at
     time_point_sec updated_at;
-
     uint64_t order_sn = 0;          // order sn, created by external app
-    // time_point_sec expired_at; // 订单到期时间
-    // time_point_sec maker_expired_at; // 卖家操作到期时间
+
     vector<deal_session_msg_t> session; // session
 
     deal_t() {}
@@ -347,44 +315,20 @@ struct OTCBOOK_TBL deal_t {
     uint64_t scope() const { return /*order_price.symbol.code().raw()*/ 0; }
 
     uint128_t by_order()     const { return (uint128_t)order_id << 64 | status; }
-    uint128_t by_maker()     const { return (uint128_t)order_maker.value << 64 | status ; }
-    uint128_t by_taker()     const { return (uint128_t)order_taker.value << 64 | status; }
-    uint128_t by_arbiter()   const { return (uint128_t)arbiter.value << 64 | arbit_status; }
-    uint64_t by_ordersn()    const { return order_sn;}
-
-
-    uint128_t by_order_id() const {
-        return (uint128_t)order_side.value << 64 | order_id;
-    }
-    uint128_t by_coin() const {
-        return (uint128_t)deal_quantity.symbol.code().raw() << 64 | order_price.amount;
-    }
     uint64_t by_update_time() const {
         return (uint64_t) updated_at.utc_seconds ;
     }
-    // uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
-    // uint64_t by_maker_expired_at() const    { return uint64_t(maker_expired_at.sec_since_epoch()); }
-
     typedef eosio::multi_index
     <"deals"_n, deal_t,
-        indexed_by<"order"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_order> >,
-        indexed_by<"maker"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_maker> >,
-        indexed_by<"taker"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_taker> >,
-        indexed_by<"arbiter"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_arbiter> >,
-        indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >,
-        indexed_by<"orderid"_n, const_mem_fun<deal_t, uint128_t, &deal_t::by_order_id> >,
-        indexed_by<"coin"_n,    const_mem_fun<deal_t, uint128_t, &deal_t::by_coin> >,
-        indexed_by<"updatedat"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_update_time> >
-        // indexed_by<"expiry"_n,  const_mem_fun<deal_t, uint64_t, &deal_t::by_expired_at> >
+        indexed_by<"updatedat"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_update_time> >,
+        indexed_by<"order"_n,   const_mem_fun<deal_t, uint128_t, &deal_t::by_order> >
     > idx_t;
 
     EOSLIB_SERIALIZE(deal_t,    (id)(order_side)(order_id)(order_price)(deal_quantity)
                                 (order_maker)(merchant_name)
                                 (order_taker)(deal_fee)(fine_amount)
                                 (status)(arbit_status)(arbiter)
-                                /*(ss_hash)(user_ss)(merchant_ss)(arbiter_ss)*/
                                 (created_at)(closed_at)(updated_at)(order_sn)
-                                /*(expired_at)(maker_expired_at)*/
                                 (session))
 };
 
@@ -406,19 +350,12 @@ struct OTCBOOK_TBL fund_log_t {
     uint64_t primary_key() const { return id; }
     uint64_t scope() const { return /*order_price.symbol.code().raw()*/ 0; }
 
-    uint64_t by_owner()     const { return owner.value; }
-
-    uint128_t by_action()     const {
-        return (uint128_t)action.value << 64 | owner.value;
-    }
     uint64_t by_update_time() const {
         return (uint64_t) updated_at.utc_seconds ;
     }
 
     typedef eosio::multi_index
     <"fundlog"_n, fund_log_t,
-        indexed_by<"owner"_n,   const_mem_fun<fund_log_t, uint64_t, &fund_log_t::by_owner> > ,
-        indexed_by<"action"_n,   const_mem_fun<fund_log_t, uint128_t, &fund_log_t::by_action> >,
         indexed_by<"updatedat"_n, const_mem_fun<fund_log_t, uint64_t, &fund_log_t::by_update_time> >
     > table_t;
 
