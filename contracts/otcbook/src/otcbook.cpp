@@ -215,6 +215,7 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
             row = order;
         });
     }
+    _add_fund_log(owner, "openorder"_n, -stake_frozen, order.id, order_side);
 }
 
 void otcbook::pauseorder(const name& owner, const name& order_side, const uint64_t& order_id) {
@@ -281,7 +282,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     merchant.stake_free -= order.total_fee;
     merchant.stake_free -= order.fine_amount;
     _dbc.set( merchant );
-    _add_fund_log(owner, "closeorder"_n, order.stake_frozen);
+    _add_fund_log(owner, "closeorder"_n, order.stake_frozen, order_id, order_side);
 
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.status = (uint8_t)order_status_t::CLOSED;
@@ -429,7 +430,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
 
     const auto &fee_recv_addr  = _conf().fee_recv_addr;
     TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
-    _add_fund_log(order_maker, "dealfee"_n, -deal_fee);
+    _add_fund_log(order_maker, "dealfee"_n, -deal_fee, deal_id, deal_itr->order_side);
 }
 
 
@@ -673,7 +674,7 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
 
         const auto &fee_recv_addr  = _conf().fee_recv_addr;
         TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
-        _add_fund_log(order_maker, "dealfee"_n, -deal_fee);
+        _add_fund_log(order_maker, "dealfee"_n, -deal_fee, deal_id, deal_itr->order_side);
     }
 }
 
@@ -842,13 +843,15 @@ const otcbook::conf_t& otcbook::_conf(bool refresh/* = false*/) {
     return *_conf_ptr;
 }
 
-void otcbook::_add_fund_log(const name& owner, const name & action, const asset &quantity) {
+void otcbook::_add_fund_log(const name& owner, const name & action, const asset &quantity, const uint64_t& order_side, const name& order_side) {
     auto now = time_point_sec(current_time_point());
     fund_log_t::table_t stake_log_tbl(_self, _self.value);
     auto id = stake_log_tbl.available_primary_key();
     stake_log_tbl.emplace( _self, [&]( auto& row ) {
         row.id 					= id;
         row.owner 			    = owner;
+        row.order_id            = order_id;
+        row.order_side          = order_side;
         row.action			    = action;
         row.quantity		    = quantity;
         row.log_at			    = now;
