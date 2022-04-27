@@ -806,11 +806,17 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
 void otcbook::deltable(){
     require_auth( _self );
 
-    // order_table_t sellorders(_self,_self.value);
-    // auto itr = sellorders.begin();
-    // while(itr != sellorders.end()){
-    //     itr = sellorders.erase(itr);
-    // }
+    order_table_t sellorders(_self,_self.value);
+    auto itr = sellorders.begin();
+    while(itr != sellorders.end()){
+        itr = sellorders.erase(itr);
+    }
+
+    order_table_t buyorders(_self,_self.value);
+    auto itr3 = buyorders.begin();
+    while(itr3 != buyorders.end()){
+        itr3 = buyorders.erase(itr3);
+    }
 
     deal_t::idx_t deals(_self,_self.value);
     auto itr1 = deals.begin();
@@ -822,6 +828,12 @@ void otcbook::deltable(){
     auto itr2 = merchants.begin();
     while(itr2 != merchants.end()){
         itr2 = merchants.erase(itr2);
+    }
+
+    order_table_t fundlog(_self,_self.value);
+    auto itr4 = fundlog.begin();
+    while(itr4 != fundlog.end()){
+        itr4 = fundlog.erase(itr4);
     }
 
     // deal_expiry_tbl exp(_self,_self.value);
