@@ -843,7 +843,7 @@ const otcbook::conf_t& otcbook::_conf(bool refresh/* = false*/) {
     return *_conf_ptr;
 }
 
-void otcbook::_add_fund_log(const name& owner, const name & action, const asset &quantity, const uint64_t& order_side, const name& order_side) {
+void otcbook::_add_fund_log(const name& owner, const name & action, const asset &quantity, const uint64_t& order_id, const name& order_side) {
     auto now = time_point_sec(current_time_point());
     fund_log_t::table_t stake_log_tbl(_self, _self.value);
     auto id = stake_log_tbl.available_primary_key();
