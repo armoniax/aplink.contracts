@@ -296,7 +296,7 @@ private:
 
     const conf_t& _conf(bool refresh = false);
 
-    void _add_fund_log(const name& owner, const name & action, const asset &quantity);
+    void _add_fund_log(const name& owner, const name & action, const asset &quantity, const uint64_t& order_id, const name& order_side);
 };
 
 }
