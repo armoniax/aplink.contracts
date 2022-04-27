@@ -343,9 +343,9 @@ struct OTCBOOK_TBL deal_t {
  */
 struct OTCBOOK_TBL fund_log_t {
     uint64_t id = 0;        // PK: available_primary_key, auto increase
+    name owner;             // merchant
     uint64_t order_id;
     name order_side;
-    name owner;             // merchant
     name action;            // operation action, [deposit, withdraw, openorder, closeorder]
     asset quantity;         // maybe positive(plus) or negative(minus)
     time_point_sec log_at;  // log time at 
