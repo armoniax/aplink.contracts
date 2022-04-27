@@ -174,7 +174,6 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
     merchant.stake_free -= stake_frozen;
     merchant.stake_frozen += stake_frozen;
     _dbc.set( merchant );
-    _add_fund_log(owner, "openorder"_n, -stake_frozen);
 
     // TODO: check pos_staking_contract
     // if (_gstate.min_pos_stake_frozen.amount > 0) {
@@ -722,7 +721,7 @@ void otcbook::withdraw(const name& owner, asset quantity){
 
     TRANSFER( SYS_BANK, owner, quantity, "withdraw" )
 
-    _add_fund_log(owner, "withdraw"_n, -quantity);
+    _add_fund_log(owner, "withdraw"_n, -quantity, 0, "none"_n);
 }
 
 /**
@@ -798,7 +797,7 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
             "merchant not enabled");
         merchant.stake_free += quantity;
         _dbc.set( merchant );
-        _add_fund_log(from, "deposit"_n, quantity);
+        _add_fund_log(from, "deposit"_n, quantity, 0, "none"_n);
     }
 }
 /**
