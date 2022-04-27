@@ -721,7 +721,7 @@ void otcbook::withdraw(const name& owner, asset quantity){
 
     TRANSFER( SYS_BANK, owner, quantity, "withdraw" )
 
-    _add_fund_log(owner, "withdraw"_n, -quantity, 0, "none"_n);
+    _add_fund_log(owner, "withdraw"_n, -quantity, 0, ""_n);
 }
 
 /**
@@ -797,7 +797,7 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
             "merchant not enabled");
         merchant.stake_free += quantity;
         _dbc.set( merchant );
-        _add_fund_log(from, "deposit"_n, quantity, 0, "none"_n);
+        _add_fund_log(from, "deposit"_n, quantity, 0, ""_n);
     }
 }
 /**
