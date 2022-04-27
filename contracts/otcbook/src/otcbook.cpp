@@ -806,13 +806,13 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
 void otcbook::deltable(){
     require_auth( _self );
 
-    order_t::sell_order_table_t sellorders(_self,_self.value);
+    sell_order_table_t sellorders(_self,_self.value);
     auto itr = sellorders.begin();
     while(itr != sellorders.end()){
         itr = sellorders.erase(itr);
     }
 
-    order_t::buy_order_table_t buyorders(_self,_self.value);
+    buy_order_table_t buyorders(_self,_self.value);
     auto itr3 = buyorders.begin();
     while(itr3 != buyorders.end()){
         itr3 = buyorders.erase(itr3);
