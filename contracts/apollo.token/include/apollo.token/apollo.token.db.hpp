@@ -69,8 +69,8 @@ APLTOKEN_TBL mine_product_t {
     uint16_t quantity;
     
     string product_sn;                              //product serial no
-    string manufacture_cn;
-    string manufacture_en;
+    string manufacturer_cn;
+    string manufacturer_en;
     string mine_coin_symbol;                        //BTC, ETH
     float hashrate;                                 //E.g. 21.457 MH/s
     char hashrate_unit;                             //M, T
