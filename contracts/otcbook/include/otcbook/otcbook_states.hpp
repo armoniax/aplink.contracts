@@ -97,7 +97,8 @@ enum class deal_status_t: uint8_t {
     MAKER_ACCEPTED      = 2,
     TAKER_SENT          = 3,
     MAKER_RECV_AND_SENT = 4,
-    CLOSED              = 5
+    CLOSED              = 5,
+    CANCELLED           = 9
 };
 
 // order sides
