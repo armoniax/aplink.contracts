@@ -272,7 +272,6 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     const auto &order = order_wrapper_ptr->get_order();
     check( owner == order.owner, "have no access to close others' order");
     check( (uint8_t)order.status != (uint8_t)order_status_t::CLOSED, "order already closed" );
-    check( (uint8_t)order.status != (uint8_t)order_status_t::CANCELLED, "order already cancelled" );
     check( order.va_frozen_quantity.amount == 0, "order being processed" );
     check( order.va_quantity >= order.va_fulfilled_quantity, "order quantity insufficient" );
 
@@ -376,6 +375,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
     auto status = (deal_status_t)deal_itr->status;
     check( (uint8_t)status != (uint8_t)deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
+    check( (uint8_t)status != (uint8_t)deal_status_t::CANCELLED, "deal already cancelled: " + to_string(deal_id) );
     auto arbit_status =  (arbit_status_t)deal_itr->arbit_status;
 
     switch ((account_type_t) account_type) {
@@ -475,11 +475,9 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
 
     check( (uint8_t)order.status != (uint8_t)order_status_t::CLOSED, "order already closed" );
 
-    auto action = deal_action_t::CLOSE;
-
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
             row.arbit_status = (uint8_t)arbit_status_t::UNARBITTED;
-            row.status = (uint8_t)deal_status_t::CLOSED;
+            row.status = (uint8_t)deal_status_t::CANCELLED;
             row.closed_at = time_point_sec(current_time_point());
             row.updated_at = time_point_sec(current_time_point());
             row.session.push_back({account_type, account, (uint8_t)status, (uint8_t)deal_action_t::FINISH_ARBIT, session_msg, row.closed_at});
@@ -532,6 +530,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     arbit_status_t limit_arbit_status = arbit_status_t::UNARBITTED;
     deal_status_t next_status = deal_status_t::NONE;
     check( status != deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
+    check( status != deal_status_t::CANCELLED, "deal already cancelled: " + to_string(deal_id) );
 
 #define DEAL_ACTION_CASE(_action, _limited_account_type, _limit_arbit_status,  _limited_status, _next_status) \
     case deal_action_t::_action:                                                        \
@@ -643,7 +642,12 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
     const auto &order_maker  = deal_itr->order_maker;
     check( arbit_status == arbit_status_t::ARBITING, "arbit isn't arbiting: " + to_string(deal_id) );
 
-     deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    auto deal_status = (uint8_t)deal_status_t::CLOSED;
+    if (arbit_result == 0) {
+        deal_status =  (uint8_t)deal_status_t::CANCELLED;
+    } 
+
+    deals.modify( *deal_itr, _self, [&]( auto& row ) {
             row.arbit_status = (uint8_t)arbit_status_t::FINISHED;
             row.status = (uint8_t)deal_status_t::CLOSED;
             row.closed_at = time_point_sec(current_time_point());
