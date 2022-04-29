@@ -361,6 +361,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
 
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.va_frozen_quantity 	+= deal_quantity;
+        row.updated_at          = time_point_sec(current_time_point());
     });
 }
 
