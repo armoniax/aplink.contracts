@@ -47,10 +47,10 @@ struct [[eosio::table("global"), eosio::contract("apollo.token")]] global_t {
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
 struct token_asset {
-    uint64_t symbid;                              // PK: available_primary_key, auto increase
-    int64_t  amount;                                // when amount is 1, it means NFT-721 type
-    uint16_t type;                                  // 0: POW assets, 1: POS assets, ...etc
-    string uri;                                     // token_uri for token metadata { image }
+    uint64_t symbid;             // PK: available_primary_key, auto increase
+    int64_t  amount;             // when amount is 1, it means NFT-721 type
+    uint16_t type;               // 0: POW assets, 1: POS assets, ...etc
+    string uri;                  // token_uri for token metadata { image }
 
     token_asset& operator+=(const token_asset& value) { this->amount += value.amount; return *this; } 
     token_asset& operator-=(const token_asset& value) { this->amount -= value.amount; return *this; }
@@ -109,42 +109,38 @@ struct pow_asset_meta {
     asset daily_earning_est;                        //daily earning estimate: E.g. "0.00397002 AMETH"
     uint16_t service_life_days;                     //service lifespan (E.g. 3*365)
     uint8_t onshelf_days;                           //0: T+0, 1:T+1
-    uint16_t available_electricity;
 
     pow_asset_meta() {};
 };
+
 /**
  * POW Mining equipment asset
  * 
  */
 TBL pow_asset_t {
-    uint64_t id;                //PK
     uint64_t symbid;
-    name owner;
     pow_asset_meta asset_meta;
-    time_point issued_at;
-    time_point started_at;     
     
     pow_asset_t() {}
-    pow_asset_t(const uint64_t& symid, const name& o): symbid(symid),owner(o) {}
+    pow_asset_t(const uint64_t& id): symbid(id) {}
 
-    uint64_t primary_key()const { return id; }
+    uint64_t primary_key()const { return symbid; }
 
-    uint64_t by_owner()const { return owner.value; }
+    // uint64_t by_owner()const { return owner.value; }
     uint64_t by_mine_coin()const { return name(asset_meta.mine_coin_type).value; }
-    uint64_t by_started_at()const { return started_at.sec_since_epoch(); }
+    // uint64_t by_started_at()const { return started_at.sec_since_epoch(); }
 
     //unique index
-    uint128_t by_owner_symbid()const { return (uint128_t) owner.value << 64 | (uint128_t) symbid; }
+    // uint128_t by_owner_symbid()const { return (uint128_t) owner.value << 64 | (uint128_t) symbid; }
   
-    EOSLIB_SERIALIZE(pow_asset_t,   (id)(symbid)(owner)(asset_meta)(issued_at)(started_at) )
+    EOSLIB_SERIALIZE(pow_asset_t, (symbid)(asset_meta) )
 
     typedef eosio::multi_index
     < "powassets"_n,  pow_asset_t,
-        indexed_by<"owner"_n, const_mem_fun<pow_asset_t, uint64_t, &pow_asset_t::by_owner> >,
-        indexed_by<"minecoin"_n, const_mem_fun<pow_asset_t, uint64_t, &pow_asset_t::by_mine_coin> >,
-        indexed_by<"startedat"_n, const_mem_fun<pow_asset_t, uint64_t, &pow_asset_t::by_started_at> >,
-        indexed_by<"ownersymbid"_n, const_mem_fun<pow_asset_t, uint128_t, &pow_asset_t::by_owner_symbid> >
+        // indexed_by<"owner"_n, const_mem_fun<pow_asset_t, uint64_t, &pow_asset_t::by_owner> >,
+        indexed_by<"minecoin"_n, const_mem_fun<pow_asset_t, uint64_t, &pow_asset_t::by_mine_coin> >
+        // indexed_by<"startedat"_n, const_mem_fun<pow_asset_t, uint64_t, &pow_asset_t::by_started_at> >,
+        //indexed_by<"ownersymbid"_n, const_mem_fun<pow_asset_t, uint128_t, &pow_asset_t::by_owner_symbid> >
     > idx_t;
 };
 

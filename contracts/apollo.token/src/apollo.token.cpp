@@ -97,14 +97,14 @@ ACTION token::multransfer( const name& from, const name& to, const vector<token_
 }
 
 void token::add_balance( const name& owner, const token_asset& value ) {
-   auto account = account_t(value.symbid);
-   if (_db.get(owner.value, account)) {
-      account.balance += value;
+   auto to_acnt = account_t(value.symbid);
+   if (_db.get(owner.value, to_acnt)) {
+      to_acnt.balance += value;
    } else {
-      account.balance = value;
+      to_acnt.balance = value;
    }
 
-   _db.set( owner.value, account );
+   _db.set( owner.value, to_acnt );
 }
 
 void token::sub_balance( const name& owner, const token_asset& value ) {
@@ -114,26 +114,16 @@ void token::sub_balance( const name& owner, const token_asset& value ) {
 
    from_acnt.balance -= value;
    _db.set( owner.value, from_acnt );
-
 }
 
-ACTION token::setpowasset( const name& issuer, const uint64_t symbid, const name& owner, const pow_asset_meta& asset_meta) {
+ACTION token::setpowasset( const name& issuer, const uint64_t symbid, const pow_asset_meta& asset_meta) {
    require_auth( issuer );
    check( issuer == _gstate.admin, "non-admin issuer not allowed" );
-   check( is_account(owner), "invalid owner account: " + owner.to_string() );
 
-   auto account = account_t(symbid);
-   check( _db.get(owner.value, account), "no account balance found" );
+   auto stats = tokenstats_t(symbid);
+   check( _db.get(stats), "asset token not found: " + to_string(symbid) );
 
-   auto pow = pow_asset_t(symbid, owner);
-   if (!_db.get(pow)) {
-      pow_asset_t::idx_t powassets(_self, _self.value);
-      pow.id         = powassets.available_primary_key();
-      pow.issued_at  = current_time_point();
-   }
-
-   pow.symbid      = symbid;
-   pow.owner         = owner;
+   auto pow = pow_asset_t(symbid);
    pow.asset_meta    = asset_meta;
 
    _db.set( pow );

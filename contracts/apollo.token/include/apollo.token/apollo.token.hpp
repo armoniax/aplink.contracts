@@ -6,11 +6,6 @@
 #include <wasm_db.hpp>
 #include "apollo.token/apollo.token.db.hpp"
 
-// namespace eosiosystem {
-//    class system_contract;
-// }
-
-
 namespace apollo {
 
 using std::string;
@@ -82,7 +77,7 @@ public:
    ACTION multransfer( const name& from, const name& to, const vector<token_asset>& quantities, const string& memo);
    using multransfer_action = action_wrapper< "multransfer"_n, &token::multransfer >;
 
-   ACTION setpowasset( const name& issuer, const uint64_t symbid, const name& owner, const pow_asset_meta& asset_meta);
+   ACTION setpowasset( const name& issuer, const uint64_t symbid, const pow_asset_meta& asset_meta);
 
    private:
    void add_balance( const name& owner, const token_asset& value );
