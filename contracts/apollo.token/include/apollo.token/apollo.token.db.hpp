@@ -52,7 +52,19 @@ struct token_asset {
     uint16_t type;               // 0: POW assets, 1: POS assets, ...etc
     string uri;                  // token_uri for token metadata { image }
 
-    token_asset& operator+=(const token_asset& value) { this->amount += value.amount; return *this; } 
+    token_asset& operator+=(const token_asset& value) { 
+        if (this->symbid == 0) { //first-time issuance
+            this->symbid = value.symbid;
+            this->amount = value.amount;
+            this->type = value.type;
+            this->uri = value.uri;
+            
+            return *this;
+        }
+
+        this->amount += value.amount; 
+        return *this; 
+    } 
     token_asset& operator-=(const token_asset& value) { this->amount -= value.amount; return *this; }
 
     token_asset(){};
