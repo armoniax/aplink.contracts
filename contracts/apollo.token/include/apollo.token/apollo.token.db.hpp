@@ -91,6 +91,7 @@ TBL tokenstats_t {
     int64_t         max_supply;     // when amount is 1, it means NFT-721 type
     int64_t         supply;
     name            issuer;
+    time_point_sec  created_at;
     bool paused     = false;
 
     tokenstats_t() {};

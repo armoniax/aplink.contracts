@@ -19,6 +19,7 @@ ACTION token::create( const name& issuer, const uint16_t& asset_type, const stri
       item.uri = uri;
       item.max_supply = maximum_supply;
       item.issuer = issuer;
+      item.created_at = current_time_point();
    });
 }
 
