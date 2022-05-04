@@ -15,7 +15,7 @@ ACTION token::create( const name& issuer, const uint16_t& asset_type, const stri
    tokenstats_t::idx_t tokenstats(_self, _self.value);
    tokenstats.emplace( _self, [&]( auto& item ) {
       item.symbid = tokenstats.available_primary_key();
-      item.type = (asset_type_t) asset_type;
+      item.type = asset_type;
       item.uri = uri;
       item.max_supply = maximum_supply;
       item.issuer = issuer;

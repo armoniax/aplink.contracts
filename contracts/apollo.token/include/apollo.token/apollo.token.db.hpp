@@ -86,7 +86,7 @@ TBL account_t {
 
 TBL tokenstats_t {
     uint64_t        symbid;         //PK
-    asset_type_t    type;           // 0: POW assets, 1: POS assets, ...etc
+    uint16_t        type;           // 0: POW assets, 1: POS assets, ...etc
     string          uri;            // token_uri for token metadata { image }
     int64_t         max_supply;     // when amount is 1, it means NFT-721 type
     int64_t         supply;
