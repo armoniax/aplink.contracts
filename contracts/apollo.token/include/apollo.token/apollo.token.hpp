@@ -38,6 +38,7 @@ public:
 
     ~token() { _global.set( _gstate, get_self() ); }
    
+   ACTION init();
    /*
     * Create asset token
     *
@@ -57,12 +58,8 @@ public:
    [[eosio::action]]
    void retire( const token_asset& quantity, const string& memo );
 
-   [[eosio::action]]
-   ACTION transfer(const name& from, const name& to, const token_asset& quantity, const string& memo );
-   using transfer_action = action_wrapper< "transfer"_n, &token::transfer >;
-
-	/*
-    * Transfers one or more assets.
+   /*
+    * Transfers assets.
     *
     * This action transfers one or more assets by changing scope.
     * Sender's RAM will be charged to transfer asset.
@@ -74,8 +71,9 @@ public:
     * @param memo is transfers comment.
     * @return no return value.
     */
-   ACTION multransfer( const name& from, const name& to, const vector<token_asset>& quantities, const string& memo);
-   using multransfer_action = action_wrapper< "multransfer"_n, &token::multransfer >;
+   [[eosio::action]]
+   ACTION transfer(const name& from, const name& to, const token_asset& quantity, const string& memo );
+   using transfer_action = action_wrapper< "transfer"_n, &token::transfer >;
 
    ACTION setpowasset( const name& issuer, const uint64_t symbid, const pow_asset_meta& asset_meta);
 

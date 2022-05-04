@@ -44,7 +44,7 @@ struct [[eosio::table("global"), eosio::contract("apollo.token")]] global_t {
     name admin;                 // default is contract self
     name fee_collector;         // mgmt fees to collector
     uint64_t fee_rate = 4;      // boost by 10,000, i.e. 0.04%
-    bool active = false; 
+    bool active = false;
 
     EOSLIB_SERIALIZE( global_t, (admin)(fee_collector)(fee_rate)(active) )
 };
@@ -52,7 +52,7 @@ struct [[eosio::table("global"), eosio::contract("apollo.token")]] global_t {
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
 struct token_asset {
-    uint64_t symbid;             // PK: available_primary_key, auto increase
+    uint64_t symbid;
     int64_t  amount;
 
     token_asset& operator+=(const token_asset& value) { this->amount += value.amount; return *this; } 
@@ -101,15 +101,19 @@ TBL tokenstats_t {
 
     typedef eosio::multi_index< "tokenstats"_n, tokenstats_t > idx_t;
 
-    EOSLIB_SERIALIZE(tokenstats_t, (symbid)(type)(uri)(max_supply)(supply)(issuer)(paused) )
+    EOSLIB_SERIALIZE(tokenstats_t, (symbid)(type)(uri)(max_supply)(supply)(issuer)(created_at)(paused) )
 };
 
+struct hashrate_t {
+    float value;
+    char unit;
+};
 
 struct pow_asset_meta {
     string product_sn;                              //product serial no
     string manufacturer;                            //manufacture info
     string mine_coin_type;                          //btc, eth
-    pair<float, char> hashrate;                     //hash_rate and hash_rate_unit(M/T) E.g. 21.457 MH/s
+    hashrate_t hashrate;                            //hash_rate and hash_rate_unit(M/T) E.g. 21.457 MH/s
     float power_in_watt;                            //E.g. 2100 Watt
     asset electricity_day_charge;                   //E.g. "0.85 CNYD" for reference
     asset daily_earning_est;                        //daily earning estimate: E.g. "0.00397002 AMETH"
@@ -117,6 +121,9 @@ struct pow_asset_meta {
     uint8_t onshelf_days;                           //0: T+0, 1:T+1
 
     pow_asset_meta() {};
+
+    EOSLIB_SERIALIZE(pow_asset_meta, (product_sn)(manufacturer)(mine_coin_type)(hashrate)(power_in_watt)
+                                    (electricity_day_charge)(daily_earning_est)(service_life_days)(onshelf_days) )
 };
 
 /**

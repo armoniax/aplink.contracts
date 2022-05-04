@@ -2,6 +2,13 @@
 
 namespace apollo {
 
+ACTION token::init() {
+   auto tokenstats = tokenstats_t(0);
+   _db.del( tokenstats );
+
+   // _gstate.initialized = true;
+
+}
 
 ACTION token::create( const name& issuer, const uint16_t& asset_type, const string& uri, const int64_t& maximum_supply )
 {
@@ -77,27 +84,6 @@ ACTION token::transfer( const name& from, const name& to, const token_asset& qua
 
    sub_balance( from, quantity );
    add_balance( to, quantity );
-}
-
-ACTION token::multransfer( const name& from, const name& to, const vector<token_asset>& quantities, const string& memo ) {
-   check( from != to, "cannot transfer to self" );
-   require_auth( from );
-   check( is_account( to ), "to account does not exist");
-   check( memo.size() <= 256, "memo has more than 256 bytes" );
-
-   require_recipient( from );
-   require_recipient( to );
-
-   for (auto& quantity : quantities) {
-      auto symid = quantity.symbid;
-      auto token = tokenstats_t(symid);
-      check( _db.get(token), "token asset not found: " + to_string(symid) );
-      check( quantity.amount > 0, "must transfer positive quantity" );
-      check( quantity.symbid == token.symbid, "symbol mismatch" );
-
-      sub_balance( from, quantity );
-      add_balance( to, quantity );
-   }
 }
 
 void token::add_balance( const name& owner, const token_asset& value ) {

@@ -89,8 +89,7 @@ public:
 
     template<typename RecordType>
     void del(const RecordType& record) {
-        auto scope = record.scope();
-        if (scope == 0) scope = code.value;
+        auto scope = code.value;
 
         typename RecordType::idx_t idx(code, scope);
         auto itr = idx.find(record.primary_key());
