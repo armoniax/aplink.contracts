@@ -3,17 +3,20 @@
 namespace apollo {
 
 
-ACTION token::create( const name& issuer, const int64_t& maximum_supply )
+ACTION token::create( const name& issuer, const uint16_t& asset_type, const string& uri, const int64_t& maximum_supply )
 {
    require_auth( get_self() );
 
    check( is_account(issuer), "issuer account does not exist" );
    check( issuer == _gstate.admin, "issuer is not an amdin user" );
    check( maximum_supply > 0, "maximum_supply must be positive" );
+   check( uri.length() < 1024, "uri length > 1024: " + to_string(uri.length()) );
 
    tokenstats_t::idx_t tokenstats(_self, _self.value);
    tokenstats.emplace( _self, [&]( auto& item ) {
       item.symbid = tokenstats.available_primary_key();
+      item.type = (asset_type_t) asset_type;
+      item.uri = uri;
       item.max_supply = maximum_supply;
       item.issuer = issuer;
    });

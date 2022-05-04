@@ -42,7 +42,7 @@ public:
     * Create asset token
     *
     */
-   ACTION create( const name& issuer, const int64_t& maximum_supply );
+   ACTION create( const name& issuer, const uint16_t& asset_type, const string& uri, const int64_t& maximum_supply );
 
    /**
     *  This action issues to `to` account a `quantity` of tokens.

@@ -32,6 +32,11 @@ static constexpr uint64_t max_memo_size     = 1024;
 // static constexpr uint64_t seconds_per_day       = 24 * 3600;
 // static constexpr uint64_t seconds_per_hour      = 3600;
 
+enum class asset_type_t : uint16_t {
+    NONE                        = 0,
+    POW_ASSET                   = 1,
+    POS_ASSET                   = 2,
+};
 
 #define TBL struct [[eosio::table, eosio::contract("apollo.token")]]
 
@@ -48,30 +53,16 @@ typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
 struct token_asset {
     uint64_t symbid;             // PK: available_primary_key, auto increase
-    int64_t  amount;             // when amount is 1, it means NFT-721 type
-    uint16_t type;               // 0: POW assets, 1: POS assets, ...etc
-    string uri;                  // token_uri for token metadata { image }
+    int64_t  amount;
 
-    token_asset& operator+=(const token_asset& value) { 
-        if (this->symbid == 0) { //first-time issuance
-            this->symbid = value.symbid;
-            this->amount = value.amount;
-            this->type = value.type;
-            this->uri = value.uri;
-            
-            return *this;
-        }
-
-        this->amount += value.amount; 
-        return *this; 
-    } 
+    token_asset& operator+=(const token_asset& value) { this->amount += value.amount; return *this; } 
     token_asset& operator-=(const token_asset& value) { this->amount -= value.amount; return *this; }
 
     token_asset(){};
     token_asset(const uint64_t& id): symbid(id) {};
-    token_asset(const uint64_t& id, const int64_t& q, const string& u): symbid(id), amount(q), uri(u) {};
+    token_asset(const uint64_t& id, const int64_t& q): symbid(id), amount(q){};
 
-    EOSLIB_SERIALIZE(token_asset, (symbid)(amount)(type)(uri) )
+    EOSLIB_SERIALIZE(token_asset, (symbid)(amount) )
 };
 
 ///Scope: owner's account
@@ -95,7 +86,9 @@ TBL account_t {
 
 TBL tokenstats_t {
     uint64_t        symbid;         //PK
-    int64_t         max_supply;     //1 means NFT
+    asset_type_t    type;           // 0: POW assets, 1: POS assets, ...etc
+    string          uri;            // token_uri for token metadata { image }
+    int64_t         max_supply;     // when amount is 1, it means NFT-721 type
     int64_t         supply;
     name            issuer;
     bool paused     = false;
@@ -107,7 +100,7 @@ TBL tokenstats_t {
 
     typedef eosio::multi_index< "tokenstats"_n, tokenstats_t > idx_t;
 
-    EOSLIB_SERIALIZE(tokenstats_t, (symbid)(max_supply)(supply)(issuer)(paused) )
+    EOSLIB_SERIALIZE(tokenstats_t, (symbid)(type)(uri)(max_supply)(supply)(issuer)(paused) )
 };
 
 
