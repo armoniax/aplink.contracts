@@ -181,13 +181,13 @@ void token::add_balance( const name& owner, const asset& value, const name& ram_
   if( to == to_acnts.end() ) {
     to_acnts.emplace( ram_payer, [&]( auto& a ){
       a.balance = value;
-      a.total_balance = value;
+      a.sum_balance = value;
       a.expired_at = current_time_point() + seconds(YEAR_SECONDS); 
     });
   } else {
     to_acnts.modify( to, same_payer, [&]( auto& a ) {
       a.balance += value;
-      a.total_balance += value;
+      a.sum_balance += value;
       a.expired_at = current_time_point() + seconds(YEAR_SECONDS); 
     });
   }
@@ -208,6 +208,7 @@ void token::open( const name& owner, const symbol& symbol, const name& ram_payer
   if( it == acnts.end() ) {
     acnts.emplace( ram_payer, [&]( auto& a ){
       a.balance = asset{0, symbol};
+      a.sum_balance = asset{0, symbol};
     });
   }
 }
@@ -236,7 +237,7 @@ void token::setacctperms(const name& issuer, const name& to, const symbol& symbo
         a.balance = asset(0, APL_SYMBOL);
         a.allow_send = allowsend;
         a.allow_recv = allowrecv;
-        a.total_balance = asset(0, APL_SYMBOL);
+        a.sum_balance = asset(0, APL_SYMBOL);
         a.expired_at = current_time_point() + seconds(YEAR_SECONDS);
       });
    } else {

@@ -138,7 +138,7 @@ namespace aplink {
             asset    balance;
             bool     allow_send = false;
             bool     allow_recv = false;
-            asset    total_balance;
+            asset    sum_balance;
             time_point expired_at;
             uint64_t primary_key()const { return balance.symbol.code().raw(); }
          };

@@ -110,6 +110,7 @@ void otcbook::setmerchant(const name& owner, const name& merchant, const string 
     merchant_raw.merchant_detail = merchant_detail;
     merchant_raw.email = email;
     merchant_raw.memo = memo;
+    merchant_raw.updated_at = time_point_sec(current_time_point());
 
     _dbc.set( merchant_raw );
 }
@@ -174,7 +175,6 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
     merchant.stake_free -= stake_frozen;
     merchant.stake_frozen += stake_frozen;
     _dbc.set( merchant );
-    _add_fund_log(owner, "openorder"_n, -stake_frozen);
 
     // TODO: check pos_staking_contract
     // if (_gstate.min_pos_stake_frozen.amount > 0) {
@@ -215,6 +215,7 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
             row = order;
         });
     }
+    _add_fund_log(owner, "openorder"_n, -stake_frozen, order.id, order_side);
 }
 
 void otcbook::pauseorder(const name& owner, const name& order_side, const uint64_t& order_id) {
@@ -281,7 +282,7 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     merchant.stake_free -= order.total_fee;
     merchant.stake_free -= order.fine_amount;
     _dbc.set( merchant );
-    _add_fund_log(owner, "closeorder"_n, order.stake_frozen);
+    _add_fund_log(owner, "closeorder"_n, order.stake_frozen, order_id, order_side);
 
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.status = (uint8_t)order_status_t::CLOSED;
@@ -360,6 +361,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
 
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.va_frozen_quantity 	+= deal_quantity;
+        row.updated_at          = time_point_sec(current_time_point());
     });
 }
 
@@ -374,6 +376,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
     auto status = (deal_status_t)deal_itr->status;
     check( (uint8_t)status != (uint8_t)deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
+    check( (uint8_t)status != (uint8_t)deal_status_t::CANCELLED, "deal already cancelled: " + to_string(deal_id) );
     auto arbit_status =  (arbit_status_t)deal_itr->arbit_status;
 
     switch ((account_type_t) account_type) {
@@ -429,7 +432,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
 
     const auto &fee_recv_addr  = _conf().fee_recv_addr;
     TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
-    _add_fund_log(order_maker, "dealfee"_n, -deal_fee);
+    _add_fund_log(order_maker, "dealfee"_n, -deal_fee, deal_id, deal_itr->order_side);
 }
 
 
@@ -473,11 +476,9 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
 
     check( (uint8_t)order.status != (uint8_t)order_status_t::CLOSED, "order already closed" );
 
-    auto action = deal_action_t::CLOSE;
-
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
             row.arbit_status = (uint8_t)arbit_status_t::UNARBITTED;
-            row.status = (uint8_t)deal_status_t::CLOSED;
+            row.status = (uint8_t)deal_status_t::CANCELLED;
             row.closed_at = time_point_sec(current_time_point());
             row.updated_at = time_point_sec(current_time_point());
             row.session.push_back({account_type, account, (uint8_t)status, (uint8_t)deal_action_t::FINISH_ARBIT, session_msg, row.closed_at});
@@ -530,6 +531,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     arbit_status_t limit_arbit_status = arbit_status_t::UNARBITTED;
     deal_status_t next_status = deal_status_t::NONE;
     check( status != deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
+    check( status != deal_status_t::CANCELLED, "deal already cancelled: " + to_string(deal_id) );
 
 #define DEAL_ACTION_CASE(_action, _limited_account_type, _limit_arbit_status,  _limited_status, _next_status) \
     case deal_action_t::_action:                                                        \
@@ -614,6 +616,7 @@ void otcbook::startarbit(const name& account, const uint8_t& account_type, const
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
         row.arbit_status = (uint8_t)arbit_status_t::ARBITING;
         row.arbiter = arbiter;
+        row.updated_at = time_point_sec(current_time_point());
         row.session.push_back({account_type, account, (uint8_t)status, (uint8_t)deal_action_t::START_ARBIT, session_msg, now});
     });
 }
@@ -641,10 +644,16 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
     const auto &order_maker  = deal_itr->order_maker;
     check( arbit_status == arbit_status_t::ARBITING, "arbit isn't arbiting: " + to_string(deal_id) );
 
-     deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    auto deal_status = (uint8_t)deal_status_t::CLOSED;
+    if (arbit_result == 0) {
+        deal_status =  (uint8_t)deal_status_t::CANCELLED;
+    } 
+
+    deals.modify( *deal_itr, _self, [&]( auto& row ) {
             row.arbit_status = (uint8_t)arbit_status_t::FINISHED;
             row.status = (uint8_t)deal_status_t::CLOSED;
             row.closed_at = time_point_sec(current_time_point());
+            row.updated_at = time_point_sec(current_time_point());
             row.session.push_back({(uint8_t)account_type_t::ARBITER, account, (uint8_t)status, (uint8_t)deal_action_t::FINISH_ARBIT, session_msg, now});
         });
 
@@ -673,7 +682,7 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
 
         const auto &fee_recv_addr  = _conf().fee_recv_addr;
         TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
-        _add_fund_log(order_maker, "dealfee"_n, -deal_fee);
+        _add_fund_log(order_maker, "dealfee"_n, -deal_fee, deal_id, deal_itr->order_side);
     }
 }
 
@@ -721,7 +730,7 @@ void otcbook::withdraw(const name& owner, asset quantity){
 
     TRANSFER( SYS_BANK, owner, quantity, "withdraw" )
 
-    _add_fund_log(owner, "withdraw"_n, -quantity);
+    _add_fund_log(owner, "withdraw"_n, -quantity, 0, ""_n);
 }
 
 /**
@@ -797,7 +806,7 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
             "merchant not enabled");
         merchant.stake_free += quantity;
         _dbc.set( merchant );
-        _add_fund_log(from, "deposit"_n, quantity);
+        _add_fund_log(from, "deposit"_n, quantity, 0, ""_n);
     }
 }
 /**
@@ -806,11 +815,17 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
 void otcbook::deltable(){
     require_auth( _self );
 
-    // order_table_t sellorders(_self,_self.value);
-    // auto itr = sellorders.begin();
-    // while(itr != sellorders.end()){
-    //     itr = sellorders.erase(itr);
-    // }
+    sell_order_table_t sellorders(_self,_self.value);
+    auto itr = sellorders.begin();
+    while(itr != sellorders.end()){
+        itr = sellorders.erase(itr);
+    }
+
+    buy_order_table_t buyorders(_self,_self.value);
+    auto itr3 = buyorders.begin();
+    while(itr3 != buyorders.end()){
+        itr3 = buyorders.erase(itr3);
+    }
 
     deal_t::idx_t deals(_self,_self.value);
     auto itr1 = deals.begin();
@@ -822,6 +837,12 @@ void otcbook::deltable(){
     auto itr2 = merchants.begin();
     while(itr2 != merchants.end()){
         itr2 = merchants.erase(itr2);
+    }
+
+    fund_log_t::table_t fundlog(_self,_self.value);
+    auto itr4 = fundlog.begin();
+    while(itr4 != fundlog.end()){
+        itr4 = fundlog.erase(itr4);
     }
 
     // deal_expiry_tbl exp(_self,_self.value);
@@ -842,13 +863,15 @@ const otcbook::conf_t& otcbook::_conf(bool refresh/* = false*/) {
     return *_conf_ptr;
 }
 
-void otcbook::_add_fund_log(const name& owner, const name & action, const asset &quantity) {
+void otcbook::_add_fund_log(const name& owner, const name & action, const asset &quantity, const uint64_t& order_id, const name& order_side) {
     auto now = time_point_sec(current_time_point());
     fund_log_t::table_t stake_log_tbl(_self, _self.value);
     auto id = stake_log_tbl.available_primary_key();
     stake_log_tbl.emplace( _self, [&]( auto& row ) {
         row.id 					= id;
         row.owner 			    = owner;
+        row.order_id            = order_id;
+        row.order_side          = order_side;
         row.action			    = action;
         row.quantity		    = quantity;
         row.log_at			    = now;

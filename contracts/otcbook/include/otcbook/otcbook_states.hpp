@@ -29,7 +29,7 @@ static constexpr symbol   CNY                   = SYMBOL("CNY", 4);
 static constexpr symbol   STAKE_SYMBOL          = CNYD_SYMBOL;
 
 static constexpr uint64_t percent_boost     = 10000;
-static constexpr uint64_t order_stake_pct   = 8000; // 80%
+static constexpr uint64_t order_stake_pct   = 10000; // 100%
 static constexpr uint64_t max_memo_size     = 1024;
 
 // static constexpr uint64_t seconds_per_year      = 24 * 3600 * 7 * 52;
@@ -97,7 +97,8 @@ enum class deal_status_t: uint8_t {
     MAKER_ACCEPTED      = 2,
     TAKER_SENT          = 3,
     MAKER_RECV_AND_SENT = 4,
-    CLOSED              = 5
+    CLOSED              = 5,
+    CANCELLED           = 9
 };
 
 // order sides
@@ -343,9 +344,9 @@ struct OTCBOOK_TBL deal_t {
  */
 struct OTCBOOK_TBL fund_log_t {
     uint64_t id = 0;        // PK: available_primary_key, auto increase
+    name owner;             // merchant
     uint64_t order_id;
     name order_side;
-    name owner;             // merchant
     name action;            // operation action, [deposit, withdraw, openorder, closeorder]
     asset quantity;         // maybe positive(plus) or negative(minus)
     time_point_sec log_at;  // log time at 
