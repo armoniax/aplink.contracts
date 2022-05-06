@@ -32,10 +32,11 @@ static constexpr symbol USDT_TRC20 = SYMBOL("USDTTRC", 6);
 static constexpr symbol USDT_BEP20 = SYMBOL("USDTBEP", 6);
 static constexpr symbol CNYD_BEP20 = SYMBOL("CNYDBEP", 4);
 static constexpr symbol CNYD_ARC20 = SYMBOL("CNYDARC", 4);
-static constexpr symbol AMA        = SYMBOL("AMA", 8);
 static constexpr symbol AMAX_ARC20 = SYMBOL("AMAXARC", 8);
-static constexpr symbol BTC        = SYMBOL("BTC", 8);
-static constexpr symbol ETH        = SYMBOL("ETH", 8);
+
+// static constexpr symbol AMAX       = SYMBOL("AMAX", 8);
+// static constexpr symbol BTC        = SYMBOL("BTC", 8);
+// static constexpr symbol ETH        = SYMBOL("ETH", 8);
 static constexpr symbol CNYD       = SYMBOL("CNYD", 4);
 
 // fiat currency symbols
@@ -45,13 +46,13 @@ static constexpr symbol   EUR      = SYMBOL("EUR", 4);
 static constexpr symbol   INR      = SYMBOL("INR", 4);
 
 // pay type
-static constexpr name BANK        = "bank"_n;
-static constexpr name WECHAT      = "wechat"_n;
-static constexpr name ALIPAY      = "alipay"_n;
-static constexpr name CNYDPAY     = "cnyd"_n;
-static constexpr name MASTER      = "master"_n;
-static constexpr name VISA        = "visa"_n;
-static constexpr name PAYPAL      = "paypal"_n;
+static constexpr name BANK          = "bank"_n;
+static constexpr name WECHAT        = "wechat"_n;
+static constexpr name ALIPAY        = "alipay"_n;
+static constexpr name CNYDPAY       = "cnyd"_n;
+static constexpr name MASTER        = "master"_n;
+static constexpr name VISA          = "visa"_n;
+static constexpr name PAYPAL        = "paypal"_n;
 
 /**
  * App upgrade info
