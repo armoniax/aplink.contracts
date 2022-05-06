@@ -2,8 +2,9 @@
 
 namespace aplink {
 
-ACTION settings::init() {
-   // _gstate.initialized = true;
+ACTION settings::init(const aplink_settings& settings) {
+   require_auth( _self );
+   _gstate.settings = settings;
 
 }
 

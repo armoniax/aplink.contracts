@@ -36,8 +36,8 @@ public:
 
     ~settings() { _global.set( _gstate, get_self() ); }
    
-   ACTION init();
-
+    ACTION init(const aplink_settings& settings);
+    using init_action = eosio::action_wrapper<"init"_n, &settings::init>;
 
 private:
     struct aplink_settings {
@@ -55,8 +55,8 @@ private:
     };
 
     struct [[eosio::table("global"), eosio::contract("aplink.conf")]] global_t {
-        name admin;                 // default is contract self
-        aplink_settings settings;         // mgmt fees to collector
+        name admin = _self;
+        aplink_settings settings;
 
         EOSLIB_SERIALIZE( global_t, (admin)(settings) )
     };
