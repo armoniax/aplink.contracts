@@ -667,6 +667,7 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
         // finished deal-canceled
         order_wrapper_ptr->modify(_self, [&]( auto& row ) {
             row.va_frozen_quantity -= deal_quantity;
+            row.updated_at = time_point_sec(current_time_point());
         });
     } else {
         // end deal - finished
@@ -675,6 +676,7 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
             row.va_fulfilled_quantity += deal_quantity;
             row.total_fee += deal_fee;
             row.fine_amount = deal_amount;
+            row.updated_at = time_point_sec(current_time_point());
         });
 
         //< send CNYD to user

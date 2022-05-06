@@ -59,8 +59,13 @@ public:
     void setrate(const map<symbol, asset>& prices_quote_cny);
 
     [[eosio::action]]
+    void setarbiters(const set<name>& arbiters);
+
+    [[eosio::action]]
     void setotcname(const name& otc_name);
+
 private:
+
 };
 
 }

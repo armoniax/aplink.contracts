@@ -32,10 +32,11 @@ static constexpr symbol USDT_TRC20 = SYMBOL("USDTTRC", 6);
 static constexpr symbol USDT_BEP20 = SYMBOL("USDTBEP", 6);
 static constexpr symbol CNYD_BEP20 = SYMBOL("CNYDBEP", 4);
 static constexpr symbol CNYD_ARC20 = SYMBOL("CNYDARC", 4);
-static constexpr symbol AMA        = SYMBOL("AMA", 8);
 static constexpr symbol AMAX_ARC20 = SYMBOL("AMAXARC", 8);
-static constexpr symbol BTC        = SYMBOL("BTC", 8);
-static constexpr symbol ETH        = SYMBOL("ETH", 8);
+
+// static constexpr symbol AMAX       = SYMBOL("AMAX", 8);
+// static constexpr symbol BTC        = SYMBOL("BTC", 8);
+// static constexpr symbol ETH        = SYMBOL("ETH", 8);
 static constexpr symbol CNYD       = SYMBOL("CNYD", 4);
 
 // fiat currency symbols
@@ -45,15 +46,14 @@ static constexpr symbol   EUR      = SYMBOL("EUR", 4);
 static constexpr symbol   INR      = SYMBOL("INR", 4);
 
 // pay type
-static constexpr name BANK        = "bank"_n;
-static constexpr name WECHAT      = "wechat"_n;
-static constexpr name ALIPAY      = "alipay"_n;
-static constexpr name CNYDPAY     = "cnyd"_n;
-static constexpr name MASTER      = "master"_n;
-static constexpr name VISA        = "visa"_n;
-static constexpr name PAYPAL      = "paypal"_n;
+static constexpr name BANK          = "bank"_n;
+static constexpr name WECHAT        = "wechat"_n;
+static constexpr name ALIPAY        = "alipay"_n;
+static constexpr name CNYDPAY       = "cnyd"_n;
+static constexpr name MASTER        = "master"_n;
+static constexpr name VISA          = "visa"_n;
+static constexpr name PAYPAL        = "paypal"_n;
 
-static constexpr name ARBITER1    = "amaxhu3t3tjd"_n;
 /**
  * App upgrade info
  */
@@ -68,7 +68,7 @@ typedef set<symbol> symbol_set;
 typedef set<name> name_set;
 
 struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
-    name otc_name = "oxo.cash1"_n;
+    name otc_name = "oxo.cash"_n;
 
     AppInfo_t app_info = {
         "0.1.0",
@@ -79,14 +79,12 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
 
     set<name> pay_type = { CNYDPAY, BANK, WECHAT, ALIPAY };
 
-    name_set arbiters {
-        "casharbitoo1"_n
-    };
+    name_set arbiters { "casharbitoo1"_n };
 
     symbol_set coin_type = { AMAX_ARC20, CNYD_ARC20, USDT_ERC20, USDT_TRC20, USDT_BEP20 };
     symbol fiat_type = CNY;
 
-    name fee_recv_addr="oxo.feeadmin"_n;
+    name fee_recv_addr = "oxo.feeadmin"_n;
     uint64_t fee_pct   = 50;
 
     /**
