@@ -79,14 +79,12 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
 
     set<name> pay_type = { CNYDPAY, BANK, WECHAT, ALIPAY };
 
-    name_set arbiters {
-        "casharbitoo1"_n
-    };
+    name_set arbiters { "casharbitoo1"_n };
 
     symbol_set coin_type = { AMAX_ARC20, CNYD_ARC20, USDT_ERC20, USDT_TRC20, USDT_BEP20 };
     symbol fiat_type = CNY;
 
-    name fee_recv_addr="oxo.feeadmin"_n;
+    name fee_recv_addr = "oxo.feeadmin"_n;
     uint64_t fee_pct   = 50;
 
     /**
