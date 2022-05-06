@@ -13,19 +13,12 @@ using std::vector;
 using namespace eosio;
 
 static constexpr symbol   SYS_SYMBOL            = symbol(symbol_code("AMAX"), 8);
-struct aplink_settings {
+
+public struct account_res {
+    uint8_t account_create_ram_bytes = 4096;
     asset account_stake_cpu = asset(200000, SYS_SYMBOL);
     asset account_stake_net = asset(200000, SYS_SYMBOL);
-    vector<string> amc_mainnet_nodes =  {
-        "a1.nchain.me:8888",
-        "a2.nchain.me:8888",
-    };
-    vector<string> amc_testnet_nodes = {
-        "t1.nchain.me:18888",
-        "t2.nchain.me:18888",
-    };
-};
-
+}
 /**
  * The `aplink.conf` is configuration contract for APLink APP
  * 
@@ -49,16 +42,20 @@ public:
    
     ACTION init(const name& admin);
     using init_action = eosio::action_wrapper<"init"_n, &settings::init>;
-    
-    ACTION update(const aplink_settings& settings);
+
+    ACTION update(const account_res& account_create_res);
     using update_action = eosio::action_wrapper<"update"_n, &settings::update>;
 
 private:
     struct [[eosio::table("global"), eosio::contract("aplink.conf")]] global_t {
-        name admin;     //default as _self
-        aplink_settings settings;
-
-        EOSLIB_SERIALIZE( global_t, (admin)(settings) )
+        name admin;     //default: _self
+        account_res account_create_res;
+        vector<string> amc_nodes =  {
+            "a1.nchain.me:8888",
+            "a2.nchain.me:8888",
+        };
+        
+        EOSLIB_SERIALIZE( global_t, (admin)(account_create_res)(amc_nodes) )
     };
 
     typedef eosio::singleton< "global"_n, global_t > global_singleton;
