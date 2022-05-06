@@ -51,8 +51,8 @@ public:
     [[eosio::action]]
     void update(const string& pubkey, const string& nickname, const uint16_t& status, const string& portrait, const name& owner);
 
-    [[eosio::action]]
-    void transfer(const name& from);
+    [[eosio::on_notify("amax.token::transfer")]]
+    void top_up(name from, name to, asset quantity, string memo);
 
     [[eosio::action]]
     void destory(const name& owner);
