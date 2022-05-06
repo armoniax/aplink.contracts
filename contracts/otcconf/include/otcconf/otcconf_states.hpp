@@ -53,7 +53,6 @@ static constexpr name MASTER      = "master"_n;
 static constexpr name VISA        = "visa"_n;
 static constexpr name PAYPAL      = "paypal"_n;
 
-static constexpr name ARBITER1    = "amaxhu3t3tjd"_n;
 /**
  * App upgrade info
  */
