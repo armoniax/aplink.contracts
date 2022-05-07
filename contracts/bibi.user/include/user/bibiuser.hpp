@@ -8,7 +8,7 @@
 #include <eosio/system.hpp>
 #include <eosio/time.hpp>
 
-#include "user_db.hpp"
+#include "bibiuser_db.hpp"
 
 #include <string>
 #include <vector>
@@ -27,7 +27,6 @@ private:
     dbc                 _db;
     global_t            _gstate;
     global_singleton    _global;
-    // enum status_list {anonymous=0, online=1, no_disturb=2, stealth=3};
 
 public:
     using contract::contract;
@@ -46,25 +45,33 @@ public:
     }
 
     [[eosio::action]]
-    void create(const string& pubkey, const name& owner);
+    void create(const name& owner,const string& pubkey);
 
     [[eosio::action]]
-    void update(const string& pubkey, const string& nickname, const uint16_t& status, const string& portrait, const name& owner);
+    void update(const name& owner,const string& pubkey, const string& nickname, const uint16_t& status, const string& portrait);
 
-    [[eosio::on_notify("amax.token::transfer")]]
-    void top_up(name from, name to, asset quantity, string memo);
+    // [[eosio::on_notify("amax.token::transfer")]]
+    [[eosio::on_notify("aplink::transfer")]]
+    void fee(name from, name to, asset quantity, string memo);
 
     [[eosio::action]]
     void destory(const name& owner);
 
     [[eosio::action]]
-    void settopupconf(const bool& enable, const asset& topup_val, const name& contract_name, uint16_t days);
+    void setfeeconf(const bool& enable, const asset& fee, uint16_t days);
 
+    [[eosio::action]]
+    void gmuserstat(const name& owner, const bool& enable);
+
+    [[eosio::action]]
+    void gmdestory(const name& owner);
 
     using create_action = eosio::action_wrapper<"create"_n, &bibiuser::create>;
     using update_action = eosio::action_wrapper<"update"_n, &bibiuser::update>;
-    using transfer_action = eosio::action_wrapper<"transfer"_n, &bibiuser::transfer>;
+    using fee_action = eosio::action_wrapper<"fee"_n, &bibiuser::fee>;
     using destory_action = eosio::action_wrapper<"destory"_n, &bibiuser::destory>;
-    using settopupconf_action = eosio::action_wrapper<"settopupconf"_n, &bibiuser::settopupconf>;
+    using setfeeconf_action = eosio::action_wrapper<"setfeeconf"_n, &bibiuser::setfeeconf>;
+    using gmuserstat_action = eosio::action_wrapper<"gmuserstat"_n, &bibiuser::gmuserstat>;
+    using gmdestory_action = eosio::action_wrapper<"gmdestory"_n, &bibiuser::gmdestory>;
 
 };
