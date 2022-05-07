@@ -58,20 +58,17 @@ public:
     void destory(const name& owner);
 
     [[eosio::action]]
-    void setfeeconf(const bool& enable, const asset& fee, uint16_t days);
+    void setconf(const bool& enable, const asset& fee, uint16_t days);
 
     [[eosio::action]]
-    void gmuserstat(const name& owner, const bool& enable);
+    void enableuser(const name& owner, const bool& enable);
 
-    [[eosio::action]]
-    void gmdestory(const name& owner);
 
     using create_action = eosio::action_wrapper<"create"_n, &bibiuser::create>;
     using update_action = eosio::action_wrapper<"update"_n, &bibiuser::update>;
     using fee_action = eosio::action_wrapper<"fee"_n, &bibiuser::fee>;
     using destory_action = eosio::action_wrapper<"destory"_n, &bibiuser::destory>;
-    using setfeeconf_action = eosio::action_wrapper<"setfeeconf"_n, &bibiuser::setfeeconf>;
-    using gmuserstat_action = eosio::action_wrapper<"gmuserstat"_n, &bibiuser::gmuserstat>;
-    using gmdestory_action = eosio::action_wrapper<"gmdestory"_n, &bibiuser::gmdestory>;
+    using setconf_action = eosio::action_wrapper<"setconf"_n, &bibiuser::setconf>;
+    using enableuser_action = eosio::action_wrapper<"enableuser"_n, &bibiuser::enableuser>;
 
 };

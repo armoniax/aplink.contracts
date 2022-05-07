@@ -56,30 +56,25 @@ void bibiuser::fee(name from, name to, asset quantity, string memo)
 
     CHECK( _gstate.fee.amount == quantity.amount, "quantity mismatch" );
 
-    CHECK( _gstate.fee.symbol.raw() == quantity.symbol.raw(), "symbol mismatch" );
+    CHECK( _gstate.fee.symbol == quantity.symbol, "symbol mismatch" );
     
     chatuser chatuser_t(from);
     CHECK( _db.get(chatuser_t), "the user is not registered");
     
-    if (chatuser_t.vip_ex_time == time_point()){
+    if(chatuser_t.vip_ex_time >= current_time_point()){
+
+       chatuser_t.vip_ex_time += eosio::days(_gstate.effective_days);
+    }else{
 
        chatuser_t.vip_ex_time = current_time_point()+eosio::days(_gstate.effective_days);
-    } else {
-
-       if (chatuser_t.vip_ex_time >= current_time_point()){
-
-            chatuser_t.vip_ex_time += eosio::days(_gstate.effective_days);
-       }else{
-
-           chatuser_t.vip_ex_time = current_time_point()+eosio::days(_gstate.effective_days);
-       }
     }
+
     _db.set(chatuser_t);
 }
 
 void bibiuser::destory(const name& owner)
 {
-    require_auth(owner);
+    CHECK( has_auth(_self) || has_auth(owner), "no permistion for destory");
 
     chatuser chatuser_t(owner);
     CHECK( _db.get(chatuser_t), "the user is not registered");
@@ -88,10 +83,10 @@ void bibiuser::destory(const name& owner)
     _db.del(chatuser_t);
 }
 
-void bibiuser::setfeeconf(const bool& enable, const asset& fee, uint16_t days)
+void bibiuser::setconf(const bool& enable, const asset& fee, uint16_t days)
 {
     require_auth( _self );
-
+    
     CHECK( fee.is_valid(), "invalid quantity");
     CHECK( fee.amount > 0, "fee must be positive");
 
@@ -101,7 +96,7 @@ void bibiuser::setfeeconf(const bool& enable, const asset& fee, uint16_t days)
 
 }
 
-void bibiuser::gmuserstat(const name& owner, const bool& enable)
+void bibiuser::enableuser(const name& owner, const bool& enable)
 {
     require_auth( _self );
 
@@ -110,17 +105,5 @@ void bibiuser::gmuserstat(const name& owner, const bool& enable)
 
     chatuser_t.enable = enable;
     _db.set(chatuser_t);
-
-}
-
-void bibiuser::gmdestory(const name& owner)
-{
-    require_auth( _self );
-
-    chatuser chatuser_t(owner);
-    CHECK( _db.get(chatuser_t), "the user is not registered");
-    CHECK(chatuser_t.enable == true,"the user has been disabled");
-
-    _db.del(chatuser_t);
 
 }

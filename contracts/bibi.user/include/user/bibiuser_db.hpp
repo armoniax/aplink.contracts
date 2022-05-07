@@ -25,7 +25,7 @@ using namespace wasm;
 struct [[eosio::table("global"), eosio::contract("bibiuser")]] global_t {            
     asset               fee;  
     bool                enable = false;
-    uint16_t            effective_days;
+    uint16_t            effective_days = 0;
     global_t() {}
 
     EOSLIB_SERIALIZE( global_t, (fee)(enable)(effective_days) )
