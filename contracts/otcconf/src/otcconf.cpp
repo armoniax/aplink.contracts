@@ -47,4 +47,8 @@ void otcconf::setotcname(const name& otc_name) {
     
 }
 
+void otcconf::setarbiters(const set<name>& arbiters) {
+    _gstate.arbiters = arbiters;
+}
+
 }  //end of namespace:: otc
