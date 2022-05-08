@@ -17,11 +17,7 @@ set(ICON_BASE_URL "http://127.0.0.1/ricardian_assets/amax.contracts/icons")
 # add_subdirectory(otcbook)
 # add_subdirectory(otcconf)
 # add_subdirectory(amax.exchange)
-add_subdirectory(rewardnewbie)
+add_subdirectory(aplink.newbie)
 # add_subdirectory(aplink.stake)
-<<<<<<< HEAD
 # add_subdirectory(aplink.token)
 add_subdirectory(aplink.conf)
-=======
-add_subdirectory(aplink.token)
->>>>>>> prod

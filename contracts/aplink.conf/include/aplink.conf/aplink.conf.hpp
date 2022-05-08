@@ -14,11 +14,11 @@ using namespace eosio;
 
 static constexpr symbol   SYS_SYMBOL            = symbol(symbol_code("AMAX"), 8);
 
-public struct account_res {
-    uint8_t account_create_ram_bytes = 4096;
+struct account_res {
+    uint8_t account_create_ram_bytes = (uint8_t) 4096;
     asset account_stake_cpu = asset(200000, SYS_SYMBOL);
     asset account_stake_net = asset(200000, SYS_SYMBOL);
-}
+};
 /**
  * The `aplink.conf` is configuration contract for APLink APP
  * 

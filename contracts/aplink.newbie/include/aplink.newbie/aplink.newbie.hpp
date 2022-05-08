@@ -8,7 +8,7 @@
 #include <eosio/system.hpp>
 #include <eosio/time.hpp>
 
-#include "rewardnewbie_db.hpp"
+#include "aplink.newbie.db.hpp"
 
 #include <string>
 #include <vector>
@@ -22,7 +22,7 @@ using std::vector;
 using namespace eosio;
 using namespace wasm::db;
 
-class [[eosio::contract("rewardnewbie")]] rewardnewbie : public contract {
+class [[eosio::contract("aplink.newbie")]] newbie : public contract {
 private:
     dbc                 _db;
     global_t            _gstate;
@@ -31,7 +31,7 @@ private:
 public:
     using contract::contract;
 
-    rewardnewbie(name receiver, name code, datastream<const char*> ds):_db(_self), contract(receiver, code, ds), _global(_self, _self.value) {
+    newbie(name receiver, name code, datastream<const char*> ds):_db(_self), contract(receiver, code, ds), _global(_self, _self.value) {
         if (_global.exists()) {
             _gstate = _global.get();
 
@@ -40,7 +40,7 @@ public:
         }
     }
 
-    ~rewardnewbie() {
+    ~newbie() {
         _global.set( _gstate, get_self() );
     }
 
@@ -50,7 +50,7 @@ public:
     [[eosio::action]]
     void setstate(const bool& enable, const asset& newbie_reward, const name& contract_name);
 
-    using claimreward_action = eosio::action_wrapper<"claimreward"_n, &rewardnewbie::claimreward>;
-    using setstate_action = eosio::action_wrapper<"setstate"_n, &rewardnewbie::setstate>;
+    // using claimreward_action = eosio::action_wrapper<"claimreward"_n, &newbie::claimreward>;
+    // using setstate_action = eosio::action_wrapper<"setstate"_n, &newbie::setstate>;
 
 };

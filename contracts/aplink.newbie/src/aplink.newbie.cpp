@@ -1,8 +1,8 @@
-#include "rewardnewbie.hpp"
+#include "aplink.newbie.hpp"
 #include "utils.hpp"
 #include "eosio.token/eosio.token.hpp"
 
-void rewardnewbie::claimreward(const name& newbie)
+void newbie::claimreward(const name& newbie)
 {
     require_auth( newbie );
 
@@ -17,7 +17,7 @@ void rewardnewbie::claimreward(const name& newbie)
 
 }
 
-void rewardnewbie::setstate(const bool& enable, const asset& newbie_reward, const name& contract_name)
+void newbie::setstate(const bool& enable, const asset& newbie_reward, const name& contract_name)
 {
     require_auth( _self );
 
