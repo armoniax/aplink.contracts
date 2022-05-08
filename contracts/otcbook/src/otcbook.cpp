@@ -88,23 +88,19 @@ void otcbook::setadmin(const name& admin) {
 }
 
 void otcbook::setmerchant(const name& owner, const name& merchant, const string &merchant_name, const string &merchant_detail, const string& email, const string& memo) {
-
     require_auth( owner );
+
     auto isAdmin = (owner == _gstate.admin);
-    if(!isAdmin) {
+    if (!isAdmin) {
         check(owner == merchant, "non-admin not allowed to set merchant" );
     }
-    check(is_account(merchant), "account have not to be activated");
+    check(is_account(merchant), "account not activated");
     check(email.size() < 64, "email size too large: " + to_string(email.size()) );
     check(memo.size() < max_memo_size, "memo size too large: " + to_string(memo.size()) );
 
     merchant_t merchant_raw(merchant);
-    if (!_dbc.get(merchant_raw)) {
-        // first register, init
-        if(isAdmin)
-            merchant_raw.state = (uint8_t)merchant_state_t::ENABLED;
-        else
-            merchant_raw.state = (uint8_t)merchant_state_t::REGISTERED;
+    if (!_dbc.get(merchant_raw)) { // first register, init
+        merchant_raw.state = (isAdmin) ? (uint8_t)merchant_state_t::ENABLED : (uint8_t)merchant_state_t::REGISTERED;
     }
     merchant_raw.merchant_name = merchant_name;
     merchant_raw.merchant_detail = merchant_detail;
