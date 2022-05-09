@@ -50,6 +50,14 @@ public:
     [[eosio::action]]
     void setstate(const bool& enable, const asset& newbie_reward, const name& contract_name);
 
+    /**
+     * recycle db
+     * require contract self auth
+     * @param max_rows - max rows to recycle
+     */
+    [[eosio::action]]
+    void recycledb(uint32_t max_rows);
+
     // using claimreward_action = eosio::action_wrapper<"claimreward"_n, &newbie::claimreward>;
     // using setstate_action = eosio::action_wrapper<"setstate"_n, &newbie::setstate>;
 
