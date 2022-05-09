@@ -42,7 +42,7 @@ void bibiuser::update(const name& owner,const string& pubkey, const string& nick
 
 }
 
-void bibiuser::fee(name from, name to, asset quantity, string memo)
+void bibiuser::onpayfee(name from, name to, asset quantity, string memo)
 {
     if (_self == from ){
         return;

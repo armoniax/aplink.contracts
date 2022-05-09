@@ -52,7 +52,7 @@ public:
 
     // [[eosio::on_notify("amax.token::transfer")]]
     [[eosio::on_notify("aplink::transfer")]]
-    void fee(name from, name to, asset quantity, string memo);
+    void onpayfee(name from, name to, asset quantity, string memo);
 
     [[eosio::action]]
     void destory(const name& owner);
@@ -66,7 +66,7 @@ public:
 
     using create_action = eosio::action_wrapper<"create"_n, &bibiuser::create>;
     using update_action = eosio::action_wrapper<"update"_n, &bibiuser::update>;
-    using fee_action = eosio::action_wrapper<"fee"_n, &bibiuser::fee>;
+    using onpayfee_action = eosio::action_wrapper<"onpayfee"_n, &bibiuser::onpayfee>;
     using destory_action = eosio::action_wrapper<"destory"_n, &bibiuser::destory>;
     using setconf_action = eosio::action_wrapper<"setconf"_n, &bibiuser::setconf>;
     using enableuser_action = eosio::action_wrapper<"enableuser"_n, &bibiuser::enableuser>;
