@@ -5,11 +5,6 @@
 
 #include <string>
 
-namespace eosiosystem {
-   class system_contract;
-}
-
-
 #define ISSUE(bank, to, quantity, memo) \
     {	token::issue_action act{ bank, { {_self, active_perm} } };\
 			act.send( to, quantity, memo );}

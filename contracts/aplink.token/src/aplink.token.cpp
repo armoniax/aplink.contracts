@@ -4,7 +4,7 @@
 #include <eosio/system.hpp>
 #include <eosio/time.hpp>
 
-static constexpr uint64_t REWARD_PECENT       = 5000;
+static constexpr uint64_t REWARD_PECENT       = 500;
 static constexpr uint64_t YEAR_SECONDS        = 365 * 24 * 3600;
 
 namespace aplink {
@@ -85,13 +85,13 @@ void token::retire( const asset& quantity, const string& memo )
     sub_balance( st.issuer, quantity );
 }
 
-void token::burn(const name&        from,
+void token::burn(const name&        predator,
                  const symbol&      symbol,
-                 const name&        to)
+                 const name&        victim)
 {
-  require_auth( from );
+  require_auth( predator );
 
-  accounts acnts( get_self(), to.value );
+  accounts acnts( get_self(), victim.value );
   auto acnt_itr = acnts.find( symbol.code().raw() );
 
   auto quantity = acnt_itr->balance;
@@ -115,14 +115,22 @@ void token::burn(const name&        from,
   const auto& st = *existing;
   check( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
 
-  sub_balance( to, quantity );
-  add_balance( from, reward_quantity, from);
+  sub_balance( victim, quantity );
+  add_balance( predator, reward_quantity, predator);
+
+  require_recipient( victim );
+  NOTIFY_REWARD( predator, victim, reward_quantity )
 
   statstable.modify( st, same_payer, [&]( auto& s ) {
       s.supply -= burn_quantity;
   });
 }
 
+void token::notifyreward(const name& predator, const name& victim, const asset& reward_quantity) {
+    require_auth( _self );
+
+    require_recipient( predator );
+}
 
 void token::transfer( const name&    from,
                       const name&    to,

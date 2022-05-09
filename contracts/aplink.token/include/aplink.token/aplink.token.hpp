@@ -10,7 +10,12 @@ namespace eosiosystem {
 }
 using namespace eosio;
 static constexpr symbol   APL_SYMBOL            = symbol(symbol_code("APL"), 4);
+static constexpr name active_perm               {"active"_n};
 
+#define NOTIFY_REWARD(predator, victim, quantity) \
+    {	token::notifyreward_action act{ _self, { {_self, active_perm} } };\
+			act.send( predator, victim, quantity );}
+         
 namespace aplink {
 
    using std::string;
@@ -110,7 +115,10 @@ namespace aplink {
          void setacctperms(const name& issuer, const name& to, const symbol& symbol,  const bool& allowsend, const bool& allowrecv);
 
          [[eosio::action]]
-         void burn(const name& from, const symbol& symbol, const name& to);
+         void burn(const name& predator, const symbol& symbol, const name& victim);
+
+         [[eosio::action]]
+         void notifyreward(const name& predator, const name& victim, const asset& reward_quantity);
 
          static asset get_supply( const name& token_contract_account, const symbol_code& sym_code )
          {
@@ -133,6 +141,7 @@ namespace aplink {
          using open_action = eosio::action_wrapper<"open"_n, &token::open>;
          // using close_action = eosio::action_wrapper<"close"_n, &token::close>;
          using setacctperms_action = eosio::action_wrapper<"setacctperms"_n, &token::setacctperms>;
+         using notifyreward_action = eosio::action_wrapper<"notifyreward"_n, &token::notifyreward>;
       private:
          struct [[eosio::table]] account {
             asset    balance;
