@@ -50,8 +50,7 @@ public:
     [[eosio::action]]
     void update(const name& owner,const string& pubkey, const string& nickname, const uint16_t& status, const string& portrait);
 
-    // [[eosio::on_notify("amax.token::transfer")]]
-    [[eosio::on_notify("aplink::transfer")]]
+    [[eosio::on_notify("amax.token::transfer")]]
     void onpayfee(name from, name to, asset quantity, string memo);
 
     [[eosio::action]]
