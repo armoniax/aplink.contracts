@@ -169,7 +169,7 @@ void token::sub_balance( const name& owner, const asset& value ) {
   from_acnts.modify( from, owner, [&]( auto& a ) {
     a.balance -= value;
     if (a.balance.amount != 0) {
-      a.expired_at = current_time_point() + seconds(YEAR_SECONDS); 
+      a.expired_at = current_time_point() + seconds(YEAR_SECONDS);
     }
   });
 }
@@ -182,13 +182,13 @@ void token::add_balance( const name& owner, const asset& value, const name& ram_
     to_acnts.emplace( ram_payer, [&]( auto& a ){
       a.balance = value;
       a.sum_balance = value;
-      a.expired_at = current_time_point() + seconds(YEAR_SECONDS); 
+      a.expired_at = current_time_point() + seconds(YEAR_SECONDS);
     });
   } else {
     to_acnts.modify( to, same_payer, [&]( auto& a ) {
       a.balance += value;
       a.sum_balance += value;
-      a.expired_at = current_time_point() + seconds(YEAR_SECONDS); 
+      a.expired_at = current_time_point() + seconds(YEAR_SECONDS);
     });
   }
 }
@@ -213,20 +213,20 @@ void token::open( const name& owner, const symbol& symbol, const name& ram_payer
   }
 }
 
-void token::close( const name& owner, const symbol& symbol )
-{
-   require_auth( owner );
-   accounts acnts( get_self(), owner.value );
-   auto it = acnts.find( symbol.code().raw() );
-   check( it != acnts.end(), "Balance row already deleted or never existed. Action won't have any effect." );
-   check( it->balance.amount == 0, "Cannot close because the balance is not zero." );
-   acnts.erase( it );
-}
+// void token::close( const name& owner, const symbol& symbol )
+// {
+//    require_auth( owner );
+//    accounts acnts( get_self(), owner.value );
+//    auto it = acnts.find( symbol.code().raw() );
+//    check( it != acnts.end(), "Balance row already deleted or never existed. Action won't have any effect." );
+//    check( it->balance.amount == 0, "Cannot close because the balance is not zero." );
+//    acnts.erase( it );
+// }
 
 void token::setacctperms(const name& issuer, const name& to, const symbol& symbol,  const bool& allowsend, const bool& allowrecv) {
     require_auth( issuer );
     require_issuer(issuer, symbol);
-    
+
     check( is_account( to ), "to account does not exist");
     check(symbol == APL_SYMBOL, "invalid APL symbol");
 
