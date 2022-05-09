@@ -134,6 +134,12 @@ namespace aplink {
             return ac.balance;
          }
 
+         static bool account_exist( const name& token_contract_account, const name& owner, const symbol_code& sym_code )
+         {
+            accounts accountstable( token_contract_account, owner.value );
+            return accountstable.find( sym_code.raw() ) != accountstable.end();
+         }
+
          using create_action = eosio::action_wrapper<"create"_n, &token::create>;
          using issue_action = eosio::action_wrapper<"issue"_n, &token::issue>;
          using retire_action = eosio::action_wrapper<"retire"_n, &token::retire>;

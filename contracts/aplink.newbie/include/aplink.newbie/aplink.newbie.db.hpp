@@ -15,7 +15,7 @@ using namespace eosio;
 
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
 
-static constexpr name active_perm               {"active"_n};
+// static constexpr name active_perm               {"active"_n};
 // static constexpr symbol APL_SYMBOL              = SYMBOL("APL", 4);
 // static constexpr name   APL_BANK                { "aplink.token"_n };   //NTT token
 
