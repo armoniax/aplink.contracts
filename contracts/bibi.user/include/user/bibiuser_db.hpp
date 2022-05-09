@@ -20,7 +20,7 @@ using namespace std;
 using namespace eosio;
 using namespace wasm;
 
-#define USER_TBL [[eosio::table, eosio::contract("bibiuser")]]
+#define USER_TBL [[eosio::table, eosio::contract("bibi.user")]]
 
 struct [[eosio::table("global"), eosio::contract("bibiuser")]] global_t {            
     asset               fee;  

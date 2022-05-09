@@ -1,4 +1,4 @@
-#include <user/bibiuser.hpp>
+#include <user/bibi.user.hpp>
 
 void bibiuser::create(const name& owner,const string& pubkey)
 {

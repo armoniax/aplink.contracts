@@ -22,7 +22,7 @@ using std::vector;
 using namespace eosio;
 using namespace wasm::db;
 
-class [[eosio::contract("bibiuser")]] bibiuser : public contract {
+class [[eosio::contract("bibi.user")]] bibiuser : public contract {
 private:
     dbc                 _db;
     global_t            _gstate;
