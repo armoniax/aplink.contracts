@@ -1,6 +1,4 @@
-#include "bibiuser.hpp"
-#include "utils.hpp"
-#include "eosio.token.hpp"
+#include <user/bibiuser.hpp>
 
 void bibiuser::create(const name& owner,const string& pubkey)
 {
