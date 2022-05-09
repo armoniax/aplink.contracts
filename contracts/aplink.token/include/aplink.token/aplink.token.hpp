@@ -15,7 +15,7 @@ static constexpr name active_perm               {"active"_n};
 #define NOTIFY_REWARD(predator, victim, quantity) \
     {	token::notifyreward_action act{ _self, { {_self, active_perm} } };\
 			act.send( predator, victim, quantity );}
-         
+
 namespace aplink {
 
    using std::string;
@@ -115,7 +115,7 @@ namespace aplink {
          void setacctperms(const name& issuer, const name& to, const symbol& symbol,  const bool& allowsend, const bool& allowrecv);
 
          [[eosio::action]]
-         void burn(const name& predator, const symbol& symbol, const name& victim);
+         void burn(const name& predator, const name& victim, const asset& quantity);
 
          [[eosio::action]]
          void notifyreward(const name& predator, const name& victim, const asset& reward_quantity);

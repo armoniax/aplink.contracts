@@ -4,7 +4,7 @@
 #include <eosio/system.hpp>
 #include <eosio/time.hpp>
 
-static constexpr uint64_t REWARD_PECENT       = 500;
+static constexpr uint64_t REWARD_PERCENT      = 500;
 static constexpr uint64_t YEAR_SECONDS        = 365 * 24 * 3600;
 
 namespace aplink {
@@ -86,43 +86,38 @@ void token::retire( const asset& quantity, const string& memo )
 }
 
 void token::burn(const name&        predator,
-                 const symbol&      symbol,
-                 const name&        victim)
+                 const name&        victim,
+                 const asset& quantity)
 {
   require_auth( predator );
 
+  auto sym_code_raw = quantity.symbol.code().raw();
+
   accounts acnts( get_self(), victim.value );
-  auto acnt_itr = acnts.find( symbol.code().raw() );
-
-  auto quantity = acnt_itr->balance;
-  check( acnt_itr->expired_at <  current_time_point(), "premature to burn" );
-
+  auto acnt_itr = acnts.find( sym_code_raw );
+  check( acnt_itr != acnts.end(), "no balance object found");
+  check( quantity.symbol == acnt_itr->balance.symbol, "symbol precision mismatch" );
   check( quantity.is_valid(), "invalid quantity" );
   check( quantity.amount > 0, "must burn positive quantity" );
+  check( quantity != acnt_itr->balance, "quantity amount mismatch with account balance");
+  check( acnt_itr->expired_at <  current_time_point(), "only expired account can be burned" );
 
-  uint64_t to_reward = mul( quantity.amount, REWARD_PECENT );
-  uint64_t to_burn = quantity.amount - to_reward;
-  check( to_reward > 0, "reward quantity must be positive");
-  auto reward_quantity  = ASSET( to_reward, quantity.symbol );
-  auto burn_quantity    = ASSET( to_burn, quantity.symbol );
-
-  auto sym = quantity.symbol;
-  check( sym.is_valid(), "invalid symbol" );
-
-  stats statstable( get_self(), sym.code().raw() );
-  auto existing = statstable.find( sym.code().raw() );
-  check( existing != statstable.end(), "token with symbol does not exist" );
-  const auto& st = *existing;
-  check( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
+  int64_t to_reward = mul( quantity.amount, REWARD_PERCENT );
+  int64_t to_burn = quantity.amount - to_reward;
 
   sub_balance( victim, quantity );
-  add_balance( predator, reward_quantity, predator);
-
   require_recipient( victim );
-  NOTIFY_REWARD( predator, victim, reward_quantity )
 
+  if (to_reward > 0) {
+    auto reward_quantity  = ASSET( to_reward, quantity.symbol );
+    add_balance( predator, reward_quantity, predator);
+    NOTIFY_REWARD( predator, victim, reward_quantity )
+  }
+
+  stats statstable( get_self(), sym_code_raw );
+  const auto &st = statstable.get( sym_code_raw, "token of symbol does not exist" );
   statstable.modify( st, same_payer, [&]( auto& s ) {
-      s.supply -= burn_quantity;
+      s.supply.amount -= to_burn;
   });
 }
 
