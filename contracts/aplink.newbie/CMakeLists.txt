@@ -3,7 +3,9 @@ add_contract(aplink.newbie aplink.newbie ${CMAKE_CURRENT_SOURCE_DIR}/src/aplink.
 target_include_directories(aplink.newbie
    PUBLIC
    ${CMAKE_CURRENT_SOURCE_DIR}/include
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/aplink.newbie )
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/aplink.newbie
+   ${CMAKE_CURRENT_SOURCE_DIR}/../aplink.token/include
+)
 
 set_target_properties(aplink.newbie
    PROPERTIES
