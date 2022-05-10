@@ -5,7 +5,12 @@
 #include <eosio/time.hpp>
 
 static constexpr uint64_t REWARD_PERCENT      = 500;
+#ifndef YEAR_SECONDS_FOR_TEST
 static constexpr uint64_t YEAR_SECONDS        = 365 * 24 * 3600;
+#else
+#warning "YEAR_SECONDS_FOR_TEST should be used only for test!!!"
+static constexpr uint64_t YEAR_SECONDS        = YEAR_SECONDS_FOR_TEST;
+#endif//DAY_SECONDS_FOR_TEST
 
 namespace aplink {
 
