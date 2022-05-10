@@ -99,7 +99,7 @@ void token::burn(const name&        predator,
   check( quantity.symbol == acnt_itr->balance.symbol, "symbol precision mismatch" );
   check( quantity.is_valid(), "invalid quantity" );
   check( quantity.amount > 0, "must burn positive quantity" );
-  check( quantity != acnt_itr->balance, "quantity amount mismatch with account balance");
+  check( quantity == acnt_itr->balance, "quantity amount mismatch with account balance");
   check( acnt_itr->expired_at <  current_time_point(), "only expired account can be burned" );
 
   int64_t to_reward = mul( quantity.amount, REWARD_PERCENT );
