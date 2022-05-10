@@ -306,6 +306,10 @@ struct OTCBOOK_TBL deal_t {
     uint8_t status = 0;             // status
     uint8_t arbit_status = 0;       // arbit status
     name arbiter;
+    
+    time_point_sec merchant_accepted_at;      // create time at
+    time_point_sec merchant_paid_at;      // create time at
+
     time_point_sec created_at;      // create time at
     time_point_sec closed_at;       // closed time at
     time_point_sec updated_at;
