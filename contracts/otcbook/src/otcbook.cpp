@@ -9,10 +9,7 @@ using namespace std;
 using std::string;
 
 static constexpr uint64_t HALF_HOUR_SECONDS         = 1800;
-static constexpr uint64_t HOUR_SECONDS              = 3600;
 static constexpr uint64_t THREE_HOURS_SECONDS       = 10800;
-
-
 
 namespace amax {
 
@@ -384,7 +381,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( (uint8_t)status != (uint8_t)deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
     check( (uint8_t)status != (uint8_t)deal_status_t::CANCELLED, "deal already cancelled: " + to_string(deal_id) );
     auto arbit_status =  (arbit_status_t)deal_itr->arbit_status;
-    auto merchant_paid_at = deal_itr->merchant_paid_at;
+    // auto merchant_paid_at = deal_itr->merchant_paid_at;
 
     switch ((account_type_t) account_type) {
     case account_type_t::USER:
@@ -397,9 +394,11 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         check( deal_itr->arbiter == account, "abiter account mismatched");
         break;
     case account_type_t::MERCHANT:
-        check( deal_itr->order_maker == account, "merchant account mismatched");
-        check( (uint8_t)status != (uint8_t)deal_status_t::MAKER_RECV_AND_SENT, "deal already cancelled: " + to_string(deal_id) );
-        check( merchant_paid_at + seconds(THREE_HOURS_SECONDS) < current_time_point(), "deal is not expired.");
+        check( false, "deal already cancelled: " + to_string(deal_id) );
+
+        // check( deal_itr->order_maker == account, "merchant account mismatched");
+        // check( (uint8_t)status != (uint8_t)deal_status_t::MAKER_RECV_AND_SENT, "deal already cancelled: " + to_string(deal_id) );
+        // check( merchant_paid_at + seconds(THREE_HOURS_SECONDS) < current_time_point(), "deal is not expired.");
         break;
     default:
         check(false, "account type not supported: " + to_string(account_type));
@@ -467,8 +466,8 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
         if((uint8_t)status == (uint8_t)deal_status_t::CREATED) {
 
         } else if((uint8_t)status == (uint8_t)deal_status_t::MAKER_ACCEPTED) {
-            auto merchant_accepted_at = deal_itr->merchant_accepted_at;
-            check(merchant_accepted_at + seconds(HALF_HOUR_SECONDS) <  current_time_point(), "deal is not expired.");
+            // auto merchant_accepted_at = deal_itr->merchant_accepted_at;
+            // check(merchant_accepted_at + seconds(HALF_HOUR_SECONDS) <  current_time_point(), "deal is not expired.");
         } else {
             check(false, "deal already status need CREATED or MAKER_ACCEPTED " + to_string(deal_id));
         }
@@ -590,10 +589,10 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
             row.updated_at = time_point_sec(current_time_point());
         }
         if(next_status != deal_status_t::MAKER_ACCEPTED) {
-            row.merchant_accepted_at = time_point_sec(current_time_point());
+            // row.merchant_accepted_at = time_point_sec(current_time_point());
         }
         if(next_status != deal_status_t::MAKER_RECV_AND_SENT) {
-            row.merchant_paid_at = time_point_sec(current_time_point());
+            // row.merchant_paid_at = time_point_sec(current_time_point());
         }
 
         row.session.push_back({account_type, account, (uint8_t)status, action, session_msg, now});
