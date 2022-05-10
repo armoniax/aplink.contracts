@@ -25,9 +25,9 @@ using namespace std;
 using namespace eosio;
 using namespace wasm;
 
-#define CUSTODY_TBL [[eosio::table, eosio::contract("rewardnewbie")]]
+#define CUSTODY_TBL [[eosio::table, eosio::contract("aplink.newbie")]]
 
-struct [[eosio::table("global"), eosio::contract("rewardnewbie")]] global_t {
+struct [[eosio::table("global"), eosio::contract("aplink.newbie")]] global_t {
     asset               newbie_reward;  //"100.0000 APL"
     name                contract_name;
     bool                enable = false;
