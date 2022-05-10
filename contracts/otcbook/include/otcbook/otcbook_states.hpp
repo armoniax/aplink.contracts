@@ -306,12 +306,16 @@ struct OTCBOOK_TBL deal_t {
     uint8_t status = 0;             // status
     uint8_t arbit_status = 0;       // arbit status
     name arbiter;
+
     time_point_sec created_at;      // create time at
     time_point_sec closed_at;       // closed time at
     time_point_sec updated_at;
     uint64_t order_sn = 0;          // order sn, created by external app
 
     vector<deal_session_msg_t> session; // session
+
+    // time_point_sec merchant_accepted_at;  // merchant accepted time
+    // time_point_sec merchant_paid_at;      // merchant paid time
 
     deal_t() {}
     deal_t(uint64_t i): id(i) {}
@@ -337,6 +341,7 @@ struct OTCBOOK_TBL deal_t {
                                 (status)(arbit_status)(arbiter)
                                 (created_at)(closed_at)(updated_at)(order_sn)
                                 (session))
+                                // (merchant_accepted_at)(merchant_paid_at))
 };
 
 /**
@@ -369,28 +374,60 @@ struct OTCBOOK_TBL fund_log_t {
     EOSLIB_SERIALIZE(fund_log_t,    (id)(owner)(order_id)(order_side)(action)(quantity)(log_at)(updated_at) )
 };
 
-// /**
-//  * 交易订单过期时间
-//  *
-//  */
-// struct OTCBOOK_TBL deal_expiry_t{
-//     uint64_t deal_id;
-//     time_point_sec expired_at;
 
-//     deal_expiry_t() {}
-//     deal_expiry_t(uint64_t i): deal_id(i) {}
+/**
+ * buy/sell deal
+ *
+ */
+struct OTCBOOK_TBL deal_t1 {
+    uint64_t id = 0;                // PK: available_primary_key, auto increase
+    name order_side;                // order side, buy(1) or sell(2)
+    uint64_t order_id = 0;          // order id, created by maker by openorder()
+    asset order_price;              // order price, deal price
+    asset deal_quantity;            // deal quantity
+    name order_maker;               // maker, merchant
+    string merchant_name;           // merchant's name
+    name order_taker;               // taker, user
+    asset deal_fee;                 // deal fee
+    asset fine_amount;              // aarbit fine amount, not contain fee
+    uint8_t status = 0;             // status
+    uint8_t arbit_status = 0;       // arbit status
+    name arbiter;
 
-//     uint64_t primary_key()const { return deal_id; }
-//     uint64_t scope()const { return 0; }
+    time_point_sec created_at;      // create time at
+    time_point_sec closed_at;       // closed time at
+    time_point_sec updated_at;
+    uint64_t order_sn = 0;          // order sn, created by external app
 
-//     uint64_t by_expired_at() const    { return uint64_t(expired_at.sec_since_epoch()); }
+    vector<deal_session_msg_t> session; // session
 
-//     EOSLIB_SERIALIZE(deal_expiry_t,  (deal_id)(expired_at) )
-// };
+    time_point_sec merchant_accepted_at;  // merchant accepted time
+    time_point_sec merchant_paid_at;      // merchant paid time
 
-// typedef eosio::multi_index
-//     <"dealexpiries"_n, deal_expiry_t ,
-//         indexed_by<"expiry"_n,    const_mem_fun<deal_expiry_t, uint64_t, &deal_expiry_t::by_expired_at>   >
-//     > deal_expiry_tbl;
+    deal_t1() {}
+    deal_t1(uint64_t i): id(i) {}
+
+    uint64_t primary_key() const { return id; }
+    uint64_t scope() const { return /*order_price.symbol.code().raw()*/ 0; }
+
+    uint128_t by_order()     const { return (uint128_t)order_id << 64 | status; }
+    uint64_t by_ordersn()    const { return order_sn;}
+    uint64_t by_update_time() const {
+        return (uint64_t) updated_at.utc_seconds ;
+    }
+    typedef eosio::multi_index
+    <"deals"_n, deal_t1,
+        indexed_by<"updatedat"_n, const_mem_fun<deal_t1, uint64_t, &deal_t1::by_update_time> >,
+        indexed_by<"order"_n,   const_mem_fun<deal_t1, uint128_t, &deal_t1::by_order> >,
+        indexed_by<"ordersn"_n, const_mem_fun<deal_t1, uint64_t, &deal_t1::by_ordersn> >
+    > idx_t;
+
+    EOSLIB_SERIALIZE(deal_t1,    (id)(order_side)(order_id)(order_price)(deal_quantity)
+                                (order_maker)(merchant_name)
+                                (order_taker)(deal_fee)(fine_amount)
+                                (status)(arbit_status)(arbiter)
+                                (created_at)(closed_at)(updated_at)(order_sn)
+                                (session))
+};
 
 } // AMA

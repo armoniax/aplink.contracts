@@ -115,6 +115,10 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
         { CNYD, ASSET(1.0000, CNY) }
     };
 
+    uint64_t accepted_timeout   = 1800;
+    uint64_t payed_timeout   = 10800;
+
+
     global_t() {
 
     }
@@ -122,6 +126,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     EOSLIB_SERIALIZE( global_t, (otc_name)(app_info)(pay_type)(arbiters)(coin_type)
                                 (fiat_type)(fee_recv_addr)(fee_pct)
                                 (buy_coins_conf)(sell_coins_conf)(prices_quote_cny)
+                                (accepted_timeout)(payed_timeout)
     )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
