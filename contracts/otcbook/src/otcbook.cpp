@@ -848,4 +848,13 @@ void otcbook::_add_fund_log(const name& owner, const name & action, const asset 
     });
 }
 
+void otcbook::migrate(){
+    deal_t::idx_t deals(_self,_self.value);
+    auto itr1 = deals.begin();
+    while(itr1 != deals.end()) {
+        deals.modify( *itr1, _self, [&]( auto& row ) {
+        });
+    }
+}
+
 }  //end of namespace:: amaxbpvoting
