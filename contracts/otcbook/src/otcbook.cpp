@@ -289,8 +289,6 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
 ) {
     require_auth( taker );
 
-    check( deal_quantity >= _gstate.min_buy_order_quantity, "min buy order quantity not met: " +  _gstate.min_buy_order_quantity.to_string() );
-
     check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
 
     auto order_wrapper_ptr = (order_side == BUY_SIDE) ?
@@ -303,7 +301,6 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     check( order.status == (uint8_t)order_status_t::RUNNING, "Order not runing" );
     check( order.va_quantity >= order.va_frozen_quantity + order.va_fulfilled_quantity + deal_quantity,
         "Order's quantity insufficient" );
-    check( itr->price.amount * deal_quantity.amount >= itr->va_min_take_quantity.amount * 10000, "Order's min accept quantity not met!" );
     check( deal_quantity >= order.va_min_take_quantity, "Order's min accept quantity not met!" );
     check( deal_quantity <= order.va_max_take_quantity, "Order's max accept quantity not met!" );
 
@@ -368,7 +365,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     check( (uint8_t)status != (uint8_t)deal_status_t::CLOSED, "deal already closed: " + to_string(deal_id) );
     check( (uint8_t)status != (uint8_t)deal_status_t::CANCELLED, "deal already cancelled: " + to_string(deal_id) );
     auto arbit_status =  (arbit_status_t)deal_itr->arbit_status;
-    // auto merchant_paid_at = deal_itr->merchant_paid_at;
+    auto merchant_paid_at = deal_itr->merchant_paid_at;
 
     switch ((account_type_t) account_type) {
     case account_type_t::USER:
@@ -613,7 +610,7 @@ void otcbook::startarbit(const name& account, const uint8_t& account_type, const
     }
 
     // check arbiter is vaild
-    check( conf.arbiters.count(arbiter) != 0, "arbiter illegal: " + arbiter.to_string() );
+    check( _conf().arbiters.count(arbiter) != 0, "arbiter illegal: " + arbiter.to_string() );
 
     auto status = (deal_status_t)deal_itr->status;
     auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
