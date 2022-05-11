@@ -174,7 +174,7 @@ void token::sub_balance( const name& owner, const asset& value ) {
   const auto& from = from_acnts.get( value.symbol.code().raw(), "no balance object found" );
   check( from.balance.amount >= value.amount, "overdrawn balance" );
 
-  from_acnts.modify( from, owner, [&]( auto& a ) {
+  from_acnts.modify( from, same_payer, [&]( auto& a ) {
     a.balance -= value;
     if (a.balance.amount != 0) {
       a.expired_at = current_time_point() + seconds(YEAR_SECONDS);
