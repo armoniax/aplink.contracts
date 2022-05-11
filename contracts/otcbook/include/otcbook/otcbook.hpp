@@ -285,6 +285,11 @@ public:
     [[eosio::action]]
     void deltable();
 
+
+    [[eosio::action]]
+    void migrate();
+
+
 private:
     asset _calc_order_stakes(const asset &quantity, const asset &price);
 

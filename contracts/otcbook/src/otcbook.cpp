@@ -3,14 +3,6 @@
 #include <otcbook/otcbook.hpp>
 #include <otcbook/utils.hpp>
 
-
-using namespace eosio;
-using namespace std;
-using std::string;
-
-static constexpr uint64_t HALF_HOUR_SECONDS         = 1800;
-static constexpr uint64_t THREE_HOURS_SECONDS       = 10800;
-
 namespace amax {
 
 using namespace std;
@@ -297,7 +289,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
 ) {
     require_auth( taker );
 
-    // check( deal_quantity >= _gstate.min_buy_order_quantity, "min buy order quantity not met: " +  _gstate.min_buy_order_quantity.to_string() );
+    check( deal_quantity >= _gstate.min_buy_order_quantity, "min buy order quantity not met: " +  _gstate.min_buy_order_quantity.to_string() );
 
     check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
 
@@ -311,12 +303,11 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     check( order.status == (uint8_t)order_status_t::RUNNING, "Order not runing" );
     check( order.va_quantity >= order.va_frozen_quantity + order.va_fulfilled_quantity + deal_quantity,
         "Order's quantity insufficient" );
-    // check( itr->price.amount * deal_quantity.amount >= itr->va_min_take_quantity.amount * 10000, "Order's min accept quantity not met!" );
+    check( itr->price.amount * deal_quantity.amount >= itr->va_min_take_quantity.amount * 10000, "Order's min accept quantity not met!" );
     check( deal_quantity >= order.va_min_take_quantity, "Order's min accept quantity not met!" );
     check( deal_quantity <= order.va_max_take_quantity, "Order's max accept quantity not met!" );
 
     asset order_price = order.va_price;
-    // asset order_price_usd = itr->price_usd;
     name order_maker = order.owner;
     string merchant_name = order.merchant_name;
 
@@ -390,11 +381,9 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         check( deal_itr->arbiter == account, "abiter account mismatched");
         break;
     case account_type_t::MERCHANT:
-        check( false, "deal already cancelled: " + to_string(deal_id) );
-
-        // check( deal_itr->order_maker == account, "merchant account mismatched");
-        // check( (uint8_t)status != (uint8_t)deal_status_t::MAKER_RECV_AND_SENT, "deal already cancelled: " + to_string(deal_id) );
-        // check( merchant_paid_at + seconds(THREE_HOURS_SECONDS) < current_time_point(), "deal is not expired.");
+        check( deal_itr->order_maker == account, "merchant account mismatched");
+        check( (uint8_t)status != (uint8_t)deal_status_t::MAKER_RECV_AND_SENT, "deal already cancelled: " + to_string(deal_id) );
+        check( merchant_paid_at + seconds(_conf().payed_timeout) < current_time_point(), "deal is not expired.");
         break;
     default:
         check(false, "account type not supported: " + to_string(account_type));
@@ -462,8 +451,8 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
         if((uint8_t)status == (uint8_t)deal_status_t::CREATED) {
 
         } else if((uint8_t)status == (uint8_t)deal_status_t::MAKER_ACCEPTED) {
-            // auto merchant_accepted_at = deal_itr->merchant_accepted_at;
-            // check(merchant_accepted_at + seconds(HALF_HOUR_SECONDS) <  current_time_point(), "deal is not expired.");
+            auto merchant_accepted_at = deal_itr->merchant_accepted_at;
+            check(merchant_accepted_at + seconds(_conf().accepted_timeout) <  current_time_point(), "deal is not expired.");
         } else {
             check(false, "deal already status need CREATED or MAKER_ACCEPTED " + to_string(deal_id));
         }
@@ -585,10 +574,10 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
             row.updated_at = time_point_sec(current_time_point());
         }
         if(next_status != deal_status_t::MAKER_ACCEPTED) {
-            // row.merchant_accepted_at = time_point_sec(current_time_point());
+            row.merchant_accepted_at = time_point_sec(current_time_point());
         }
         if(next_status != deal_status_t::MAKER_RECV_AND_SENT) {
-            // row.merchant_paid_at = time_point_sec(current_time_point());
+            row.merchant_paid_at = time_point_sec(current_time_point());
         }
 
         row.session.push_back({account_type, account, (uint8_t)status, action, session_msg, now});
@@ -622,7 +611,7 @@ void otcbook::startarbit(const name& account, const uint8_t& account_type, const
         check(false, "account type not supported: " + to_string(account_type));
         break;
     }
-    const auto& conf = _conf();
+
     // check arbiter is vaild
     check( conf.arbiters.count(arbiter) != 0, "arbiter illegal: " + arbiter.to_string() );
 
@@ -766,7 +755,6 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
     }
     if (to != _self)
         return;
-    // check( false, "deposit check test , from:" + from.to_string()+ ",to:" + to.to_string());
 
     if (get_first_receiver() == SYS_BANK && quantity.symbol == CNYD_SYMBOL){
         merchant_t merchant(from);
@@ -846,6 +834,19 @@ void otcbook::_add_fund_log(const name& owner, const name & action, const asset 
         row.log_at			    = now;
         row.updated_at          = time_point_sec(current_time_point());
     });
+}
+
+void otcbook::migrate(){
+    require_auth( _self );
+
+    deal_t::idx_t deals(_self,_self.value);
+    auto itr1 = deals.begin();
+    while(itr1 != deals.end()) {
+        deals.modify( *itr1, _self, [&]( auto& row ) {
+            row.merchant_accepted_at = time_point_sec(current_time_point());
+            row.merchant_paid_at = time_point_sec(current_time_point());
+        });
+    }
 }
 
 }  //end of namespace:: amaxbpvoting

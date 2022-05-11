@@ -314,8 +314,8 @@ struct OTCBOOK_TBL deal_t {
 
     vector<deal_session_msg_t> session; // session
 
-    // time_point_sec merchant_accepted_at;  // merchant accepted time
-    // time_point_sec merchant_paid_at;      // merchant paid time
+    time_point_sec merchant_accepted_at;  // merchant accepted time
+    time_point_sec merchant_paid_at;      // merchant paid time
 
     deal_t() {}
     deal_t(uint64_t i): id(i) {}
@@ -335,13 +335,60 @@ struct OTCBOOK_TBL deal_t {
         indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >
     > idx_t;
 
-    EOSLIB_SERIALIZE(deal_t,    (id)(order_side)(order_id)(order_price)(deal_quantity)
-                                (order_maker)(merchant_name)
-                                (order_taker)(deal_fee)(fine_amount)
-                                (status)(arbit_status)(arbiter)
-                                (created_at)(closed_at)(updated_at)(order_sn)
-                                (session))
-                                // (merchant_accepted_at)(merchant_paid_at))
+    // EOSLIB_SERIALIZE(deal_t,    (id)(order_side)(order_id)(order_price)(deal_quantity)
+    //                             (order_maker)(merchant_name)
+    //                             (order_taker)(deal_fee)(fine_amount)
+    //                             (status)(arbit_status)(arbiter)
+    //                             (created_at)(closed_at)(updated_at)(order_sn)
+    //                             (session))
+    //                             // (merchant_accepted_at)(merchant_paid_at))
+
+    template<typename DataStream>
+    friend DataStream& operator << ( DataStream& ds, const deal_t& t ) {
+    ds << t.id
+        << t.order_side
+        << t.order_id
+        << t.order_price
+        << t.deal_quantity
+        << t.order_maker
+        << t.merchant_name
+        << t.order_taker
+        << t.deal_fee
+        << t.fine_amount
+        << t.status
+        << t.arbit_status
+        << t.arbiter
+        << t.created_at
+        << t.closed_at
+        << t.updated_at
+        << t.order_sn
+        << t.session
+        << t.merchant_accepted_at
+        << t.merchant_paid_at;
+         return ds;
+    }
+
+    template<typename DataStream>
+    friend DataStream& operator >> ( DataStream& ds, producer_info& t ) {
+     ds >> t.id
+        >> t.order_side
+        >> t.order_id
+        >> t.order_price
+        >> t.deal_quantity
+        >> t.order_maker
+        >> t.merchant_name
+        >> t.order_taker
+        >> t.deal_fee
+        >> t.fine_amount
+        >> t.status
+        >> t.arbit_status
+        >> t.arbiter
+        >> t.created_at
+        >> t.closed_at
+        >> t.updated_at
+        >> t.order_sn
+        >> t.session;
+    }
 };
 
 /**
@@ -374,60 +421,5 @@ struct OTCBOOK_TBL fund_log_t {
     EOSLIB_SERIALIZE(fund_log_t,    (id)(owner)(order_id)(order_side)(action)(quantity)(log_at)(updated_at) )
 };
 
-
-/**
- * buy/sell deal
- *
- */
-struct OTCBOOK_TBL deal_t1 {
-    uint64_t id = 0;                // PK: available_primary_key, auto increase
-    name order_side;                // order side, buy(1) or sell(2)
-    uint64_t order_id = 0;          // order id, created by maker by openorder()
-    asset order_price;              // order price, deal price
-    asset deal_quantity;            // deal quantity
-    name order_maker;               // maker, merchant
-    string merchant_name;           // merchant's name
-    name order_taker;               // taker, user
-    asset deal_fee;                 // deal fee
-    asset fine_amount;              // aarbit fine amount, not contain fee
-    uint8_t status = 0;             // status
-    uint8_t arbit_status = 0;       // arbit status
-    name arbiter;
-
-    time_point_sec created_at;      // create time at
-    time_point_sec closed_at;       // closed time at
-    time_point_sec updated_at;
-    uint64_t order_sn = 0;          // order sn, created by external app
-
-    vector<deal_session_msg_t> session; // session
-
-    time_point_sec merchant_accepted_at;  // merchant accepted time
-    time_point_sec merchant_paid_at;      // merchant paid time
-
-    deal_t1() {}
-    deal_t1(uint64_t i): id(i) {}
-
-    uint64_t primary_key() const { return id; }
-    uint64_t scope() const { return /*order_price.symbol.code().raw()*/ 0; }
-
-    uint128_t by_order()     const { return (uint128_t)order_id << 64 | status; }
-    uint64_t by_ordersn()    const { return order_sn;}
-    uint64_t by_update_time() const {
-        return (uint64_t) updated_at.utc_seconds ;
-    }
-    typedef eosio::multi_index
-    <"deals"_n, deal_t1,
-        indexed_by<"updatedat"_n, const_mem_fun<deal_t1, uint64_t, &deal_t1::by_update_time> >,
-        indexed_by<"order"_n,   const_mem_fun<deal_t1, uint128_t, &deal_t1::by_order> >,
-        indexed_by<"ordersn"_n, const_mem_fun<deal_t1, uint64_t, &deal_t1::by_ordersn> >
-    > idx_t;
-
-    EOSLIB_SERIALIZE(deal_t1,    (id)(order_side)(order_id)(order_price)(deal_quantity)
-                                (order_maker)(merchant_name)
-                                (order_taker)(deal_fee)(fine_amount)
-                                (status)(arbit_status)(arbiter)
-                                (created_at)(closed_at)(updated_at)(order_sn)
-                                (session))
-};
 
 } // AMA
