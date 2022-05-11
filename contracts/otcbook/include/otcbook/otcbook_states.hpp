@@ -365,12 +365,12 @@ struct OTCBOOK_TBL deal_t {
         << t.session
         << t.merchant_accepted_at
         << t.merchant_paid_at;
-         return ds;
+        return ds;
     }
 
     template<typename DataStream>
     friend DataStream& operator >> ( DataStream& ds, deal_t& t ) {
-     ds >> t.id
+    ds >> t.id
         >> t.order_side
         >> t.order_id
         >> t.order_price
@@ -388,6 +388,7 @@ struct OTCBOOK_TBL deal_t {
         >> t.updated_at
         >> t.order_sn
         >> t.session;
+        return ds;
     }
 };
 
