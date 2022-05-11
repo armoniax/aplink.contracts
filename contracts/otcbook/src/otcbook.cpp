@@ -842,6 +842,7 @@ void otcbook::migrate(){
         deals.modify( *itr1, _self, [&]( auto& row ) {
             row.merchant_accepted_at = time_point_sec(current_time_point());
             row.merchant_paid_at = time_point_sec(current_time_point());
+            ++itr1;
         });
     }
 }
