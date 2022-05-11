@@ -345,50 +345,48 @@ struct OTCBOOK_TBL deal_t {
 
     template<typename DataStream>
     friend DataStream& operator << ( DataStream& ds, const deal_t& t ) {
-    ds << t.id
-        << t.order_side
-        << t.order_id
-        << t.order_price
-        << t.deal_quantity
-        << t.order_maker
-        << t.merchant_name
-        << t.order_taker
-        << t.deal_fee
-        << t.fine_amount
-        << t.status
-        << t.arbit_status
-        << t.arbiter
-        << t.created_at
-        << t.closed_at
-        << t.updated_at
-        << t.order_sn
-        << t.session
-        << t.merchant_accepted_at
-        << t.merchant_paid_at;
-        return ds;
+        return ds << t.id
+            << t.order_side
+            << t.order_id
+            << t.order_price
+            << t.deal_quantity
+            << t.order_maker
+            << t.merchant_name
+            << t.order_taker
+            << t.deal_fee
+            << t.fine_amount
+            << t.status
+            << t.arbit_status
+            << t.arbiter
+            << t.created_at
+            << t.closed_at
+            << t.updated_at
+            << t.order_sn
+            << t.session
+            << t.merchant_accepted_at
+            << t.merchant_paid_at;
     }
 
     template<typename DataStream>
     friend DataStream& operator >> ( DataStream& ds, deal_t& t ) {
-    ds >> t.id
-        >> t.order_side
-        >> t.order_id
-        >> t.order_price
-        >> t.deal_quantity
-        >> t.order_maker
-        >> t.merchant_name
-        >> t.order_taker
-        >> t.deal_fee
-        >> t.fine_amount
-        >> t.status
-        >> t.arbit_status
-        >> t.arbiter
-        >> t.created_at
-        >> t.closed_at
-        >> t.updated_at
-        >> t.order_sn
-        >> t.session;
-        return ds;
+        return ds >> t.id
+            >> t.order_side
+            >> t.order_id
+            >> t.order_price
+            >> t.deal_quantity
+            >> t.order_maker
+            >> t.merchant_name
+            >> t.order_taker
+            >> t.deal_fee
+            >> t.fine_amount
+            >> t.status
+            >> t.arbit_status
+            >> t.arbiter
+            >> t.created_at
+            >> t.closed_at
+            >> t.updated_at
+            >> t.order_sn
+            >> t.session;
     }
 };
 
