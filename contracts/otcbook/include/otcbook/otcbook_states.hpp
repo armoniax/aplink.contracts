@@ -369,7 +369,7 @@ struct OTCBOOK_TBL deal_t {
     }
 
     template<typename DataStream>
-    friend DataStream& operator >> ( DataStream& ds, producer_info& t ) {
+    friend DataStream& operator >> ( DataStream& ds, deal_t& t ) {
      ds >> t.id
         >> t.order_side
         >> t.order_id
