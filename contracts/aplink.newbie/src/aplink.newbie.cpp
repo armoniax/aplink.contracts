@@ -28,11 +28,11 @@ void newbie::setstate(const bool& enable, const asset& newbie_reward, const name
     _gstate.contract_name = contract_name;
 }
 
-void newbie::recycledb(uint32_t max_rows) {
-    require_auth( _self );
-    claim_t::tbl_t claim_tbl(_self, _self.value);
-    auto claim_itr = claim_tbl.begin();
-    for (size_t count = 0; count < max_rows && claim_itr != claim_tbl.end(); count++) {
-        claim_itr = claim_tbl.erase(claim_itr);
-    }
-}
+// void newbie::recycledb(uint32_t max_rows) {
+//     require_auth( _self );
+//     claim_t::tbl_t claim_tbl(_self, _self.value);
+//     auto claim_itr = claim_tbl.begin();
+//     for (size_t count = 0; count < max_rows && claim_itr != claim_tbl.end(); count++) {
+//         claim_itr = claim_tbl.erase(claim_itr);
+//     }
+// }
