@@ -2,14 +2,9 @@
 #pragma once
 
 #include <eosio/asset.hpp>
-#include <eosio/privileged.hpp>
 #include <eosio/singleton.hpp>
-#include <eosio/system.hpp>
 #include <eosio/time.hpp>
 #include <eosio/name.hpp>
-
-#include "wasm_db.hpp"
-#include "utils.hpp"
 
 using namespace eosio;
 
