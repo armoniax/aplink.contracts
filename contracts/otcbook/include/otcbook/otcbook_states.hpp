@@ -75,6 +75,7 @@ enum class deal_action_t: uint8_t {
     TAKER_SEND          = 3,
     MAKER_RECV_AND_SENT = 4,
     CLOSE               = 5,
+    CANCEL              = 9,
     
     REVERSE             = 10,
     ADD_SESSION_MSG     = 11,
