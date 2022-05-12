@@ -570,10 +570,10 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
             row.status = (uint8_t)next_status;
             row.updated_at = time_point_sec(current_time_point());
         }
-        if(next_status == deal_status_t::MAKER_ACCEPTED) {
+        if(action == deal_action_t::MAKER_ACCEPT) {
             row.merchant_accepted_at = time_point_sec(current_time_point());
         }
-        if(next_status == deal_status_t::MAKER_RECV_AND_SENT) {
+        if(action == deal_action_t::MAKER_RECV_AND_SENT) {
             row.merchant_paid_at = time_point_sec(current_time_point());
         }
 
