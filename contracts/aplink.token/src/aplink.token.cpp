@@ -1,22 +1,11 @@
 #include <aplink.token/aplink.token.hpp>
-#include <aplink.token/safemath.hpp>
 #include <aplink.token/utils.hpp>
 #include <eosio/system.hpp>
 #include <eosio/time.hpp>
 
-static constexpr uint64_t REWARD_PERCENT      = 500;
-#ifndef YEAR_SECONDS_FOR_TEST
-static constexpr uint64_t YEAR_SECONDS        = 365 * 24 * 3600;
-#else
-#warning "YEAR_SECONDS_FOR_TEST should be used only for test!!!"
-static constexpr uint64_t YEAR_SECONDS        = YEAR_SECONDS_FOR_TEST;
-#endif//DAY_SECONDS_FOR_TEST
-
 namespace aplink {
 
 using namespace eosio;
-using namespace wasm;
-using namespace wasm::safemath;
 
 void token::create( const name&   issuer,
                     const asset&  maximum_supply )
@@ -90,40 +79,43 @@ void token::retire( const asset& quantity, const string& memo )
     sub_balance( st.issuer, quantity );
 }
 
-void token::burn(const name&        predator,
-                 const name&        victim,
+void token::burn(const name& predator,
+                 const name& victim,
                  const asset& quantity)
 {
-  require_auth( predator );
+    require_auth(predator);
 
-  auto sym_code_raw = quantity.symbol.code().raw();
+    auto sym_code_raw = quantity.symbol.code().raw();
 
-  accounts acnts( get_self(), victim.value );
-  auto acnt_itr = acnts.find( sym_code_raw );
-  check( acnt_itr != acnts.end(), "no balance object found");
-  check( quantity.symbol == acnt_itr->balance.symbol, "symbol precision mismatch" );
-  check( quantity.is_valid(), "invalid quantity" );
-  check( quantity.amount > 0, "must burn positive quantity" );
-  check( quantity == acnt_itr->balance, "quantity amount mismatch with account balance");
-  check( acnt_itr->expired_at <  current_time_point(), "only expired account can be burned" );
+    accounts acnts(get_self(), victim.value);
+    auto acnt_itr = acnts.find(sym_code_raw);
+    check(acnt_itr != acnts.end(), "no balance object found");
+    check(quantity.symbol == acnt_itr->balance.symbol, "symbol precision mismatch");
+    check(quantity.is_valid(), "invalid quantity");
+    check(quantity.amount > 0, "must burn positive quantity");
+    check(quantity == acnt_itr->balance, "quantity amount mismatch with account balance");
+    check(acnt_itr->expired_at < current_time_point(), "only expired account can be burned");
 
-  int64_t to_reward = mul( quantity.amount, REWARD_PERCENT );
-  int64_t to_burn = quantity.amount - to_reward;
+    static_assert(REWARD_PERCENT < PERCENT_BOOST);
+    int64_t to_reward = mul_decimal_64(quantity.amount, REWARD_PERCENT, PERCENT_BOOST);
+    ASSERT(quantity.amount >= to_reward);
+    int64_t to_burn = quantity.amount - to_reward;
 
-  sub_balance( victim, quantity );
-  require_recipient( victim );
+    sub_balance(victim, quantity);
+    require_recipient(victim);
 
-  if (to_reward > 0) {
-    auto reward_quantity  = ASSET( to_reward, quantity.symbol );
-    add_balance( predator, reward_quantity, predator);
-    NOTIFY_REWARD( predator, victim, reward_quantity )
-  }
+    if (to_reward > 0) {
+        auto reward_quantity = asset(to_reward, quantity.symbol);
+        add_balance(predator, reward_quantity, predator);
+        NOTIFY_REWARD(predator, victim, reward_quantity)
+    }
 
-  stats statstable( get_self(), sym_code_raw );
-  const auto &st = statstable.get( sym_code_raw, "token of symbol does not exist" );
-  statstable.modify( st, same_payer, [&]( auto& s ) {
-      s.supply.amount -= to_burn;
-  });
+    stats statstable(get_self(), sym_code_raw);
+    const auto& st = statstable.get(sym_code_raw, "token of symbol does not exist");
+    statstable.modify(st, same_payer, [&](auto& s) {
+        ASSERT(s.supply.amount >= to_burn);
+        s.supply.amount -= to_burn;
+    });
 }
 
 void token::notifyreward(const name& predator, const name& victim, const asset& reward_quantity) {
@@ -174,7 +166,7 @@ void token::sub_balance( const name& owner, const asset& value ) {
   const auto& from = from_acnts.get( value.symbol.code().raw(), "no balance object found" );
   check( from.balance.amount >= value.amount, "overdrawn balance" );
 
-  from_acnts.modify( from, owner, [&]( auto& a ) {
+  from_acnts.modify( from, same_payer, [&]( auto& a ) {
     a.balance -= value;
     if (a.balance.amount != 0) {
       a.expired_at = current_time_point() + seconds(YEAR_SECONDS);

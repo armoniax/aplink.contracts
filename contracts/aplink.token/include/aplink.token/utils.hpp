@@ -1,7 +1,7 @@
 #pragma once
 
 #include <eosio/eosio.hpp>
-#include <vector>
+
 
 #define EMPTY_MACRO_FUNC(...)
 
@@ -9,90 +9,48 @@
 #define PP0(prop) #prop ":", prop
 #define PRINT_PROPERTIES(...) eosio::print("{", __VA_ARGS__, "}")
 
+#define CHECK(exp, msg) { if (!(exp)) eosio::check(false, msg); }
+
 #ifndef ASSERT
-    #define ASSERT(exp) eosio::check(exp, #exp)
+    #define ASSERT(exp) CHECK(exp, #exp)
 #endif
 
-#ifndef TRACE
+#ifdef PRINT_TRACE
+    #warning "PRINT_TRACE should be used for test!!!"
     #define TRACE(...) print(__VA_ARGS__)
+#else
+    #define TRACE(...)
 #endif
 
 #define TRACE_L(...) TRACE(__VA_ARGS__, "\n")
 
-#define CHECK(exp, msg) { if (!(exp)) eosio::check(false, msg); }
 
-namespace wasm {
-
-using namespace std;
-
-uint64_t char_to_symbol( char c );
-uint64_t string_to_name( const char* str );
-
-//===----------------------------------------------------------------------===//
-// WebAssemblyAsmPrinter Implementation.
-//===----------------------------------------------------------------------===//
-uint64_t char_to_symbol( char c ) {
-   if( c >= 'a' && c <= 'z' )
-      return (c - 'a') + 6;
-   if( c >= '1' && c <= '5' )
-      return (c - '1') + 1;
-   return 0;
-}
-
-inline vector <string> string_split(string str, char delimiter) {
-      vector <string> r;
-      string tmpstr;
-      while (!str.empty()) {
-          int ind = str.find_first_of(delimiter);
-          if (ind == -1) {
-              r.push_back(str);
-              str.clear();
-          } else {
-              r.push_back(str.substr(0, ind));
-              str = str.substr(ind + 1, str.size() - ind - 1);
-          }
-      }
-      return r;
-
-}
-
-uint64_t string_to_name( const std::string& str ) {
-   uint64_t name = 0;
-   int i = 0;
-   for ( ; str[i] && i < 12; ++i) {
-       // NOTE: char_to_symbol() returns char type, and without this explicit
-       // expansion to uint64 type, the compilation fails at the point of usage
-       // of string_to_name(), where the usage requires constant (compile time) expression.
-        name |= (char_to_symbol(str[i]) & 0x1f) << (64 - 5 * (i + 1));
-    }
-
-   // The for-loop encoded up to 60 high bits into uint64 'name' variable,
-   // if (strlen(str) > 12) then encode str[12] into the low (remaining)
-   // 4 bits of 'name'
-   if (i == 12)
-       name |= char_to_symbol(str[12]) & 0x0F;
-   return name;
-}
-
-inline constexpr int64_t power(int64_t base, int64_t exp) {
-    int64_t ret = 1;
-    while( exp > 0  ) {
-        ret *= base; --exp;
-    }
+template<typename T>
+int128_t multiply(int128_t a, int128_t b) {
+    int128_t ret = a * b;
+    CHECK(ret >= std::numeric_limits<T>::min() && ret <= std::numeric_limits<T>::max(),
+          "overflow exception of multiply");
     return ret;
 }
 
-inline constexpr int64_t power10(int64_t exp) {
-    return power(10, exp);
+template<typename T>
+int128_t divide_decimal(int128_t a, int128_t b, int128_t precision) {
+    // with rounding-off method
+    int128_t tmp = 10 * a * precision  / b;
+    CHECK(tmp >= std::numeric_limits<T>::min() && tmp <= std::numeric_limits<T>::max(),
+          "overflow exception of divide_decimal");
+    return (tmp + 5) / 10;
 }
 
-inline constexpr int64_t calc_precision(int64_t digit) {
-    return power10(digit);
+template<typename T>
+int128_t multiply_decimal(int128_t a, int128_t b, int128_t precision) {
+    // with rounding-off method
+    int128_t tmp = 10 * a * b / precision;
+    CHECK(tmp >= std::numeric_limits<T>::min() && tmp <= std::numeric_limits<T>::max(),
+          "overflow exception of multiply_decimal");
+    return (tmp + 5) / 10;
 }
 
-/**
- *  @param quantity: quantity * precision == amount
- */
-#define ASSET(quantity, sym) asset(quantity * calc_precision(sym.precision()), sym)
-
-}
+#define div_decimal_64(a, b, precision) divide_decimal<int64_t>(a, b, precision)
+#define mul_decimal_64(a, b, precision) multiply_decimal<int64_t>(a, b, precision)
+#define mul_64(a, b) multiply<int64_t>(a, b)

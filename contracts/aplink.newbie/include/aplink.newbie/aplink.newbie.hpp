@@ -2,36 +2,24 @@
 
 #include <eosio/asset.hpp>
 #include <eosio/eosio.hpp>
-#include <eosio/print.hpp>
-#include <eosio/privileged.hpp>
 #include <eosio/singleton.hpp>
-#include <eosio/system.hpp>
 #include <eosio/time.hpp>
 
 #include "aplink.newbie.db.hpp"
-
-#include <string>
-#include <vector>
-#include <deque>
-#include <optional>
-#include <type_traits>
-
-using std::string;
-using std::vector;
+// #include "wasm_db.hpp"
 
 using namespace eosio;
 using namespace wasm::db;
 
 class [[eosio::contract("aplink.newbie")]] newbie : public contract {
 private:
-    dbc                 _db;
     global_t            _gstate;
     global_singleton    _global;
 
 public:
     using contract::contract;
 
-    newbie(name receiver, name code, datastream<const char*> ds):_db(_self), contract(receiver, code, ds), _global(_self, _self.value) {
+    newbie(name receiver, name code, datastream<const char*> ds):contract(receiver, code, ds), _global(_self, _self.value) {
         if (_global.exists()) {
             _gstate = _global.get();
 
@@ -55,8 +43,8 @@ public:
      * require contract self auth
      * @param max_rows - max rows to recycle
      */
-    [[eosio::action]]
-    void recycledb(uint32_t max_rows);
+    // [[eosio::action]]
+    // void recycledb(uint32_t max_rows);
 
     // using claimreward_action = eosio::action_wrapper<"claimreward"_n, &newbie::claimreward>;
     // using setstate_action = eosio::action_wrapper<"setstate"_n, &newbie::setstate>;

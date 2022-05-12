@@ -5,12 +5,19 @@
 
 #include <string>
 
-namespace eosiosystem {
-   class system_contract;
-}
 using namespace eosio;
-static constexpr symbol   APL_SYMBOL            = symbol(symbol_code("APL"), 4);
-static constexpr name active_perm               {"active"_n};
+
+static constexpr uint64_t PERCENT_BOOST       = 10000;
+static constexpr uint64_t REWARD_PERCENT      = 500;
+#ifndef YEAR_SECONDS_FOR_TEST
+static constexpr uint64_t YEAR_SECONDS        = 365 * 24 * 3600;
+#else
+#warning "YEAR_SECONDS_FOR_TEST should be used only for test!!!"
+static constexpr uint64_t YEAR_SECONDS        = YEAR_SECONDS_FOR_TEST;
+#endif//DAY_SECONDS_FOR_TEST
+
+static constexpr symbol   APL_SYMBOL          = symbol(symbol_code("APL"), 4);
+static constexpr name active_perm             = "active"_n;
 
 #define NOTIFY_REWARD(predator, victim, quantity) \
     {	token::notifyreward_action act{ _self, { {_self, active_perm} } };\
