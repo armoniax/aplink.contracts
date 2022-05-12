@@ -47,6 +47,7 @@ public:
     ACTION init(const name& admin);
     ACTION setacctres(const account_res& account_create_res);
     ACTION setprices(const vector<pair<symbol_code, asset>> prices);
+    ACTION setshowprice(const bool& show);
 
 private:
     struct [[eosio::table("global"), eosio::contract("aplink.conf")]] global_t {

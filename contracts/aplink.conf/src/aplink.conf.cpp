@@ -42,4 +42,10 @@ ACTION settings::setprices(const vector<pair<symbol_code, asset>> prices) {
    }
 }
 
+ACTION settings::setshowprice(const bool& show) {
+   require_auth( _gstate.admin );
+   
+   _gstate.show_price = show;
+}
+
 } /// namespace aplink
