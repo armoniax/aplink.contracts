@@ -336,59 +336,59 @@ struct OTCBOOK_TBL deal_t {
         indexed_by<"ordersn"_n, const_mem_fun<deal_t, uint64_t, &deal_t::by_ordersn> >
     > idx_t;
 
-    // EOSLIB_SERIALIZE(deal_t,    (id)(order_side)(order_id)(order_price)(deal_quantity)
-    //                             (order_maker)(merchant_name)
-    //                             (order_taker)(deal_fee)(fine_amount)
-    //                             (status)(arbit_status)(arbiter)
-    //                             (created_at)(closed_at)(updated_at)(order_sn)
-    //                             (session))
-    //                             // (merchant_accepted_at)(merchant_paid_at))
+    EOSLIB_SERIALIZE(deal_t,    (id)(order_side)(order_id)(order_price)(deal_quantity)
+                                (order_maker)(merchant_name)
+                                (order_taker)(deal_fee)(fine_amount)
+                                (status)(arbit_status)(arbiter)
+                                (created_at)(closed_at)(updated_at)(order_sn)
+                                (session)
+                                (merchant_accepted_at)(merchant_paid_at))
 
-    template<typename DataStream>
-    friend DataStream& operator << ( DataStream& ds, const deal_t& t ) {
-        return ds << t.id
-            << t.order_side
-            << t.order_id
-            << t.order_price
-            << t.deal_quantity
-            << t.order_maker
-            << t.merchant_name
-            << t.order_taker
-            << t.deal_fee
-            << t.fine_amount
-            << t.status
-            << t.arbit_status
-            << t.arbiter
-            << t.created_at
-            << t.closed_at
-            << t.updated_at
-            << t.order_sn
-            << t.session
-            << t.merchant_accepted_at
-            << t.merchant_paid_at;
-    }
+    // template<typename DataStream>
+    // friend DataStream& operator << ( DataStream& ds, const deal_t& t ) {
+    //     return ds << t.id
+    //         << t.order_side
+    //         << t.order_id
+    //         << t.order_price
+    //         << t.deal_quantity
+    //         << t.order_maker
+    //         << t.merchant_name
+    //         << t.order_taker
+    //         << t.deal_fee
+    //         << t.fine_amount
+    //         << t.status
+    //         << t.arbit_status
+    //         << t.arbiter
+    //         << t.created_at
+    //         << t.closed_at
+    //         << t.updated_at
+    //         << t.order_sn
+    //         << t.session
+    //         << t.merchant_accepted_at
+    //         << t.merchant_paid_at;
+    // }
 
-    template<typename DataStream>
-    friend DataStream& operator >> ( DataStream& ds, deal_t& t ) {
-        return ds >> t.id
-            >> t.order_side
-            >> t.order_id
-            >> t.order_price
-            >> t.deal_quantity
-            >> t.order_maker
-            >> t.merchant_name
-            >> t.order_taker
-            >> t.deal_fee
-            >> t.fine_amount
-            >> t.status
-            >> t.arbit_status
-            >> t.arbiter
-            >> t.created_at
-            >> t.closed_at
-            >> t.updated_at
-            >> t.order_sn
-            >> t.session;
-    }
+    // template<typename DataStream>
+    // friend DataStream& operator >> ( DataStream& ds, deal_t& t ) {
+    //     return ds >> t.id
+    //         >> t.order_side
+    //         >> t.order_id
+    //         >> t.order_price
+    //         >> t.deal_quantity
+    //         >> t.order_maker
+    //         >> t.merchant_name
+    //         >> t.order_taker
+    //         >> t.deal_fee
+    //         >> t.fine_amount
+    //         >> t.status
+    //         >> t.arbit_status
+    //         >> t.arbiter
+    //         >> t.created_at
+    //         >> t.closed_at
+    //         >> t.updated_at
+    //         >> t.order_sn
+    //         >> t.session;
+    // }
 };
 
 /**
