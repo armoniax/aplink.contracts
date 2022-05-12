@@ -8,7 +8,7 @@ ACTION settings::init(const name& admin) {
    require_auth( _self );
    
    _gstate.admin = admin;
-   _global.remove();
+   // _global.remove();
 }
 
 ACTION settings::setacctres(const account_res& account_create_res) {
@@ -44,7 +44,7 @@ ACTION settings::setprices(const vector<pair<symbol_code, asset>> prices) {
 
 ACTION settings::setshowprice(const bool& show) {
    require_auth( _gstate.admin );
-   
+
    _gstate.show_price = show;
 }
 
