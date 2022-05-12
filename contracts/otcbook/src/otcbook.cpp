@@ -643,7 +643,6 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
     auto now = time_point_sec(current_time_point());
     check( deal_itr->arbiter == account, "arbiter account mismatched");
 
-
     auto status = (deal_status_t)deal_itr->status;
     auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
     const auto &order_taker  = deal_itr->order_taker;
