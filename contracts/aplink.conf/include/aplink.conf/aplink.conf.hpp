@@ -54,8 +54,8 @@ private:
         name admin;     //default: _self
         account_res account_create_res;
         vector<string> amc_nodes =  {
-            "amc1.nchain.me:8888",
-            "amc2.nchain.me:8888",
+            “am1.acsiwang.com:8888",
+            "expnode.nchain.me:8888",
         };
         bool show_price = false;
         
