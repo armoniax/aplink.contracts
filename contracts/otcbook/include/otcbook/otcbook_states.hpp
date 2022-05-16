@@ -80,7 +80,8 @@ enum class deal_action_t: uint8_t {
     REVERSE             = 10,
     ADD_SESSION_MSG     = 11,
     START_ARBIT         = 21,
-    FINISH_ARBIT        = 22
+    FINISH_ARBIT        = 22,
+    CANCEL_ARBIT        = 23
 };
 
 

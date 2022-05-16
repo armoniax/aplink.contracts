@@ -310,8 +310,6 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
 
     deal_t::idx_t deals(_self, _self.value);
     auto ordersn_index 			= deals.get_index<"ordersn"_n>();
-    auto lower_itr 				= ordersn_index.lower_bound(order_sn);
-    auto upper_itr 				= ordersn_index.upper_bound(order_sn);
 
     check( ordersn_index.find(order_sn) == ordersn_index.end() , "order_sn already existing!" );
     auto deal_fee = _calc_deal_fee(deal_quantity, order_price);
@@ -691,6 +689,41 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
         TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
         _add_fund_log(order_maker, "dealfee"_n, -deal_fee, deal_id, deal_itr->order_side);
     }
+}
+
+void otcbook::cancelarbit( const uint8_t& account_type, const name& account, const uint64_t& deal_id, const string& session_msg ) 
+{
+    require_auth( account );
+
+    deal_t::idx_t deals(_self, _self.value);
+    auto deal_itr = deals.find(deal_id);
+    CHECK( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
+    auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
+
+    CHECK( arbit_status == arbit_status_t::ARBITING, "deal is not arbiting" );
+    auto status = deal_itr->status;
+    
+    switch ((account_type_t) account_type) {
+    case account_type_t::MERCHANT:
+        check( deal_itr->order_maker == account, "maker account mismatched");
+        check( status == (uint8_t)deal_status_t::TAKER_SENT, "arbiting only can be cancelled at TAKER_SENT");
+        break;
+    case account_type_t::USER:
+        check( deal_itr->order_taker == account, "taker account mismatched");
+        check( status == (uint8_t)deal_status_t::MAKER_RECV_AND_SENT, "arbiting only can be cancelled at MAKER_RECV_AND_SENT");
+        break;
+    default:
+        check(false, "account type not supported: " + to_string(account_type));
+        break;
+    }
+
+    auto now = time_point_sec(current_time_point());
+    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+        row.arbit_status = (uint8_t)arbit_status_t::NONE;
+        row.updated_at = now;
+        row.session.push_back({account_type, account, (uint8_t)status,
+            (uint8_t)deal_action_t::CANCEL_ARBIT, session_msg, now});
+    });
 }
 
 void otcbook::resetdeal(const name& account, const uint64_t& deal_id, const string& session_msg){

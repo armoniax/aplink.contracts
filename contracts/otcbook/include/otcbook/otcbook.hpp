@@ -248,6 +248,17 @@ public:
     void closearbit(const name& account, const uint64_t& deal_id, const uint8_t& arbit_result, const string& session_msg);
 
     /**
+     * arbiter close arbit request
+     * @param account account name
+     * @param account_type account type, merchant(2) | user(3)
+     * @param deal_id deal_id, created by opendeal()
+     * @param arbit_result 0:session
+     * @param session_msg session msg(message)
+     * @note require account auth
+     */
+    [[eosio::action]]
+    void cancelarbit( const uint8_t& account_type, const name& account, const uint64_t& deal_id, const string& session_msg );
+    /**
      * action trigger by transfer()
      * transfer token to this contract will trigger this action
      * only support merchant to deposit
