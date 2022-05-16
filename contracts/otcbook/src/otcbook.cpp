@@ -706,7 +706,8 @@ void otcbook::cancelarbit( const uint8_t& account_type, const name& account, con
     switch ((account_type_t) account_type) {
     case account_type_t::MERCHANT:
         check( deal_itr->order_maker == account, "maker account mismatched");
-        check( status == (uint8_t)deal_status_t::TAKER_SENT, "arbiting only can be cancelled at TAKER_SENT");
+        check( status == (uint8_t)deal_status_t::TAKER_SENT || status == (uint8_t)deal_status_t::MAKER_ACCEPTED, 
+                    "arbiting only can be cancelled at TAKER_SENT");
         break;
     case account_type_t::USER:
         check( deal_itr->order_taker == account, "taker account mismatched");
