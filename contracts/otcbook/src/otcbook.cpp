@@ -720,7 +720,7 @@ void otcbook::cancelarbit( const uint8_t& account_type, const name& account, con
 
     auto now = time_point_sec(current_time_point());
     deals.modify( *deal_itr, _self, [&]( auto& row ) {
-        row.arbit_status = (uint8_t)arbit_status_t::NONE;
+        row.arbit_status = (uint8_t)arbit_status_t::UNARBITTED;
         row.updated_at = now;
         row.session.push_back({account_type, account, (uint8_t)status,
             (uint8_t)deal_action_t::CANCEL_ARBIT, session_msg, now});
