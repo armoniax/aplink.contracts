@@ -677,7 +677,6 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
         order_wrapper_ptr->modify(_self, [&]( auto& row ) {
             row.va_frozen_quantity -= deal_quantity;
             row.va_fulfilled_quantity += deal_quantity;
-            row.total_fee += deal_fee;
             row.fine_amount = deal_amount;
             row.updated_at = time_point_sec(current_time_point());
         });
@@ -685,9 +684,9 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
         //< send CNYD to user
         TRANSFER(SYS_BANK, order_taker, deal_amount, "");
 
-        const auto &fee_recv_addr  = _conf().fee_recv_addr;
-        TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
-        _add_fund_log(order_maker, "dealfee"_n, -deal_fee, deal_id, deal_itr->order_side);
+        // const auto &fee_recv_addr  = _conf().fee_recv_addr;
+        // TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
+        // _add_fund_log(order_maker, "dealfee"_n, -deal_fee, deal_id, deal_itr->order_side);
     }
 }
 
