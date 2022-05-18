@@ -23,6 +23,15 @@ struct account_res {
     asset account_stake_net                     = asset(200000, SYS_SYMBOL);
 };
 
+struct waku_node_info {
+    string wakunode_domain;
+    uint16_t wakunode_rpc_port;
+    uint16_t wakunode_ws_port;
+    uint16_t wakunode_wss_port;
+
+    EOSLIB_SERIALIZE(waku_node_info, (wakunode_domain)(wakunode_rpc_port)(wakunode_ws_port)(wakunode_wss_port) )
+};
+
 /**
  * The `aplink.conf` is configuration contract for APLink APP
  * 
@@ -54,12 +63,22 @@ private:
         name admin;     //default: _self
         account_res account_create_res;
         vector<string> amc_nodes =  {
-            “am1.acsiwang.com:8888",
+            "am1.acsiwang.com:8888",
             "expnode.nchain.me:8888",
         };
+
+        vector<waku_node_info> waku_nodes = {
+            {
+                "wakun1.acsiwang.com",
+                8545,
+                7000,
+                7443
+            }
+        };
+        
         bool show_price = false;
         
-        EOSLIB_SERIALIZE( global_t, (admin)(account_create_res)(amc_nodes)(show_price) )
+        EOSLIB_SERIALIZE( global_t, (admin)(account_create_res)(amc_nodes)(waku_nodes)(show_price) )
     };
     typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
