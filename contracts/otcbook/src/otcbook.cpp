@@ -438,9 +438,12 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
 
     switch ((account_type_t) account_type) {
     case account_type_t::USER:
-        check( (uint8_t)status == (uint8_t)deal_status_t::CREATED ||  (uint8_t)status == (uint8_t)deal_status_t::MAKER_ACCEPTED,
-                     "deal status need CREATED or MAKER_ACCEPTED " + to_string(deal_id));
         check( deal_itr->order_taker == account, "taker account mismatched");
+        check( (uint8_t)status == (uint8_t)deal_status_t::CREATED,  "deal status need CREATED or MAKER_ACCEPTED " + to_string(deal_id));
+        if ((uint8_t)status == (uint8_t)deal_status_t::MAKER_ACCEPTED) {
+            auto merchant_accepted_at = deal_itr->merchant_accepted_at;
+            check(merchant_accepted_at + seconds(_conf().accepted_timeout) <  current_time_point(), "deal is not expired.");
+        }
         break;
     case account_type_t::MERCHANT:
         if((uint8_t)status == (uint8_t)deal_status_t::CREATED) {
