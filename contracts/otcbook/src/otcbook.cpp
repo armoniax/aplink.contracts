@@ -317,7 +317,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     auto created_at = time_point_sec(current_time_point());
     auto updated_at = time_point_sec(current_time_point());
     auto deal_id = deals.available_primary_key();
-    deals.emplace( _self, [&]( auto& row ) {
+    deals.emplace( taker, [&]( auto& row ) {
         row.id 					= deal_id;
         row.order_side 			= order_side;
         row.merchant_name       = merchant_name;
@@ -414,7 +414,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         row.updated_at = time_point_sec(current_time_point());
     });
 
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
         row.status = (uint8_t)deal_status_t::CLOSED;
         row.closed_at = time_point_sec(current_time_point());
         row.updated_at = time_point_sec(current_time_point());
@@ -476,7 +476,7 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
 
     check( (uint8_t)order.status != (uint8_t)order_status_t::CLOSED, "order already closed" );
 
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
             row.arbit_status = (uint8_t)arbit_status_t::UNARBITTED;
             row.status = (uint8_t)deal_status_t::CANCELLED;
             row.closed_at = time_point_sec(current_time_point());
@@ -566,7 +566,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
             "can not process deal action:" + to_string((uint8_t)action)
              + " by arbit status: " + to_string((uint8_t)arbit_status) );
 
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
         if (next_status != deal_status_t::NONE) {
             row.status = (uint8_t)next_status;
             row.updated_at = time_point_sec(current_time_point());
@@ -620,7 +620,7 @@ void otcbook::startarbit(const name& account, const uint8_t& account_type, const
     set<deal_status_t> can_arbit_status = {deal_status_t::MAKER_ACCEPTED, deal_status_t::TAKER_SENT, deal_status_t::MAKER_RECV_AND_SENT };
     check( can_arbit_status.count(status) != 0, "status illegal: " + to_string((uint8_t)status) );
 
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
         row.arbit_status = (uint8_t)arbit_status_t::ARBITING;
         row.arbiter = arbiter;
         row.updated_at = time_point_sec(current_time_point());
@@ -653,9 +653,9 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
     auto deal_status = (uint8_t)deal_status_t::CLOSED;
     if (arbit_result == 0) {
         deal_status =  (uint8_t)deal_status_t::CANCELLED;
-    } 
+    }
 
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
             row.arbit_status = (uint8_t)arbit_status_t::FINISHED;
             row.status = (uint8_t)deal_status_t::CLOSED;
             row.closed_at = time_point_sec(current_time_point());
@@ -693,7 +693,7 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
     }
 }
 
-void otcbook::cancelarbit( const uint8_t& account_type, const name& account, const uint64_t& deal_id, const string& session_msg ) 
+void otcbook::cancelarbit( const uint8_t& account_type, const name& account, const uint64_t& deal_id, const string& session_msg )
 {
     require_auth( account );
 
@@ -704,11 +704,11 @@ void otcbook::cancelarbit( const uint8_t& account_type, const name& account, con
 
     CHECK( arbit_status == arbit_status_t::ARBITING, "deal is not arbiting" );
     auto status = deal_itr->status;
-    
+
     switch ((account_type_t) account_type) {
     case account_type_t::MERCHANT:
         check( deal_itr->order_maker == account, "maker account mismatched");
-        check( status == (uint8_t)deal_status_t::MAKER_ACCEPTED, 
+        check( status == (uint8_t)deal_status_t::MAKER_ACCEPTED,
                     "arbiting only can be cancelled at TAKER_SENT or MAKER_ACCEPTED");
         break;
     // case account_type_t::USER:
@@ -721,7 +721,7 @@ void otcbook::cancelarbit( const uint8_t& account_type, const name& account, con
     }
 
     auto now = time_point_sec(current_time_point());
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
         row.arbit_status = (uint8_t)arbit_status_t::UNARBITTED;
         row.updated_at = now;
         row.session.push_back({account_type, account, (uint8_t)status,
@@ -744,7 +744,7 @@ void otcbook::resetdeal(const name& account, const uint64_t& deal_id, const stri
     CHECK( status != deal_status_t::CREATED, "deal no need to reverse" );
 
     auto now = time_point_sec(current_time_point());
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
         row.status = (uint8_t)deal_status_t::CREATED;
         row.updated_at = time_point_sec(current_time_point());
         row.session.push_back({(uint8_t)account_type_t::ADMIN, account, (uint8_t)status,
