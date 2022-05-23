@@ -33,8 +33,10 @@ static constexpr uint64_t order_stake_pct   = 10000; // 100%
 static constexpr uint64_t max_memo_size     = 1024;
 
 
-static constexpr uint64_t seconds_per_year              = 365 * 24 * 3600;
-static constexpr uint64_t max_blacklist_duration_second = 100 * seconds_per_year; // 100 year
+static constexpr uint64_t seconds_per_day                   = 24 * 3600;
+static constexpr uint64_t seconds_per_year                  = 365 * seconds_per_day;
+static constexpr uint64_t max_blacklist_duration_second     = 100 * seconds_per_year; // 100 year
+static constexpr uint64_t default_blacklist_duration_second = 3 * seconds_per_day;    // 3 days
 
 
 #define OTCBOOK_TBL [[eosio::table, eosio::contract("otcbook")]]
@@ -425,7 +427,7 @@ struct OTCBOOK_TBL blacklist_t {
     uint64_t primary_key() const { return account.value; }
     uint64_t scope() const { return /*order_price.symbol.code().raw()*/ 0; }
 
-    typedef eosio::multi_index  <"blacklist"_n, blacklist_t> idx_t;
+    typedef wasm::db::multi_index_ex  <"blacklist"_n, blacklist_t> idx_t;
 };
 
 } // AMA

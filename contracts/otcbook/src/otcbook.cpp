@@ -440,6 +440,7 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
     check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
     auto status = (deal_status_t)deal_itr->status;
     auto arbit_status =  (arbit_status_t)deal_itr->arbit_status;
+    auto now = current_time_point();
 
     switch ((account_type_t) account_type) {
     case account_type_t::USER:
@@ -447,20 +448,23 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
         check( (uint8_t)status == (uint8_t)deal_status_t::CREATED,  "deal status need CREATED or MAKER_ACCEPTED " + to_string(deal_id));
         if ((uint8_t)status == (uint8_t)deal_status_t::MAKER_ACCEPTED) {
             auto merchant_accepted_at = deal_itr->merchant_accepted_at;
-            check(merchant_accepted_at + seconds(_conf().accepted_timeout) <  current_time_point(), "deal is not expired.");
+            check(merchant_accepted_at + seconds(_conf().accepted_timeout) < now, "deal is not expired.");
         }
         break;
-    case account_type_t::MERCHANT:
+    case account_type_t::MERCHANT: {
         if((uint8_t)status == (uint8_t)deal_status_t::CREATED) {
 
         } else if((uint8_t)status == (uint8_t)deal_status_t::MAKER_ACCEPTED) {
             auto merchant_accepted_at = deal_itr->merchant_accepted_at;
-            check(merchant_accepted_at + seconds(_conf().accepted_timeout) <  current_time_point(), "deal is not expired.");
+            check(merchant_accepted_at + seconds(_conf().accepted_timeout) < now, "deal is not expired.");
         } else {
             check(false, "deal already status need CREATED or MAKER_ACCEPTED " + to_string(deal_id));
         }
         check( deal_itr->order_maker == account, "merchant account mismatched");
+
+        _set_blacklist(deal_itr->order_taker, default_blacklist_duration_second, account);
         break;
+    }
     case account_type_t::ADMIN:
         check( _gstate.admin == account, "admin account mismatched");
         break;
@@ -812,12 +816,7 @@ void otcbook::setblacklist(const name& account, uint64_t duration_second) {
     CHECK( duration_second <= max_blacklist_duration_second,
            "duration_second too large than: " + to_string(max_blacklist_duration_second));
 
-    blacklist_t blacklist = {account, current_time_point() + eosio::seconds(duration_second)};
-    if (duration_second > 0) {
-        _dbc.set(blacklist);
-    } else {
-        _dbc.del(blacklist);
-    }
+   _set_blacklist(account, duration_second, _gstate.admin);
 }
 
 /**
@@ -902,6 +901,19 @@ void otcbook::migrate(){
         });
         ++itr1;
 
+    }
+}
+
+void otcbook::_set_blacklist(const name& account, uint64_t duration_second, const name& payer) {
+    blacklist_t::idx_t blacklist_tbl(_self, _self.value);
+    auto blacklist_itr = blacklist_tbl.find(account.value);
+    if (duration_second > 0) {
+        blacklist_tbl.set( account.value, payer, [&]( auto& row ) {
+            row.account     = account;
+            row.expired_at  = current_time_point() + eosio::seconds(duration_second);
+        });
+    } else {
+        blacklist_tbl.erase_by_pk(account.value);
     }
 }
 
