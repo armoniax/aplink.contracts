@@ -304,6 +304,13 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     check( deal_quantity >= order.va_min_take_quantity, "Order's min accept quantity not met!" );
     check( deal_quantity <= order.va_max_take_quantity, "Order's max accept quantity not met!" );
 
+    auto now = current_time_point();
+
+    blacklist_t::idx_t blacklist_tbl(_self, _self.value);
+    auto blacklist_itr = blacklist_tbl.find(taker.value);
+    CHECK(blacklist_itr == blacklist_tbl.end() || blacklist_itr->expired_at <= now,
+        "taker is in blacklist")
+
     asset order_price = order.va_price;
     name order_maker = order.owner;
     string merchant_name = order.merchant_name;
@@ -314,8 +321,6 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     check( ordersn_index.find(order_sn) == ordersn_index.end() , "order_sn already existing!" );
     auto deal_fee = _calc_deal_fee(deal_quantity, order_price);
 
-    auto created_at = time_point_sec(current_time_point());
-    auto updated_at = time_point_sec(current_time_point());
     auto deal_id = deals.available_primary_key();
     deals.emplace( taker, [&]( auto& row ) {
         row.id 					= deal_id;
@@ -328,13 +333,13 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.order_taker			= taker;
         row.status				=(uint8_t)deal_status_t::CREATED;
         row.arbit_status        =(uint8_t)arbit_status_t::UNARBITTED;
-        row.created_at			= created_at;
-        row.updated_at          = updated_at;
+        row.created_at			= now;
+        row.updated_at          = now;
         row.order_sn 			= order_sn;
         row.deal_fee            = deal_fee;
         // row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
         row.session.push_back({(uint8_t)account_type_t::USER, taker, (uint8_t)deal_status_t::NONE,
-            (uint8_t)deal_action_t::CREATE, session_msg, created_at});
+            (uint8_t)deal_action_t::CREATE, session_msg, now});
     });
 
     // // 添加交易到期表数据
@@ -798,6 +803,23 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
         _add_fund_log(from, "deposit"_n, quantity, 0, ""_n);
     }
 }
+
+
+void otcbook::setblacklist(const name& account, uint64_t duration_second) {
+    require_auth( _gstate.admin );
+
+    CHECK( is_account(account), "account does not exist: " + account.to_string() );
+    CHECK( duration_second <= max_blacklist_duration_second,
+           "duration_second too large than: " + to_string(max_blacklist_duration_second));
+
+    blacklist_t blacklist = {account, current_time_point() + eosio::seconds(duration_second)};
+    if (duration_second > 0) {
+        _dbc.set(blacklist);
+    } else {
+        _dbc.del(blacklist);
+    }
+}
+
 /**
  * 进行数据清除，测试用，发布正式环境去除
  */

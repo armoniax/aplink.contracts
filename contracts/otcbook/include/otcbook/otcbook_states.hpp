@@ -32,13 +32,9 @@ static constexpr uint64_t percent_boost     = 10000;
 static constexpr uint64_t order_stake_pct   = 10000; // 100%
 static constexpr uint64_t max_memo_size     = 1024;
 
-// static constexpr uint64_t seconds_per_year      = 24 * 3600 * 7 * 52;
-// static constexpr uint64_t seconds_per_month     = 24 * 3600 * 30;
-// static constexpr uint64_t seconds_per_week      = 24 * 3600 * 7;
-// static constexpr uint64_t seconds_per_day       = 24 * 3600;
-// static constexpr uint64_t seconds_per_hour      = 3600;
 
-
+static constexpr uint64_t seconds_per_year              = 365 * 24 * 3600;
+static constexpr uint64_t max_blacklist_duration_second = 100 * seconds_per_year; // 100 year
 
 
 #define OTCBOOK_TBL [[eosio::table, eosio::contract("otcbook")]]
@@ -52,7 +48,7 @@ struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
     // uint64_t transaction_fee_ratio = 0; // fee ratio boosted by 10000
     name admin;             // default is contract self
     name conf_contract      = "otcconf"_n;
-    bool initialized        = false; 
+    bool initialized        = false;
 
     EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
                                 /*(withhold_expire_sec)(transaction_fee_receiver)
@@ -76,7 +72,7 @@ enum class deal_action_t: uint8_t {
     MAKER_RECV_AND_SENT = 4,
     CLOSE               = 5,
     CANCEL              = 9,
-    
+
     REVERSE             = 10,
     ADD_SESSION_MSG     = 11,
     START_ARBIT         = 21,
@@ -172,11 +168,11 @@ struct OTCBOOK_TBL order_t {
     asset va_frozen_quantity;                       // va(virtual asset) frozen quantity of sell/buy coin
     asset va_fulfilled_quantity;                    // va(virtual asset) fulfilled quantity of sell/buy coin, support partial fulfillment
     asset stake_frozen = asset(0, STAKE_SYMBOL);    // stake frozen asset
-    asset total_fee = asset(0, STAKE_SYMBOL);       
+    asset total_fee = asset(0, STAKE_SYMBOL);
     asset fine_amount= asset(0, STAKE_SYMBOL);      // aarbit fine amount, not contain fee
     string memo;                                    // memo
 
-    uint8_t status;                                 // 
+    uint8_t status;                                 //
     time_point_sec created_at;                      // created time at
     time_point_sec closed_at;                       // closed time at
     time_point_sec updated_at;
@@ -205,7 +201,7 @@ struct OTCBOOK_TBL order_t {
     uint64_t by_update_time() const {
         return (uint64_t) updated_at.utc_seconds ;
     }
-  
+
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(merchant_name)(accepted_payments)(va_price)(va_quantity)
                                 (va_min_take_quantity)(va_max_take_quantity)(va_frozen_quantity)(va_fulfilled_quantity)
                                 (stake_frozen)(total_fee)(fine_amount)
@@ -252,13 +248,13 @@ struct order_wrapper_impl_t: public order_wrapper_t {
     }
 
     void modify(eosio::name payer, const updater_t& updater) override {
-        _table->modify(*_row_ptr, payer, updater);  
+        _table->modify(*_row_ptr, payer, updater);
     }
 
     static std::shared_ptr<order_wrapper_t> get_from_db(name code, uint64_t scope, uint64_t pk) {
         auto ret = std::make_shared<order_wrapper_impl_t<table_t>>();
         ret->_table = make_unique<table_t>(code, scope);
-        auto itr = ret->_table->find(pk); 
+        auto itr = ret->_table->find(pk);
         if (itr != ret->_table->end()) {
             ret->_row_ptr = &(*itr);
             return ret;
@@ -285,7 +281,7 @@ struct deal_session_msg_t {
     uint8_t status = 0;         // status before action, deal_status_t
     uint8_t action = 0;         // action type, deal_action_t
     string msg;                // msg(message)
-    time_point_sec created_at;  // created time at  
+    time_point_sec created_at;  // created time at
 
     EOSLIB_SERIALIZE(deal_session_msg_t,   (account_type)(account)(status)(action)(msg)(created_at) )
 };
@@ -402,7 +398,7 @@ struct OTCBOOK_TBL fund_log_t {
     name order_side;
     name action;            // operation action, [deposit, withdraw, openorder, closeorder]
     asset quantity;         // maybe positive(plus) or negative(minus)
-    time_point_sec log_at;  // log time at 
+    time_point_sec log_at;  // log time at
     time_point_sec updated_at;
 
     fund_log_t() {}
@@ -422,5 +418,14 @@ struct OTCBOOK_TBL fund_log_t {
     EOSLIB_SERIALIZE(fund_log_t,    (id)(owner)(order_id)(order_side)(action)(quantity)(log_at)(updated_at) )
 };
 
+struct OTCBOOK_TBL blacklist_t {
+    name account;               // account, PK
+    time_point_sec expired_at;  // expired at time
+
+    uint64_t primary_key() const { return account.value; }
+    uint64_t scope() const { return /*order_price.symbol.code().raw()*/ 0; }
+
+    typedef eosio::multi_index  <"blacklist"_n, blacklist_t> idx_t;
+};
 
 } // AMA
