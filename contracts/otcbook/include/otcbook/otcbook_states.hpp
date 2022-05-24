@@ -36,7 +36,13 @@ static constexpr uint64_t max_memo_size     = 1024;
 static constexpr uint64_t seconds_per_day                   = 24 * 3600;
 static constexpr uint64_t seconds_per_year                  = 365 * seconds_per_day;
 static constexpr uint64_t max_blacklist_duration_second     = 100 * seconds_per_year; // 100 year
+
+#ifndef DEFAULT_BLACKLIST_DURATION_SECOND_FOR_TEST
 static constexpr uint64_t default_blacklist_duration_second = 3 * seconds_per_day;    // 3 days
+#else
+#warning "DEFAULT_BLACKLIST_DURATION_SECOND_FOR_TEST should only be used for test
+static constexpr uint64_t default_blacklist_duration_second = DEFAULT_BLACKLIST_DURATION_SECOND_FOR_TEST;
+#endif//DEFAULT_BLACKLIST_DURATION_SECOND_FOR_TEST
 
 
 #define OTCBOOK_TBL [[eosio::table, eosio::contract("otcbook")]]
