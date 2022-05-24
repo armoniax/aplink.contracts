@@ -432,7 +432,8 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
 }
 
 
-void otcbook::canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& session_msg){
+void otcbook::canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id,
+                         const string& session_msg, bool is_taker_black) {
     require_auth( account );
 
     deal_t::idx_t deals(_self, _self.value);
@@ -465,7 +466,8 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
             case deal_status_t::MAKER_ACCEPTED: {
                 auto merchant_accepted_at = deal_itr->merchant_accepted_at;
                 check(merchant_accepted_at + seconds(_conf().accepted_timeout) < now, "deal is not expired.");
-                _set_blacklist(deal_itr->order_taker, default_blacklist_duration_second, account);
+                if (is_taker_black)
+                    _set_blacklist(deal_itr->order_taker, default_blacklist_duration_second, account);
                 break;
             }
             default:

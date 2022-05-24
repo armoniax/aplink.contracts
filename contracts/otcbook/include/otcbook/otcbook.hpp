@@ -201,10 +201,11 @@ public:
      * @param account_type account type, admin(1) | merchant(2) | user(3)
      * @param deal_id deal_id, created by opendeal()
      * @param session_msg session msg(message)
+     * @param is_taker_black is taker black,  if true, and status is MAKER_ACCEPTED, and account is maker: add taker to blacklist
      * @note require account auth
      */
     [[eosio::action]]
-    void canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& session_msg);
+    void canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& session_msg, bool is_taker_black);
 
 
     /**
