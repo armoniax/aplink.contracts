@@ -1,0 +1,62 @@
+<h1 class="contract">lend</h1>
+
+---
+spec_version: "0.1.0"
+title: aplink farming
+summary: 'lend a land for cropping APL'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+lord can lend a land to farmer for croping APL to customer
+
+
+<h1 class="contract">setlord</h1>
+---
+spec_version: "0.1.0"
+title: set lord for lands
+summary: 'set a lord to manage all lands'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+lord can lend and retrieve land
+lands can be disabled by lord
+
+<h1 class="contract">retrieve</h1>
+---
+spec_version: "0.1.0"
+title: retrieve a land
+summary: 'retrieve a land and return all seeds to recipient'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+retrieve a disabled land, and send seeds to recipient
+
+<h1 class="contract">setstatus</h1>
+---
+spec_version: "0.1.0"
+title: change a land's status
+summary: 'Enable/Disable a land'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+param status  0:NONE 1:Enable 2:Disable
+
+<h1 class="contract">crop</h1>
+---
+spec_version: "0.1.0"
+title: farmer crop seeds and send to a customer
+summary: 'farmer crop seeds and send to a customer'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+farmer crop seeds and send to a customer
+
+
+<h1 class="contract">ontransfer</h1>
+---
+spec_version: "0.1.0"
+title: lord plant seeds to a land
+summary: 'lord plant seeds to a land'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+lord plant seeds to a land
