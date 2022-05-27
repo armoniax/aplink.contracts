@@ -41,52 +41,53 @@ class [[eosio::contract("aplink.farm")]] farm: public eosio::contract {
 public:
     using contract::contract;
 
-    farm(eosio::name lord, eosio::name code, datastream<const char*> ds):
-        _db(_self), contract(lord, code, ds),
+    farm(eosio::name receiver, eosio::name code, datastream<const char*> ds):
+        _db(_self), contract(receiver, code, ds),
         _global(get_self(), get_self().value)
     {
         _gstate = _global.exists() ? _global.get() : global_t{};
     }
 
     /**
-    * @param lord * lord can lend out land
+    * @param lord lord can lend out land
+    * @param jamfactory expired apples will send to jamfactory
     */
     [[eosio::action]]
-    void setlord(const name& lord);
+    void setlord(const name& lord, const name& jamfactory);
 
     /**
-     * @brief lend a land to a farmer
+     * @brief lease a land to a farmer
      * 
      * @param farmer account who can crop the land, always be a contract
      * @param title the land's name
      * @param uri  the details info of the farmer
-     * @param crop_start_at  farmer can crop after start_at
-     * @param crop_end_at farmer can crop before end_at
+     * @param open_at  farmer can crop after open_at
+     * @param close_at farmer can crop before close_at
      */
     [[eosio::action]]
-    void lend(const name& farmer, const string& title, const string& uri, const time_point& crop_start_at, const time_point& crop_end_at);
+    void lease(const name& farmer, const string& title, const string& uri, const time_point& open_at, const time_point& close_at);
 
     /**
-     * @brief retrieve a land, only for disabled land
+     * @brief reclaim a land, only for disabled land
      * 
      * @param land_id 
      * @param recipient all seeds on this land will send to 
      * @param memo 
      */
     [[eosio::action]]
-    void retrieve(const uint64_t& land_id, const name& recipient, const string& memo);
+    void reclaim(const uint64_t& land_id, const name& recipient, const string& memo);
 
     /**
      * @brief 
      * 
      * @param land_id 
-     * @param status 
+     * @param status  0:NONE 1:Enable 2:Disable
      */
     [[eosio::action]]
     void setstatus(const uint64_t& land_id, const uint8_t& status);
 
     /**
-     * @brief farmer can crop seeds to customer
+     * @brief farmer can plant seeds to customer
      * 
      * @param land_id 
      * @param customer  send seeds to account
@@ -94,7 +95,16 @@ public:
      * @param memo 
      */
     [[eosio::action]]
-    void crop(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo);
+    void ripen(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo);
+
+    /**
+     * @brief crop apples
+     * 
+     * @param croper 
+     * @param appleids apple_id set, support lessthan 20 appls
+     */
+    [[eosio::action]]
+    void crop(const name& croper, const string& appleids);
 
     /**
      * @brief topup seeds for a land

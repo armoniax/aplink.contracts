@@ -1,13 +1,13 @@
-<h1 class="contract">lend</h1>
+<h1 class="contract">lease</h1>
 
 ---
 spec_version: "0.1.0"
 title: aplink farming
-summary: 'lend a land for cropping APL'
+summary: 'lease a land for cropping APL'
 icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 ---
 
-lord can lend a land to farmer for croping APL to customer
+lord can lease a land to farmer for croping APL to customer
 
 
 <h1 class="contract">setlord</h1>
@@ -18,17 +18,18 @@ summary: 'set a lord to manage all lands'
 icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 ---
 
-lord can lend and retrieve land
+lord can lease and reclaim land
+jamfactory is used to collect expired apples
 lands can be disabled by lord
 
-<h1 class="contract">retrieve</h1>
+<h1 class="contract">reclaim</h1>
 ---
 spec_version: "0.1.0"
-title: retrieve a land
-summary: 'retrieve a land and return all seeds to recipient'
+title: reclaim a land
+summary: 'reclaim a land and return all seeds to recipient'
 icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 ---
-retrieve a disabled land, and send seeds to recipient
+reclaim a disabled land, and send seeds to recipient
 
 <h1 class="contract">setstatus</h1>
 ---
@@ -40,15 +41,25 @@ icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 
 param status  0:NONE 1:Enable 2:Disable
 
-<h1 class="contract">crop</h1>
+<h1 class="contract">ripen</h1>
 ---
 spec_version: "0.1.0"
-title: farmer crop seeds and send to a customer
-summary: 'farmer crop seeds and send to a customer'
+title: farmer ripen seeds to an apple
+summary: 'farmer ripen seeds and send to a customer'
 icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 ---
 
-farmer crop seeds and send to a customer
+farmer ripen seeds to an apple and send it to croper
+
+<h1 class="contract">crop</h1>
+---
+spec_version: "0.1.0"
+title: croper crop apples
+summary: 'croper crop apples or collect expired apples'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+croper crop apples or collect expired apples
 
 
 <h1 class="contract">ontransfer</h1>
