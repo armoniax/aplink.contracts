@@ -56,7 +56,7 @@ void farm::lease(const name& farmer,
 }
 
 
-void farm::ripen(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo){
+void farm::plant(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo){
     CHECKC( is_account(customer), err::ACCOUNT_INVALID, "Invalid account of farmer" );
     CHECKC( quantity.amount > 0, err::PARAM_ERROR, "non-positive quantity not allowed" );
     CHECKC( quantity.symbol == APLINK_SYMBOL, err::SYMBOL_MISMATCH, "symbol not allowed" );
@@ -86,7 +86,7 @@ void farm::ripen(const uint64_t& land_id, const name& customer, const asset& qua
     _db.set(apple, land.farmer);
 }
 
-void farm::crop(const name& croper, const string& appleids){
+void farm::pick(const name& croper, const string& appleids){
     require_auth(croper);
 
     auto croper_quantity = asset(0, APLINK_SYMBOL);

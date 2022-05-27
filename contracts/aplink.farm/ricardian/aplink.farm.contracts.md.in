@@ -41,25 +41,25 @@ icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 
 param status  0:NONE 1:Enable 2:Disable
 
-<h1 class="contract">ripen</h1>
+<h1 class="contract">plant</h1>
 ---
 spec_version: "0.1.0"
-title: farmer ripen seeds to an apple
-summary: 'farmer ripen seeds and send to a customer'
+title: farmer plant seeds to an apple
+summary: 'farmer plant seeds and send to a customer'
 icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 ---
 
 farmer ripen seeds to an apple and send it to croper
 
-<h1 class="contract">crop</h1>
+<h1 class="contract">pick</h1>
 ---
 spec_version: "0.1.0"
-title: croper crop apples
-summary: 'croper crop apples or collect expired apples'
+title: croper pick apples
+summary: 'croper pick apples or collect expired apples'
 icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
 ---
 
-croper crop apples or collect expired apples
+croper pick apples or collect expired apples
 
 
 <h1 class="contract">ontransfer</h1>

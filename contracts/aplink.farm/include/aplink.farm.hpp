@@ -95,16 +95,16 @@ public:
      * @param memo 
      */
     [[eosio::action]]
-    void ripen(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo);
+    void plant(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo);
 
     /**
-     * @brief crop apples
+     * @brief pick apples
      * 
      * @param croper 
      * @param appleids apple_id set, support lessthan 20 appls
      */
     [[eosio::action]]
-    void crop(const name& croper, const string& appleids);
+    void pick(const name& croper, const string& appleids);
 
     /**
      * @brief topup seeds for a land
