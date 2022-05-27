@@ -304,12 +304,6 @@ public:
     // [[eosio::action]]
     // void timeoutdeal();
 
-    [[eosio::action]]
-    void deltable();
-
-
-    [[eosio::action]]
-    void migrate();
 
 
 private:

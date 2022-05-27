@@ -830,50 +830,6 @@ void otcbook::setblacklist(const name& account, uint64_t duration_second) {
    _set_blacklist(account, duration_second, _gstate.admin);
 }
 
-/**
- * 进行数据清除，测试用，发布正式环境去除
- */
-void otcbook::deltable(){
-    require_auth( _self );
-
-    sell_order_table_t sellorders(_self,_self.value);
-    auto itr = sellorders.begin();
-    while(itr != sellorders.end()){
-        itr = sellorders.erase(itr);
-    }
-
-    buy_order_table_t buyorders(_self,_self.value);
-    auto itr3 = buyorders.begin();
-    while(itr3 != buyorders.end()){
-        itr3 = buyorders.erase(itr3);
-    }
-
-    deal_t::idx_t deals(_self,_self.value);
-    auto itr1 = deals.begin();
-    while(itr1 != deals.end()){
-        itr1 = deals.erase(itr1);
-    }
-
-    merchant_t::idx_t merchants(_self,_self.value);
-    auto itr2 = merchants.begin();
-    while(itr2 != merchants.end()){
-        itr2 = merchants.erase(itr2);
-    }
-
-    fund_log_t::table_t fundlog(_self,_self.value);
-    auto itr4 = fundlog.begin();
-    while(itr4 != fundlog.end()){
-        itr4 = fundlog.erase(itr4);
-    }
-
-    // deal_expiry_tbl exp(_self,_self.value);
-    // auto itr3 = exp.begin();
-    // while(itr3 != exp.end()){
-    //     itr3 = exp.erase(itr3);
-    // }
-
-}
-
 const otcbook::conf_t& otcbook::_conf(bool refresh/* = false*/) {
     if (!_conf_ptr || refresh) {
         CHECK(_gstate.conf_contract.value != 0, "Invalid conf_table");
@@ -898,21 +854,6 @@ void otcbook::_add_fund_log(const name& owner, const name & action, const asset 
         row.log_at			    = now;
         row.updated_at          = time_point_sec(current_time_point());
     });
-}
-
-void otcbook::migrate(){
-    require_auth( _self );
-
-    deal_t::idx_t deals(_self,_self.value);
-    auto itr1 = deals.begin();
-    while(itr1 != deals.end()) {
-        deals.modify( *itr1, _self, [&]( auto& row ) {
-            row.merchant_accepted_at = time_point_sec(current_time_point());
-            row.merchant_paid_at = time_point_sec(current_time_point());
-        });
-        ++itr1;
-
-    }
 }
 
 void otcbook::_set_blacklist(const name& account, uint64_t duration_second, const name& payer) {
