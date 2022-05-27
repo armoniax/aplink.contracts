@@ -8,9 +8,10 @@
     {	aplink::token::transfer_action act{ bank, { {_self, active_perm} } };\
 			act.send( _self, to, quantity, memo );}
 
+using grow_action = aplink::farm::grow_action;
 #define GROW_APPLE(farm, land_id, to, quantity) \
-    {   aplink::farm::grow_action act{ farm, { {_self, active_perm} } };\
-            act.send( to, land_id, quantity );}
+    {   grow_action(farm, { {_self, active_perm} }).send( \
+            to, land_id, quantity );}
 
 void newbie::claimreward(const name& newbie)
 {
@@ -22,7 +23,7 @@ void newbie::claimreward(const name& newbie)
     TRANSFER( _gstate.aplink_token_contract, newbie, _gstate.newbie_reward, "newbie reward" )
 }
 
-void newbie::rewardinvite(const name& to) 
+void newbie::rewardinvite(const name& to)
 {
     require_auth( _gstate.aplink_token_contract );
     CHECK( aplink::token::account_exist(_gstate.aplink_token_contract, to, _gstate.newbie_reward.symbol.code()),
