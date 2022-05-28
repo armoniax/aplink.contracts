@@ -56,7 +56,7 @@ void farm::lease(const name& farmer,
 }
 
 
-void farm::plant(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo){
+void farm::ripe(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo){
     CHECKC( is_account(customer), err::ACCOUNT_INVALID, "Invalid account of farmer" );
     CHECKC( quantity.amount > 0, err::PARAM_ERROR, "non-positive quantity not allowed" );
     CHECKC( quantity.symbol == APLINK_SYMBOL, err::SYMBOL_MISMATCH, "symbol not allowed" );

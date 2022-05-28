@@ -95,7 +95,7 @@ public:
      * @param memo 
      */
     [[eosio::action]]
-    void plant(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo);
+    void ripe(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo);
 
     /**
      * @brief pick apples
@@ -116,6 +116,7 @@ public:
     [[eosio::on_notify("aplink.token::transfer")]]
     void ontransfer(const name& from, const name& to, const asset& quantity, const string& memo);
     
+    using ripe_action = eosio::action_wrapper<"ripe"_n, &token::ripe>;
 private:
     global_singleton    _global;
     global_t            _gstate;
