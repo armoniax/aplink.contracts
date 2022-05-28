@@ -26,8 +26,8 @@ void newbie::claimreward(const name& newbie)
 void newbie::rewardinvite(const name& to)
 {
     require_auth( _gstate.aplink_token_contract );
-    CHECK( aplink::token::account_exist(_gstate.aplink_token_contract, to, _gstate.newbie_reward.symbol.code()),
-           "newbie reward not yet claimed by: " + to.to_string() )
+    // CHECK( aplink::token::account_exist(_gstate.aplink_token_contract, to, _gstate.newbie_reward.symbol.code()),
+    //        "newbie reward not yet claimed by: " + to.to_string() )
 
     auto parent_inviter = get_account_creator( to );
     GROW_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, parent_inviter, _gstate.apl_farm.parent_inviter_reward )
