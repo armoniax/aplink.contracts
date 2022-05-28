@@ -56,7 +56,7 @@ void farm::lease(const name& farmer,
 }
 
 
-void farm::ripe(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo){
+void farm::grow(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo){
     CHECKC( is_account(customer), err::ACCOUNT_INVALID, "Invalid account of farmer" );
     CHECKC( quantity.amount > 0, err::PARAM_ERROR, "non-positive quantity not allowed" );
     CHECKC( quantity.symbol == APLINK_SYMBOL, err::SYMBOL_MISMATCH, "symbol not allowed" );
@@ -86,29 +86,30 @@ void farm::ripe(const uint64_t& land_id, const name& customer, const asset& quan
     _db.set(apple, land.farmer);
 }
 
-void farm::pick(const name& croper, const string& appleids){
+void farm::pick(const name& croper, vector<uint64_t> appleids){
+    CHECKC( aplink::token::account_exist(APLINK_BANK, croper, APLINK_SYMBOL.code()), 
+        err::ACCOUNT_INVALID, "croper should get newbie reward first");
     require_auth(croper);
 
     auto croper_quantity = asset(0, APLINK_SYMBOL);
     auto factory_quantity = asset(0, APLINK_SYMBOL);
     auto current = time_point_sec(current_time_point());
 
-    vector<string_view> ids = split(appleids, ":");
-    CHECKC( ids.size() <= 20, err::CONTENT_LENGTH_INVALID, "appleids too long, expect length 20" );
+    CHECKC( appleids.size() <= 20, err::CONTENT_LENGTH_INVALID, "appleids too long, expect length 20" );
 
     string memo = "";
-    for (int i = 0; i<ids.size(); ++i)
+    for (int i = 0; i<appleids.size(); ++i)
 	{
-        auto apple_id = string{ids[i]};
-        auto apple = apple_t(stoi(apple_id));
-        CHECKC( _db.get( apple ), err::RECORD_NOT_FOUND, "apple not found: " + apple_id );
+        auto apple_id = appleids[i];
+        auto apple = apple_t(apple_id);
+        CHECKC( _db.get( apple ), err::RECORD_NOT_FOUND, "apple not found: " + to_string(apple_id));
         CHECKC( apple.croper == croper || _gstate.jamfactory == croper, err::ACCOUNT_INVALID, "account invalid");
         
         if( current > apple.expire_at) {
             factory_quantity += apple.weight;
         }
         else {
-            if(ids.size() == 1 && memo.size() == 0) memo = apple.memo;
+            if(appleids.size() == 1 && memo.size() == 0) memo = apple.memo;
             croper_quantity += apple.weight;
         }
         _db.del(apple);

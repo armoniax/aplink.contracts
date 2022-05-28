@@ -95,16 +95,16 @@ public:
      * @param memo 
      */
     [[eosio::action]]
-    void ripe(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo);
+    void grow(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo);
 
     /**
      * @brief pick apples
      * 
      * @param croper 
-     * @param appleids apple_id set, support lessthan 20 appls
+     * @param appleids apple_id array, support lessthan 20 appls
      */
     [[eosio::action]]
-    void pick(const name& croper, const string& appleids);
+    void pick(const name& croper, vector<uint64_t> appleids);
 
     /**
      * @brief topup seeds for a land
@@ -116,7 +116,7 @@ public:
     [[eosio::on_notify("aplink.token::transfer")]]
     void ontransfer(const name& from, const name& to, const asset& quantity, const string& memo);
     
-    using ripe_action = eosio::action_wrapper<"ripe"_n, &token::ripe>;
+    using grow_action = eosio::action_wrapper<"grow"_n, &farm::grow>;
 private:
     global_singleton    _global;
     global_t            _gstate;
