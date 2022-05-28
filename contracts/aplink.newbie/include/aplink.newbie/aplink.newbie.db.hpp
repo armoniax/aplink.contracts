@@ -6,6 +6,8 @@
 #include <eosio/time.hpp>
 #include <eosio/name.hpp>
 
+#include "utils.hpp"
+
 using namespace eosio;
 
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
@@ -22,14 +24,22 @@ using namespace wasm;
 
 #define CUSTODY_TBL [[eosio::table, eosio::contract("aplink.newbie")]]
 
+struct aplink_farm {
+    name contract = "aplink.farm"_n;
+    uint64_t land_id;
+    asset parent_inviter_reward = asset_from_string("100 APL");
+    asset grandparent_inviter_reward = asset_from_string("100 APL");
+};
+
 struct [[eosio::table("global"), eosio::contract("aplink.newbie")]] global_t {
     asset               newbie_reward;  //"100.0000 APL"
-    name                contract_name;
+    name                aplink_token_contract;
+    aplink_farm         apl_farm;
     bool                enable = false;
 
     global_t() {}
 
-    EOSLIB_SERIALIZE( global_t, (newbie_reward)(contract_name)(enable) )
+    EOSLIB_SERIALIZE( global_t, (newbie_reward)(aplink_token_contract)(apl_farm)(enable) )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
