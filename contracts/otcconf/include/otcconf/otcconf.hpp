@@ -64,6 +64,9 @@ public:
     [[eosio::action]]
     void setotcname(const name& otc_name);
 
+    [[eosio::action]]
+    void settimeout(const uint64_t& accepted_timeout, const uint64_t& payed_timeout);
+
 private:
 
 };

@@ -47,8 +47,8 @@ public:
      * require contract self auth
      * @param max_rows - max rows to recycle
      */
-    // [[eosio::action]]
-    // void recycledb(uint32_t max_rows);
+    [[eosio::action]]
+    void recycledb(uint32_t max_rows);
 
     // using claimreward_action = eosio::action_wrapper<"claimreward"_n, &newbie::claimreward>;
     // using setstate_action = eosio::action_wrapper<"setstate"_n, &newbie::setstate>;

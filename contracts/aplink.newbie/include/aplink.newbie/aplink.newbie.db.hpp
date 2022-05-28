@@ -43,19 +43,19 @@ struct [[eosio::table("global"), eosio::contract("aplink.newbie")]] global_t {
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
-// struct CUSTODY_TBL claim_t {
-//     name        claimer;
-//     time_point  claimed_at;
+struct CUSTODY_TBL claim_t {
+    name        claimer;
+    time_point  claimed_at;
 
-//     uint64_t    primary_key()const { return claimer.value; }
-//     uint64_t    scope() const { return 0; }
+    uint64_t    primary_key()const { return claimer.value; }
+    uint64_t    scope() const { return 0; }
 
-//     claim_t() {}
-//     claim_t(const name& c): claimer(c) {}
+    claim_t() {}
+    claim_t(const name& c): claimer(c) {}
 
-//     EOSLIB_SERIALIZE( claim_t, (claimer)(claimed_at) )
+    EOSLIB_SERIALIZE( claim_t, (claimer)(claimed_at) )
 
-//     typedef eosio::multi_index<"claims"_n, claim_t > tbl_t;
-// };
+    typedef eosio::multi_index<"claims"_n, claim_t > tbl_t;
+};
 
 } } //wasm
