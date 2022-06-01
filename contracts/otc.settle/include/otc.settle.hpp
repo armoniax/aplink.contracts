@@ -63,10 +63,11 @@ public:
     void setconfig(const vector<level_config>& configs);
 
     [[eosio::action]]
-    void deal(const name& merchant, 
+    void deal(const uint64_t& deal_id,
+                const name& merchant, 
                 const name& user, 
                 const asset& quantity, 
-                const asset& fee, 
+                const asset& fee,
                 const uint8_t& arbit_staus, 
                 const time_point_sec& start_at, 
                 const time_point_sec& end_at);

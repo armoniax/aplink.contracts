@@ -61,11 +61,12 @@ public:
      * @param farmer account who can crop the land, always be a contract
      * @param title the land's name
      * @param uri  the details info of the farmer
+     * @param banner  the banner info of the farmer
      * @param open_at  farmer can crop after open_at
      * @param close_at farmer can crop before close_at
      */
     [[eosio::action]]
-    void lease(const name& farmer, const string& title, const string& uri, const time_point& open_at, const time_point& close_at);
+    void lease(const name& farmer, const string& title, const string& uri, const string& banner, const time_point& open_at, const time_point& close_at);
 
     /**
      * @brief reclaim a land, only for disabled land
@@ -117,6 +118,7 @@ public:
     void ontransfer(const name& from, const name& to, const asset& quantity, const string& memo);
     
     using grow_action = eosio::action_wrapper<"grow"_n, &farm::grow>;
+
 private:
     global_singleton    _global;
     global_t            _gstate;

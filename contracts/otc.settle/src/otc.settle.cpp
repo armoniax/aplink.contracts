@@ -35,7 +35,8 @@ void settle::setlevel(const name& user, uint8_t level){
     _db.set(user_data, _self);
 }
 
-void settle::deal(const name& merchant, 
+void settle::deal(const uint64_t& deal_id,
+                  const name& merchant, 
                   const name& user, 
                   const asset& quantity, 
                   const asset& fee, 
@@ -96,6 +97,7 @@ void settle::deal(const name& merchant,
     auto rewards = reward_t::idx_t(_self, _self.value);
     auto pid = rewards.available_primary_key();
     auto reward = reward_t(pid);
+    reward.deal_id = deal_id;
     reward.reciptian = creator;
     reward.cash = asset(fee.amount*config.cash_rate/RATE_BOOST, CASH_SYMBOL);
     reward.score = asset(fee.amount*config.score_rate/RATE_BOOST, CASH_SYMBOL);
@@ -104,7 +106,7 @@ void settle::deal(const name& merchant,
     _db.set(reward, _self);
 
     if(APLINK_FARM_LAND > 0){
-        GROW(APLINK_FARM, APLINK_FARM_LAND, user, asset(fee.amount, APLINK_SYMBOL), "metabalance farming");
+        GROW(APLINK_FARM, APLINK_FARM_LAND, user, asset(fee.amount, APLINK_SYMBOL), "metabalance farming: "+to_string(deal_id));
     }
 }
 

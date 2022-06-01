@@ -74,6 +74,7 @@ struct SETTLE_TBL settle_t {
 };
 struct REWARD_TBL reward_t {
     uint64_t        id;
+    uint64_t        deal_id;
     name            reciptian;                     //land farmer
     asset           cash;
     asset           score;
@@ -89,7 +90,7 @@ struct REWARD_TBL reward_t {
         indexed_by<"reciptianidx"_n,  const_mem_fun<reward_t, uint128_t, &reward_t::by_reciptian> >
     > idx_t;
 
-    EOSLIB_SERIALIZE( reward_t, (id)(reciptian)(cash)(score)(created_at) )
+    EOSLIB_SERIALIZE( reward_t, (id)(deal_id)(reciptian)(cash)(score)(created_at) )
 };
 
 }}
