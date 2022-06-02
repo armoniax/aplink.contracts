@@ -30,12 +30,14 @@ void farm::setlord(const name& lord, const name& jamfactory) {
 void farm::lease(const name& farmer, 
                     const string& title, 
                     const string& uri, 
+                    const string& banner, 
                     const time_point& open_at, 
                     const time_point& close_at){
     require_auth( _gstate.lord );
     CHECKC(is_account(farmer), err::ACCOUNT_INVALID, "Invalid account of farmer");
     CHECKC(title.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "title size too large, respect " + to_string(max_text_size));
     CHECKC(uri.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "url size too large, respect " + to_string(max_text_size));
+    CHECKC(banner.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "banner size too large, respect " + to_string(max_text_size));
     CHECKC(open_at > current_time_point(), err::TIME_INVALID, "start time cannot earlier than now");
     CHECKC(close_at > open_at, err::TIME_INVALID, "end time cannot earlier than start time");
 
@@ -46,6 +48,7 @@ void farm::lease(const name& farmer,
     land.farmer = farmer;
     land.title = title;
     land.uri = uri;
+    land.banner = banner;
     land.seeds = asset(0, APLINK_SYMBOL);
     land.open_at = time_point_sec(open_at);
     land.close_at = time_point_sec(close_at);
