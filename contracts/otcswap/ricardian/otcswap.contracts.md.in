@@ -1,0 +1,54 @@
+
+
+<h1 class="contract">create</h1>
+
+---
+spec_version: "0.2.0"
+title: Create New Token
+summary: 'Create a new token'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+{{$action.account}} agrees to create a new token with symbol {{asset_to_symbol_code maximum_supply}} to be managed by {{issuer}}.
+
+This action will not result any any tokens being issued into circulation.
+
+{{issuer}} will be allowed to issue tokens into circulation, up to a maximum supply of {{maximum_supply}}.
+
+RAM will deducted from {{$action.account}}’s resources to create the necessary records.
+
+
+
+<h1 class="contract">ontransfer</h1>
+
+---
+spec_version: "0.1.0"
+title: ontransfer, trigger by recipient of transfer()
+summary: 'ontransfer, trigger by recipient of transfer()'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+charge to receiver, send to &from if empty memo
+filled memo like below to charge other account:
+charge:{receiver} Eg: "charge:receiver1234"
+
+
+<h1 class="contract">settleto</h1>
+
+---
+spec_version: "0.1.0"
+title: Set merchant info
+summary: 'Set merchant's info'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+<h1 class="contract">setrates</h1>
+
+---
+spec_version: "0.1.0"
+title: Set merchant info
+
+summary: 'Set merchant's info'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
