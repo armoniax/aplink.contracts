@@ -32,19 +32,19 @@ namespace wasm
         struct SETTLE_TBL_NAME("global") global_t
         {
             name admin;
-
+            name sellto_admin;
             vector<pair<uint64_t, double>> fee_rates = {
                 {0, 0.15}, {130000000, 0.25}, {500000000, 0.35}, {1500000000, 0.5}};
 
-            EOSLIB_SERIALIZE(global_t, (admin)(fee_rates))
+            EOSLIB_SERIALIZE(global_t, (admin)(sellto_admin)(fee_rates))
         };
         typedef eosio::singleton<"global"_n, global_t> global_singleton;
 
         struct ACCOUNT_TBL account_t
         {
             name admin;
-            uint32_t balance;
-            uint32_t sum;
+            uint32_t balance=0;
+            uint32_t sum=0;
 
             uint64_t primary_key() const { return admin.value; }
 

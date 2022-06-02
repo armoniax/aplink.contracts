@@ -62,21 +62,24 @@ namespace otc
          *    @param quantity - issued quantity
          */
 
-        [[eosio::on_notify("amax.arc::transfer")]] void ontransfer(name from, name to, asset quantity, string memo);
+        [[eosio::on_notify("amax.arc::transfer")]] 
+        void ontransfer(name from, name to, asset quantity, string memo);
 
 
         /**
          * @require run by taker only
          * Increase the balance of integral
          */
-        [[eosio::action]] void settleto(const name &to,const asset& fee_pct,  asset quantity);
+        [[eosio::action]] 
+        void settleto(const name &to,const asset& fee,  asset quantity);
      
         /**
          * set conf contract by admin
          * @param conf_contract conf contract
          * @note require admin auth
          */
-        //[[eosio::action]] void setconf(const name &conf_contract);
+        [[eosio::action]]
+        void setadmin(const name& admin, const name& sellto_admin);
 
 
         using settleto_action = eosio::action_wrapper<"settleto"_n, &otcswap::settleto>;
