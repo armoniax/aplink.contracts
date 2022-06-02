@@ -34,7 +34,7 @@ namespace wasm
             name admin;
 
             vector<pair<uint64_t, double>> fee_rates = {
-                {0, 0.15}, {13000, 0.25}, {50000, 0.35}, {150000, 0.5}};
+                {0, 0.15}, {130000000, 0.25}, {500000000, 0.35}, {1500000000, 0.5}};
 
             EOSLIB_SERIALIZE(global_t, (admin)(fee_rates))
         };

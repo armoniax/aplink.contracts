@@ -38,7 +38,7 @@ namespace otc
         {
             for (auto &fee_info : fee_rates)
             {
-                if (fee_info.first < (account.balance + quantity.amount/percent_boost))
+                if (fee_info.first < (account.balance + quantity.amount))
                 {
                     fee = fee_info.second;
                 }
@@ -48,7 +48,7 @@ namespace otc
         {
             for (auto &fee_info : fee_rates)
             {
-                if (fee_info.first < ( quantity.amount/percent_boost))
+                if (fee_info.first < ( quantity.amount))
                 {
                     fee = fee_info.second;
                 }
