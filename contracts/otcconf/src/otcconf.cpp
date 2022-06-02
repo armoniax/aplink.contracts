@@ -48,7 +48,14 @@ void otcconf::setotcname(const name& otc_name) {
 }
 
 void otcconf::setarbiters(const set<name>& arbiters) {
+    require_auth( _self );
     _gstate.arbiters = arbiters;
+}
+
+void otcconf::settimeout(const uint64_t& accepted_timeout, const uint64_t& payed_timeout) {
+    require_auth( _self );
+    _gstate.accepted_timeout = accepted_timeout;
+    _gstate.payed_timeout = payed_timeout;
 }
 
 }  //end of namespace:: otc

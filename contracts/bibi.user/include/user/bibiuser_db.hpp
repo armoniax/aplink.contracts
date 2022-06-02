@@ -22,7 +22,7 @@ using namespace wasm;
 
 #define USER_TBL [[eosio::table, eosio::contract("bibi.user")]]
 
-struct [[eosio::table("global"), eosio::contract("bibiuser")]] global_t {            
+struct [[eosio::table("global"), eosio::contract("bibi.user")]] global_t {            
     asset               fee;  
     bool                enable = false;
     uint16_t            effective_days = 0;

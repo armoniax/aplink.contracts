@@ -304,22 +304,25 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     check( deal_quantity >= order.va_min_take_quantity, "Order's min accept quantity not met!" );
     check( deal_quantity <= order.va_max_take_quantity, "Order's max accept quantity not met!" );
 
+    auto now = current_time_point();
+
+    blacklist_t::idx_t blacklist_tbl(_self, _self.value);
+    auto blacklist_itr = blacklist_tbl.find(taker.value);
+    CHECK(blacklist_itr == blacklist_tbl.end() || blacklist_itr->expired_at <= now,
+        "taker is in blacklist")
+
     asset order_price = order.va_price;
     name order_maker = order.owner;
     string merchant_name = order.merchant_name;
 
     deal_t::idx_t deals(_self, _self.value);
     auto ordersn_index 			= deals.get_index<"ordersn"_n>();
-    auto lower_itr 				= ordersn_index.lower_bound(order_sn);
-    auto upper_itr 				= ordersn_index.upper_bound(order_sn);
 
     check( ordersn_index.find(order_sn) == ordersn_index.end() , "order_sn already existing!" );
     auto deal_fee = _calc_deal_fee(deal_quantity, order_price);
 
-    auto created_at = time_point_sec(current_time_point());
-    auto updated_at = time_point_sec(current_time_point());
     auto deal_id = deals.available_primary_key();
-    deals.emplace( _self, [&]( auto& row ) {
+    deals.emplace( taker, [&]( auto& row ) {
         row.id 					= deal_id;
         row.order_side 			= order_side;
         row.merchant_name       = merchant_name;
@@ -330,13 +333,13 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.order_taker			= taker;
         row.status				=(uint8_t)deal_status_t::CREATED;
         row.arbit_status        =(uint8_t)arbit_status_t::UNARBITTED;
-        row.created_at			= created_at;
-        row.updated_at          = updated_at;
+        row.created_at			= now;
+        row.updated_at          = now;
         row.order_sn 			= order_sn;
         row.deal_fee            = deal_fee;
         // row.expired_at 			= time_point_sec(created_at.sec_since_epoch() + _gstate.withhold_expire_sec);
         row.session.push_back({(uint8_t)account_type_t::USER, taker, (uint8_t)deal_status_t::NONE,
-            (uint8_t)deal_action_t::CREATE, session_msg, created_at});
+            (uint8_t)deal_action_t::CREATE, session_msg, now});
     });
 
     // // 添加交易到期表数据
@@ -379,7 +382,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         break;
     case account_type_t::MERCHANT:
         check( deal_itr->order_maker == account, "merchant account mismatched");
-        check( (uint8_t)status != (uint8_t)deal_status_t::MAKER_RECV_AND_SENT, "deal already cancelled: " + to_string(deal_id) );
+        check( (uint8_t)status == (uint8_t)deal_status_t::MAKER_RECV_AND_SENT, "deal already cancelled: " + to_string(deal_id) );
         check( merchant_paid_at + seconds(_conf().payed_timeout) < current_time_point(), "deal is not expired.");
         break;
     default:
@@ -416,7 +419,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         row.updated_at = time_point_sec(current_time_point());
     });
 
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
         row.status = (uint8_t)deal_status_t::CLOSED;
         row.closed_at = time_point_sec(current_time_point());
         row.updated_at = time_point_sec(current_time_point());
@@ -429,7 +432,8 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
 }
 
 
-void otcbook::canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& session_msg){
+void otcbook::canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id,
+                         const string& session_msg, bool is_taker_black) {
     require_auth( account );
 
     deal_t::idx_t deals(_self, _self.value);
@@ -437,24 +441,41 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
     check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
     auto status = (deal_status_t)deal_itr->status;
     auto arbit_status =  (arbit_status_t)deal_itr->arbit_status;
+    auto now = current_time_point();
 
     switch ((account_type_t) account_type) {
     case account_type_t::USER:
-        check( (uint8_t)status == (uint8_t)deal_status_t::CREATED ||  (uint8_t)status == (uint8_t)deal_status_t::MAKER_ACCEPTED,
-                     "deal status need CREATED or MAKER_ACCEPTED " + to_string(deal_id));
-        check( deal_itr->order_taker == account, "taker account mismatched");
-        break;
-    case account_type_t::MERCHANT:
-        if((uint8_t)status == (uint8_t)deal_status_t::CREATED) {
 
-        } else if((uint8_t)status == (uint8_t)deal_status_t::MAKER_ACCEPTED) {
-            auto merchant_accepted_at = deal_itr->merchant_accepted_at;
-            check(merchant_accepted_at + seconds(_conf().accepted_timeout) <  current_time_point(), "deal is not expired.");
-        } else {
-            check(false, "deal already status need CREATED or MAKER_ACCEPTED " + to_string(deal_id));
+        switch ((deal_status_t) status) {
+            case deal_status_t::CREATED:
+                break;
+            case deal_status_t::MAKER_ACCEPTED: {
+                auto merchant_accepted_at = deal_itr->merchant_accepted_at;
+                check(merchant_accepted_at + seconds(_conf().accepted_timeout) < now, "deal is not expired.");
+                break;
+            }
+            default:
+                check( false,  "deal status need be CREATED or MAKER_ACCEPTED, deal_id:" + to_string(deal_id));
+        }
+        check( deal_itr->order_taker == account, "user account mismatched");
+        break;
+    case account_type_t::MERCHANT: {
+        switch ((deal_status_t) status) {
+            case deal_status_t::CREATED:
+                break;
+            case deal_status_t::MAKER_ACCEPTED: {
+                auto merchant_accepted_at = deal_itr->merchant_accepted_at;
+                check(merchant_accepted_at + seconds(_conf().accepted_timeout) < now, "deal is not expired.");
+                if (is_taker_black)
+                    _set_blacklist(deal_itr->order_taker, default_blacklist_duration_second, account);
+                break;
+            }
+            default:
+                check( false,  "deal status need be CREATED or MAKER_ACCEPTED, deal_id:" + to_string(deal_id));
         }
         check( deal_itr->order_maker == account, "merchant account mismatched");
         break;
+    }
     case account_type_t::ADMIN:
         check( _gstate.admin == account, "admin account mismatched");
         break;
@@ -475,12 +496,12 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
 
     check( (uint8_t)order.status != (uint8_t)order_status_t::CLOSED, "order already closed" );
 
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
             row.arbit_status = (uint8_t)arbit_status_t::UNARBITTED;
             row.status = (uint8_t)deal_status_t::CANCELLED;
             row.closed_at = time_point_sec(current_time_point());
             row.updated_at = time_point_sec(current_time_point());
-            row.session.push_back({account_type, account, (uint8_t)status, (uint8_t)deal_action_t::FINISH_ARBIT, session_msg, row.closed_at});
+            row.session.push_back({account_type, account, (uint8_t)status, (uint8_t)deal_action_t::CANCEL, session_msg, row.closed_at});
         });
 
     auto deal_quantity = deal_itr->deal_quantity;
@@ -565,15 +586,15 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
             "can not process deal action:" + to_string((uint8_t)action)
              + " by arbit status: " + to_string((uint8_t)arbit_status) );
 
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
         if (next_status != deal_status_t::NONE) {
             row.status = (uint8_t)next_status;
             row.updated_at = time_point_sec(current_time_point());
         }
-        if(next_status != deal_status_t::MAKER_ACCEPTED) {
+        if((uint8_t)deal_action_t::MAKER_ACCEPT == action) {
             row.merchant_accepted_at = time_point_sec(current_time_point());
         }
-        if(next_status != deal_status_t::MAKER_RECV_AND_SENT) {
+        if((uint8_t)deal_action_t::MAKER_RECV_AND_SENT == action ) {
             row.merchant_paid_at = time_point_sec(current_time_point());
         }
 
@@ -619,7 +640,7 @@ void otcbook::startarbit(const name& account, const uint8_t& account_type, const
     set<deal_status_t> can_arbit_status = {deal_status_t::MAKER_ACCEPTED, deal_status_t::TAKER_SENT, deal_status_t::MAKER_RECV_AND_SENT };
     check( can_arbit_status.count(status) != 0, "status illegal: " + to_string((uint8_t)status) );
 
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
         row.arbit_status = (uint8_t)arbit_status_t::ARBITING;
         row.arbiter = arbiter;
         row.updated_at = time_point_sec(current_time_point());
@@ -643,7 +664,6 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
     auto now = time_point_sec(current_time_point());
     check( deal_itr->arbiter == account, "arbiter account mismatched");
 
-
     auto status = (deal_status_t)deal_itr->status;
     auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
     const auto &order_taker  = deal_itr->order_taker;
@@ -653,9 +673,9 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
     auto deal_status = (uint8_t)deal_status_t::CLOSED;
     if (arbit_result == 0) {
         deal_status =  (uint8_t)deal_status_t::CANCELLED;
-    } 
+    }
 
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
             row.arbit_status = (uint8_t)arbit_status_t::FINISHED;
             row.status = (uint8_t)deal_status_t::CLOSED;
             row.closed_at = time_point_sec(current_time_point());
@@ -680,7 +700,6 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
         order_wrapper_ptr->modify(_self, [&]( auto& row ) {
             row.va_frozen_quantity -= deal_quantity;
             row.va_fulfilled_quantity += deal_quantity;
-            row.total_fee += deal_fee;
             row.fine_amount = deal_amount;
             row.updated_at = time_point_sec(current_time_point());
         });
@@ -688,10 +707,46 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
         //< send CNYD to user
         TRANSFER(SYS_BANK, order_taker, deal_amount, "");
 
-        const auto &fee_recv_addr  = _conf().fee_recv_addr;
-        TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
-        _add_fund_log(order_maker, "dealfee"_n, -deal_fee, deal_id, deal_itr->order_side);
+        // const auto &fee_recv_addr  = _conf().fee_recv_addr;
+        // TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
+        // _add_fund_log(order_maker, "dealfee"_n, -deal_fee, deal_id, deal_itr->order_side);
     }
+}
+
+void otcbook::cancelarbit( const uint8_t& account_type, const name& account, const uint64_t& deal_id, const string& session_msg )
+{
+    require_auth( account );
+
+    deal_t::idx_t deals(_self, _self.value);
+    auto deal_itr = deals.find(deal_id);
+    CHECK( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
+    auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
+
+    CHECK( arbit_status == arbit_status_t::ARBITING, "deal is not arbiting" );
+    auto status = deal_itr->status;
+
+    switch ((account_type_t) account_type) {
+    case account_type_t::MERCHANT:
+        check( deal_itr->order_maker == account, "maker account mismatched");
+        check( status == (uint8_t)deal_status_t::MAKER_ACCEPTED,
+                    "arbiting only can be cancelled at TAKER_SENT or MAKER_ACCEPTED");
+        break;
+    // case account_type_t::USER:
+    //     check( deal_itr->order_taker == account, "taker account mismatched");
+    //     check( status == (uint8_t)deal_status_t::MAKER_RECV_AND_SENT, "arbiting only can be cancelled at MAKER_RECV_AND_SENT");
+    //     break;
+    default:
+        check(false, "account type not supported: " + to_string(account_type));
+        break;
+    }
+
+    auto now = time_point_sec(current_time_point());
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
+        row.arbit_status = (uint8_t)arbit_status_t::UNARBITTED;
+        row.updated_at = now;
+        row.session.push_back({account_type, account, (uint8_t)status,
+            (uint8_t)deal_action_t::CANCEL_ARBIT, session_msg, now});
+    });
 }
 
 void otcbook::resetdeal(const name& account, const uint64_t& deal_id, const string& session_msg){
@@ -709,7 +764,7 @@ void otcbook::resetdeal(const name& account, const uint64_t& deal_id, const stri
     CHECK( status != deal_status_t::CREATED, "deal no need to reverse" );
 
     auto now = time_point_sec(current_time_point());
-    deals.modify( *deal_itr, _self, [&]( auto& row ) {
+    deals.modify( *deal_itr, account, [&]( auto& row ) {
         row.status = (uint8_t)deal_status_t::CREATED;
         row.updated_at = time_point_sec(current_time_point());
         row.session.push_back({(uint8_t)account_type_t::ADMIN, account, (uint8_t)status,
@@ -763,48 +818,16 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
         _add_fund_log(from, "deposit"_n, quantity, 0, ""_n);
     }
 }
-/**
- * 进行数据清除，测试用，发布正式环境去除
- */
-void otcbook::deltable(){
-    require_auth( _self );
 
-    sell_order_table_t sellorders(_self,_self.value);
-    auto itr = sellorders.begin();
-    while(itr != sellorders.end()){
-        itr = sellorders.erase(itr);
-    }
 
-    buy_order_table_t buyorders(_self,_self.value);
-    auto itr3 = buyorders.begin();
-    while(itr3 != buyorders.end()){
-        itr3 = buyorders.erase(itr3);
-    }
+void otcbook::setblacklist(const name& account, uint64_t duration_second) {
+    require_auth( _gstate.admin );
 
-    deal_t::idx_t deals(_self,_self.value);
-    auto itr1 = deals.begin();
-    while(itr1 != deals.end()){
-        itr1 = deals.erase(itr1);
-    }
+    CHECK( is_account(account), "account does not exist: " + account.to_string() );
+    CHECK( duration_second <= max_blacklist_duration_second,
+           "duration_second too large than: " + to_string(max_blacklist_duration_second));
 
-    merchant_t::idx_t merchants(_self,_self.value);
-    auto itr2 = merchants.begin();
-    while(itr2 != merchants.end()){
-        itr2 = merchants.erase(itr2);
-    }
-
-    fund_log_t::table_t fundlog(_self,_self.value);
-    auto itr4 = fundlog.begin();
-    while(itr4 != fundlog.end()){
-        itr4 = fundlog.erase(itr4);
-    }
-
-    // deal_expiry_tbl exp(_self,_self.value);
-    // auto itr3 = exp.begin();
-    // while(itr3 != exp.end()){
-    //     itr3 = exp.erase(itr3);
-    // }
-
+   _set_blacklist(account, duration_second, _gstate.admin);
 }
 
 const otcbook::conf_t& otcbook::_conf(bool refresh/* = false*/) {
@@ -833,16 +856,16 @@ void otcbook::_add_fund_log(const name& owner, const name & action, const asset 
     });
 }
 
-void otcbook::migrate(){
-    require_auth( _self );
-
-    deal_t::idx_t deals(_self,_self.value);
-    auto itr1 = deals.begin();
-    while(itr1 != deals.end()) {
-        deals.modify( *itr1, _self, [&]( auto& row ) {
-            row.merchant_accepted_at = time_point_sec(current_time_point());
-            row.merchant_paid_at = time_point_sec(current_time_point());
+void otcbook::_set_blacklist(const name& account, uint64_t duration_second, const name& payer) {
+    blacklist_t::idx_t blacklist_tbl(_self, _self.value);
+    auto blacklist_itr = blacklist_tbl.find(account.value);
+    if (duration_second > 0) {
+        blacklist_tbl.set( account.value, payer, [&]( auto& row ) {
+            row.account     = account;
+            row.expired_at  = current_time_point() + eosio::seconds(duration_second);
         });
+    } else {
+        blacklist_tbl.erase_by_pk(account.value);
     }
 }
 

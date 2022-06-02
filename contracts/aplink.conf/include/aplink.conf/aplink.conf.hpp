@@ -10,17 +10,14 @@ namespace aplink {
 
 using std::string;
 using std::vector;
-using std::pair;
 using namespace eosio;
 
 static constexpr symbol   SYS_SYMBOL            = symbol(symbol_code("AMAX"), 8);
-static constexpr symbol   APL_SYMBOL            = symbol(symbol_code("APL"), 4);
-static constexpr symbol   CNYD_SYMBOL           = symbol(symbol_code("CNYD"), 4);
 
 struct account_res {
-    uint8_t account_create_ram_bytes            = (uint8_t) 4096;
-    asset account_stake_cpu                     = asset(200000, SYS_SYMBOL);
-    asset account_stake_net                     = asset(200000, SYS_SYMBOL);
+    uint8_t account_create_ram_bytes = (uint8_t) 4096;
+    asset account_stake_cpu = asset(200000, SYS_SYMBOL);
+    asset account_stake_net = asset(200000, SYS_SYMBOL);
 };
 
 struct waku_node_info {
@@ -31,6 +28,7 @@ struct waku_node_info {
 
     EOSLIB_SERIALIZE(waku_node_info, (wakunode_domain)(wakunode_rpc_port)(wakunode_ws_port)(wakunode_wss_port) )
 };
+
 
 /**
  * The `aplink.conf` is configuration contract for APLink APP
@@ -54,19 +52,20 @@ public:
     ~settings() { _global.set( _gstate, get_self() ); }
    
     ACTION init(const name& admin);
-    ACTION setacctres(const account_res& account_create_res);
-    ACTION setprices(const vector<pair<symbol_code, asset>> prices);
-    ACTION setshowprice(const bool& show);
+    using init_action = eosio::action_wrapper<"init"_n, &settings::init>;
+
+    ACTION update(const account_res& account_create_res);
+    using update_action = eosio::action_wrapper<"update"_n, &settings::update>;
 
 private:
     struct [[eosio::table("global"), eosio::contract("aplink.conf")]] global_t {
         name admin;     //default: _self
         account_res account_create_res;
         vector<string> amc_nodes =  {
-            "am1.acsiwang.com:8888",
-            "expnode.nchain.me:8888",
+            "a1.nchain.me:8888",
+            "a2.nchain.me:8888",
         };
-
+      
         vector<waku_node_info> waku_nodes = {
             {
                 "wakun1.acsiwang.com",
@@ -80,22 +79,8 @@ private:
         
         EOSLIB_SERIALIZE( global_t, (admin)(account_create_res)(amc_nodes)(waku_nodes)(show_price) )
     };
+
     typedef eosio::singleton< "global"_n, global_t > global_singleton;
-
-    struct [[eosio::table("prices"), eosio::contract("aplink.conf")]] price_t {
-        symbol_code         symb;
-        asset               price;
-        time_point_sec      updated_at;
-
-        uint64_t    primary_key()const { return symb.raw(); }
-
-        price_t() {}
-        price_t(const symbol_code& sc, const asset& p): symb(sc), price(p) { updated_at = time_point_sec(current_time_point()); }
-
-        EOSLIB_SERIALIZE( price_t, (symb)(price)(updated_at) )
-
-        typedef eosio::multi_index<"prices"_n, price_t > tbl_t;
-    };
 
     global_singleton    _global;
     global_t            _gstate;

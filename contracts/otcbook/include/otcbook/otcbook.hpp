@@ -52,11 +52,11 @@ private:
     global_t            _gstate;
     std::unique_ptr<conf_table_t> _conf_tbl_ptr;
     std::unique_ptr<conf_t> _conf_ptr;
-    
+
 public:
     using contract::contract;
     otcbook(eosio::name receiver, eosio::name code, datastream<const char*> ds):
-        _dbc(_self), contract(receiver, code, ds), 
+        _dbc(_self), contract(receiver, code, ds),
         _global(_self, _self.value)/*, _global2(_self, _self.value) */
     {
         if (_global.exists()) {
@@ -78,7 +78,7 @@ public:
      * @param conf_contract conf contract
      * @note require admin auth
      */
-    [[eosio::action]] 
+    [[eosio::action]]
     void init(const name &conf_contract);
 
     /**
@@ -119,7 +119,7 @@ public:
      */
     [[eosio::action]]
     void enbmerchant(const name& owner, bool is_enabled);
-    
+
     /**
      * open order by merchant
      * @param owner merchant account name
@@ -131,7 +131,7 @@ public:
      * @note require owner auth
      */
     [[eosio::action]]
-    void openorder(const name& owner, const name& order_side,const set<name> &pay_methods, const asset& va_quantity, const asset& va_price, 
+    void openorder(const name& owner, const name& order_side,const set<name> &pay_methods, const asset& va_quantity, const asset& va_price,
         const asset& va_min_take_quantity, const asset& va_max_take_quantity, const string &memo);
 
 
@@ -176,7 +176,7 @@ public:
      * @note require taker auth
      */
     [[eosio::action]]
-    void opendeal(const name& taker, const name& order_side, const uint64_t& order_id, 
+    void opendeal(const name& taker, const name& order_side, const uint64_t& order_id,
         const asset& deal_quantity, const uint64_t& order_sn,
         const string& session_msg);
 
@@ -192,7 +192,7 @@ public:
      */
     [[eosio::action]]
     void closedeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& session_msg);
-    
+
     /**
      * close deal
      * merchat/user can close deal when status in [CREATED | MAKER_RECV_AND_SENT]
@@ -201,10 +201,11 @@ public:
      * @param account_type account type, admin(1) | merchant(2) | user(3)
      * @param deal_id deal_id, created by opendeal()
      * @param session_msg session msg(message)
+     * @param is_taker_black is taker black,  if true, and status is MAKER_ACCEPTED, and account is maker: add taker to blacklist
      * @note require account auth
      */
     [[eosio::action]]
-    void canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& session_msg);
+    void canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& session_msg, bool is_taker_black);
 
 
     /**
@@ -217,7 +218,7 @@ public:
      * @note require account auth
      */
     [[eosio::action]]
-    void processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
+    void processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id,
         uint8_t action, const string& session_msg);
 
 
@@ -231,9 +232,9 @@ public:
      * @note require account auth
      */
      [[eosio::action]]
-    void startarbit(const name& account, const uint8_t& account_type, const uint64_t& deal_id, 
+    void startarbit(const name& account, const uint8_t& account_type, const uint64_t& deal_id,
         const name& arbiter, const string& session_msg);
-    
+
 
     /**
      * arbiter close arbit request
@@ -248,6 +249,17 @@ public:
     void closearbit(const name& account, const uint64_t& deal_id, const uint8_t& arbit_result, const string& session_msg);
 
     /**
+     * arbiter close arbit request
+     * @param account account name
+     * @param account_type account type, merchant(2) | user(3)
+     * @param deal_id deal_id, created by opendeal()
+     * @param arbit_result 0:session
+     * @param session_msg session msg(message)
+     * @note require account auth
+     */
+    [[eosio::action]]
+    void cancelarbit( const uint8_t& account_type, const name& account, const uint64_t& deal_id, const string& session_msg );
+    /**
      * action trigger by transfer()
      * transfer token to this contract will trigger this action
      * only support merchant to deposit
@@ -259,7 +271,7 @@ public:
      */
     [[eosio::on_notify("cnyd.token::transfer")]]
     void deposit(name from, name to, asset quantity, string memo);
-   
+
     /**
      * withdraw
      * @param owner owner account, only support merchant to withdraw
@@ -279,15 +291,19 @@ public:
     [[eosio::action]]
     void resetdeal(const name& account, const uint64_t& deal_id, const string& session_msg);
 
+    /**
+     * set blacklist for opendeal()
+     *
+     * @param account account, must be admin
+     * @param duration_second duration second
+     * @note require admin auth
+     */
+    [[eosio::action]]
+    void setblacklist(const name& account, uint64_t duration_second);
+
     // [[eosio::action]]
     // void timeoutdeal();
 
-    [[eosio::action]]
-    void deltable();
-
-
-    [[eosio::action]]
-    void migrate();
 
 
 private:
@@ -302,6 +318,8 @@ private:
     const conf_t& _conf(bool refresh = false);
 
     void _add_fund_log(const name& owner, const name & action, const asset &quantity, const uint64_t& order_id, const name& order_side);
+
+    void _set_blacklist(const name& account, uint64_t duration_second, const name& payer);
 };
 
 }

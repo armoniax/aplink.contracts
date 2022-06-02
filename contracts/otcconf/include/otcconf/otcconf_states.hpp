@@ -128,6 +128,37 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
                                 (buy_coins_conf)(sell_coins_conf)(prices_quote_cny)
                                 (accepted_timeout)(payed_timeout)
     )
+    // template<typename DataStream>
+    // friend DataStream& operator << ( DataStream& ds, const global_t& t ) {
+    //     return ds << t.otc_name
+    //         << t.app_info
+    //         << t.pay_type
+    //         << t.arbiters
+    //         << t.coin_type
+    //         << t.fiat_type
+    //         << t.fee_recv_addr
+    //         << t.fee_pct
+    //         << t.buy_coins_conf
+    //         << t.sell_coins_conf
+    //         << t.prices_quote_cny
+    //         << t.accepted_timeout
+    //         << t.payed_timeout;
+    // }
+
+    // template<typename DataStream>
+    // friend DataStream& operator >> ( DataStream& ds, global_t& t ) {
+    //     return ds >> t.otc_name
+    //         >> t.app_info
+    //         >> t.pay_type
+    //         >> t.arbiters
+    //         >> t.coin_type
+    //         >> t.fiat_type
+    //         >> t.fee_recv_addr
+    //         >> t.fee_pct
+    //         >> t.buy_coins_conf
+    //         >> t.sell_coins_conf
+    //         >> t.prices_quote_cny;
+    // }
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
