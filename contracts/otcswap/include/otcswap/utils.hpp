@@ -46,15 +46,15 @@ int128_t divide_decimal(int128_t a, int128_t b, int128_t precision) {
 }
 
 template<typename T>
-int128_t multiply_decimal(int128_t a, int128_t b, int128_t precision) {
-    int128_t tmp = 10 * a * b / precision;
+int128_t multiply_decimal(int128_t a, int128_t b,int128_t c, int128_t precision) {
+    int128_t tmp = 10 * a * b* c / precision;
     CHECK(tmp >= std::numeric_limits<T>::min() && tmp <= std::numeric_limits<T>::max(),
           "overflow exception of multiply_decimal");
     return (tmp + 5) / 10;
 }
 
 #define divide_decimal64(a, b, precision) divide_decimal<int64_t>(a, b, precision)
-#define multiply_decimal64(a, b, precision) multiply_decimal<int64_t>(a, b, precision)
+#define multiply_decimal64(a, b,c, precision) multiply_decimal<int64_t>(a, b, c,precision)
 #define multiply_i64(a, b) multiply<int64_t>(a, b)
 
 
