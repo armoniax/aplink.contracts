@@ -4,12 +4,10 @@
 #include <eosio/eosio.hpp>
 #include <string>
 #include <algorithm>
-#include "otcswapdb.hpp"
 
 
 using namespace std;
 using namespace eosio;
-using namespace wasm::db;
 
 namespace otc
 {
@@ -20,21 +18,6 @@ namespace otc
     class [[eosio::contract("otcswap")]] otcswap : public contract
     {
     public:
-        using contract::contract;
-        otcswap(eosio::name receiver, eosio::name code, datastream<const char *> ds) : _db(_self),contract(receiver, code, ds), _global(_self, _self.value)
-        {
-            if (_global.exists())
-            {
-                _gstate = _global.get();
-            }
-            else
-            { // first init
-                _gstate = global_t{};
-                _gstate.admin = _self;
-            }
-        }
-
-        ~otcswap() { _global.set(_gstate, get_self()); }
 
         ACTION setrates(const vector<pair<uint64_t, double>> rates);
 
@@ -63,14 +46,7 @@ namespace otc
         [[eosio::action]]
         void setadmin(const name& admin, const name& settle_contract);
 
-
         using settleto_action = eosio::action_wrapper<"settleto"_n, &otcswap::settleto>;
-
-    private:
-        global_singleton _global;
-        global_t _gstate;
-        dbc  _db;
-        
     };
 
 }

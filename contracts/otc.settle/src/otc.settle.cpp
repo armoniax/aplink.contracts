@@ -3,6 +3,7 @@
 #include "utils.hpp"
 #include "eosio.token/eosio.token.hpp"
 #include "aplink.farm/aplink.farm.hpp"
+#include "otcswap.hpp"
 
 using namespace otc;
 using namespace eosio;
@@ -11,10 +12,18 @@ using namespace eosio;
     {	aplink::farm::grow_action act{ bank, { {_self, active_perm} } };\
 			act.send( land_id, customer, quantity , memo );}
 
-void settle::setadmin(const name& admin, const name& market){
+#define SWAP_SETTLE(bank, user, fee, quantity) \
+    {	otc::otcswap::settleto_action act{ bank, { {_self, active_perm} } };\
+			act.send( user, fee, quantity );}
+
+void settle::setadmin(const name& admin, const name& market, const name& swap){
     require_auth(get_self());
+    CHECKC(is_account(admin), err::ACCOUNT_INVALID, "invalid account: " + admin.to_string());
+    CHECKC(is_account(market), err::ACCOUNT_INVALID, "invalid account: " + market.to_string());
+    CHECKC(is_account(swap), err::ACCOUNT_INVALID, "invalid account: " + swap.to_string());
     _gstate.admin = admin;
     _gstate.market = market;
+    _gstate.swap = swap;
     _global.set(_gstate, get_self());
 }
 
@@ -40,7 +49,7 @@ void settle::deal(const uint64_t& deal_id,
                   const name& user, 
                   const asset& quantity, 
                   const asset& fee, 
-                  const uint8_t& arbit_staus, 
+                  const uint8_t& arbit_status, 
                   const time_point_sec& start_at, 
                   const time_point_sec& end_at){
     require_auth(_gstate.market);
@@ -55,7 +64,7 @@ void settle::deal(const uint64_t& deal_id,
     _db.get(user_settle_data);
     _db.get(merchant_settle_data);
 
-    if(arbit_staus != 0) {
+    if(arbit_status != 0) {
         user_settle_data.sum_arbit_count += 1;
         merchant_settle_data.sum_arbit_count += 1;
 
@@ -104,6 +113,8 @@ void settle::deal(const uint64_t& deal_id,
     reward.created_at = time_point_sec(current_time_point());
 
     _db.set(reward, _self);
+
+    SWAP_SETTLE(_gstate.swap, user, fee, quantity);
 
     if(APLINK_FARM_LAND > 0){
         GROW(APLINK_FARM, APLINK_FARM_LAND, user, asset(fee.amount, APLINK_SYMBOL), "metabalance farming: "+to_string(deal_id));

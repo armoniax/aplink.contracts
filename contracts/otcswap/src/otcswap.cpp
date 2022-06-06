@@ -10,9 +10,11 @@ namespace otc
 
     void otcswap::ontransfer(name from, name to, asset quantity, string memo)
     {
+        if(from == get_self() || to == get_self()) return;
         check(quantity.amount > 0, "must transfer positive quantity");
 
-        auto sym = quantity.symbol;
+        check(SCORE_SYMBOL==quantity.symbol, "invalid symbol");
+
         auto account = account_t(from);
         check(_db.get(account), "account does not exist");
         check(quantity.amount <= account.balance, "overdrawn balance");
@@ -25,7 +27,7 @@ namespace otc
 
     void otcswap::settleto(const name &to, const asset &fee, asset quantity)
     {
-        require_auth(_gstate.sellto_amdin);
+        require_auth(_gstate.settle_contract);
         check(quantity.amount > 0, "quantity must be positive");
         check(is_account(to), "owner account does not exist");
         auto sym = quantity.symbol;
@@ -53,11 +55,12 @@ namespace otc
         _gstate.fee_rates = rates;
         _global.set(_gstate, get_self());
     }
-    void settle::setadmin(const name &admin, const name &sellto_admin)
+
+    void otcswap::setadmin(const name &admin, const name &settle_contract)
     {
         require_auth(get_self());
         _gstate.admin = admin;
-        _gstate.sellto_admin = sellto_admin;
+        _gstate.settle_contract = settle_contract;
         _global.set(_gstate, get_self());
     }
 } /// namespace eosio
