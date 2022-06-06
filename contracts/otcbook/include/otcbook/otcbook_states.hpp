@@ -23,6 +23,8 @@ using namespace eosio;
 static constexpr eosio::name active_perm{"active"_n};
 static constexpr eosio::name SYS_BANK{"cnyd.token"_n};
 
+static constexpr eosio::name SETTLE_ARC{"otc.settle"_n};
+
 // crypto assets
 static constexpr symbol   CNYD_SYMBOL           = SYMBOL("CNYD", 4);
 static constexpr symbol   CNY                   = SYMBOL("CNY", 4);

@@ -73,6 +73,8 @@ void settle::deal(const uint64_t& deal_id,
         return;
     }
     
+    SWAP_SETTLE(_gstate.swap, user, fee, quantity);
+    
     merchant_settle_data.sum_deal += quantity.amount;
     merchant_settle_data.sum_fee += fee.amount;
     merchant_settle_data.sum_deal_count += 1;
@@ -109,12 +111,10 @@ void settle::deal(const uint64_t& deal_id,
     reward.deal_id = deal_id;
     reward.reciptian = creator;
     reward.cash = asset(fee.amount*config.cash_rate/RATE_BOOST, CASH_SYMBOL);
-    reward.score = asset(fee.amount*config.score_rate/RATE_BOOST, CASH_SYMBOL);
+    reward.score = asset(fee.amount*config.score_rate/RATE_BOOST, SCORE_SYMBOL);
     reward.created_at = time_point_sec(current_time_point());
 
     _db.set(reward, _self);
-
-    SWAP_SETTLE(_gstate.swap, user, fee, quantity);
 
     if(APLINK_FARM_LAND > 0){
         GROW(APLINK_FARM, APLINK_FARM_LAND, user, asset(fee.amount, APLINK_SYMBOL), "metabalance farming: "+to_string(deal_id));

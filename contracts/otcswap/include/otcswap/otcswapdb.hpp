@@ -31,33 +31,37 @@ namespace wasm
 
 #define ACCOUNT_TBL [[eosio::table, eosio::contract("otcswap")]]
 #define SETTLE_TBL_NAME(name) [[eosio::table(name), eosio::contract("otcswap")]]
+    
+    struct balance_config {
+        uint64_t quantity_limit;
+        uint16_t balance_precent;
+    };
+    struct SETTLE_TBL_NAME("global") global_t
+    {
+        name admin;
+        name settle_contract;
+        vector<balance_config> fee_rates = {
+            {0, 1500}, {130000000, 2500}, {500000000, 3500}, {1500000000, 5000}};
 
-        struct SETTLE_TBL_NAME("global") global_t
-        {
-            name admin;
-            name settle_contract;
-            vector<pair<uint64_t, double>> fee_rates = {
-                {0, 0.15}, {130000000, 0.25}, {500000000, 0.35}, {1500000000, 0.5}};
+        EOSLIB_SERIALIZE(global_t, (admin)(settle_contract)(fee_rates))
+    };
+    typedef eosio::singleton<"global"_n, global_t> global_singleton;
 
-            EOSLIB_SERIALIZE(global_t, (admin)(settle_contract)(fee_rates))
-        };
-        typedef eosio::singleton<"global"_n, global_t> global_singleton;
+    struct ACCOUNT_TBL account_t
+    {
+        name admin;
+        uint32_t balance=0;
+        uint32_t sum=0;
 
-        struct ACCOUNT_TBL account_t
-        {
-            name admin;
-            uint32_t balance=0;
-            uint32_t sum=0;
+        uint64_t primary_key() const { return admin.value; }
 
-            uint64_t primary_key() const { return admin.value; }
-
-            account_t() {}
-            account_t(const name &paccount) : admin(paccount) {}
+        account_t() {}
+        account_t(const name &paccount) : admin(paccount) {}
 
 
-            typedef wasm::db::multi_index<"blacklist"_n, account_t> idx_t;
+        typedef wasm::db::multi_index<"accounts"_n, account_t> idx_t;
 
-            EOSLIB_SERIALIZE(account_t, (admin)(balance)(sum))
-        };
-    }
+        EOSLIB_SERIALIZE(account_t, (admin)(balance)(sum))
+    };
+}
 }

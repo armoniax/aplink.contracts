@@ -36,7 +36,7 @@ namespace otc
 
         ~otcswap() { _global.set(_gstate, get_self()); }
 
-        ACTION setrates(const vector<pair<uint64_t, double>> rates);
+        ACTION setrates(const vector<balance_config> rates);
 
         /**
          * ontransfer, trigger by recipient of transfer()
