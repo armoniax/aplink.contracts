@@ -17,9 +17,12 @@ using namespace wasm;
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
 
 static constexpr uint32_t MAX_CONTENT_SIZE = 64; // 4*0 behind 1
+static constexpr uint64_t percent_boost = 10000;
+
+static constexpr symbol SCORE_SYMBOL = SYMBOL("METAS", 4);
+
 static constexpr symbol CNYD_SYMBOL = SYMBOL("CNYD", 4);
 static constexpr eosio::name CNYD_BANK{"cnyd.token"_n};
-static constexpr uint64_t percent_boost = 10000;
 
 namespace wasm
 {
@@ -32,11 +35,11 @@ namespace wasm
         struct SETTLE_TBL_NAME("global") global_t
         {
             name admin;
-            name sellto_admin;
+            name settle_contract;
             vector<pair<uint64_t, double>> fee_rates = {
                 {0, 0.15}, {130000000, 0.25}, {500000000, 0.35}, {1500000000, 0.5}};
 
-            EOSLIB_SERIALIZE(global_t, (admin)(sellto_admin)(fee_rates))
+            EOSLIB_SERIALIZE(global_t, (admin)(settle_contract)(fee_rates))
         };
         typedef eosio::singleton<"global"_n, global_t> global_singleton;
 

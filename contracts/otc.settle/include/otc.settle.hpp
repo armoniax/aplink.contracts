@@ -54,7 +54,7 @@ public:
     }
 
     [[eosio::action]]
-    void setadmin(const name& admin, const name& market);
+    void setadmin(const name& admin, const name& market, const name& swap);
 
     [[eosio::action]]
     void setlevel(const name& user, uint8_t level);
@@ -68,7 +68,7 @@ public:
                 const name& user, 
                 const asset& quantity, 
                 const asset& fee,
-                const uint8_t& arbit_staus, 
+                const uint8_t& arbit_status, 
                 const time_point_sec& start_at, 
                 const time_point_sec& end_at);
 
@@ -80,6 +80,8 @@ public:
      */
     [[eosio::action]]
     void pick(const name& reciptian, vector<uint64_t> rewards);
+
+    using deal_action = eosio::action_wrapper<"grow"_n, &settle::deal>;
 
 private:
     global_singleton    _global;
