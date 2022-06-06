@@ -1,0 +1,73 @@
+<h1 class="contract">lease</h1>
+
+---
+spec_version: "0.1.0"
+title: aplink farming
+summary: 'lease a land for cropping APL'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+lord can lease a land to farmer for croping APL to customer
+
+
+<h1 class="contract">setlord</h1>
+---
+spec_version: "0.1.0"
+title: set lord for lands
+summary: 'set a lord to manage all lands'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+lord can lease and reclaim land
+jamfactory is used to collect expired apples
+lands can be disabled by lord
+
+<h1 class="contract">reclaim</h1>
+---
+spec_version: "0.1.0"
+title: reclaim a land
+summary: 'reclaim a land and return all seeds to recipient'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+reclaim a disabled land, and send seeds to recipient
+
+<h1 class="contract">setstatus</h1>
+---
+spec_version: "0.1.0"
+title: change a land's status
+summary: 'Enable/Disable a land'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+param status  0:NONE 1:Enable 2:Disable
+
+<h1 class="contract">plant</h1>
+---
+spec_version: "0.1.0"
+title: farmer plant seeds to an apple
+summary: 'farmer plant seeds and send to a customer'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+farmer ripen seeds to an apple and send it to croper
+
+<h1 class="contract">pick</h1>
+---
+spec_version: "0.1.0"
+title: croper pick apples
+summary: 'croper pick apples or collect expired apples'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+croper pick apples or collect expired apples
+
+
+<h1 class="contract">ontransfer</h1>
+---
+spec_version: "0.1.0"
+title: lord plant seeds to a land
+summary: 'lord plant seeds to a land'
+icon: @ICON_BASE_URL@/@TOKEN_ICON_URI@
+---
+
+lord plant seeds to a land
