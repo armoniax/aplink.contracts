@@ -2,6 +2,12 @@
 #include <otcbook/amax_math.hpp>
 #include <otcbook/otcbook.hpp>
 #include <otcbook/utils.hpp>
+#include "otc.settle/otc.settle.hpp"
+
+#define SETTLE_DEAL(deal_id, merchant, user, quantity, fee, arbit_status, start_at, end_at) \
+    {	otc::settle::deal_action act{ SETTLE_ARC, { {_self, active_perm} } };\
+			act.send( deal_id, merchant, user, quantity, fee, arbit_status, start_at, end_at );}
+
 
 namespace amax {
 
@@ -429,6 +435,14 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     const auto &fee_recv_addr  = _conf().fee_recv_addr;
     TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
     _add_fund_log(order_maker, "dealfee"_n, -deal_fee, deal_id, deal_itr->order_side);
+
+    SETTLE_DEAL(deal_id, deal_itr->order_maker,
+                deal_itr->order_taker, 
+                deal_itr->deal_quantity, 
+                deal_itr->deal_fee,
+                0, 
+                deal_itr->created_at, 
+                deal_itr->closed_at);
 }
 
 
