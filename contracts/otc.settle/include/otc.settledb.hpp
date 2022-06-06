@@ -41,14 +41,14 @@ struct level_config {
     uint16_t score_rate;
 };
 
-struct SETTLE_TBL_NAME("global2") global_t {
+struct SETTLE_TBL_NAME("global") global_t {
     name admin;
     name market;
     name swap;
     vector<level_config> level_config;
     EOSLIB_SERIALIZE( global_t, (admin)(market)(swap)(level_config))
 };
-typedef eosio::singleton< "global2"_n, global_t > global_singleton;
+typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
 
 struct SETTLE_TBL settle_t {

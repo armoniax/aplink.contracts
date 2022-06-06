@@ -25,31 +25,28 @@ namespace otc
         _db.set(account);
     }
 
-    void otcswap::settleto(const name &to, const asset &fee, asset quantity)
+    void otcswap::settleto(const name &user, const asset &fee, asset quantity)
     {
         require_auth(_gstate.settle_contract);
         check(quantity.amount > 0, "quantity must be positive");
-        check(is_account(to), "owner account does not exist");
+        check(fee.amount > 0, "quantity must be positive");
+        check(is_account(user), "owner account does not exist");
         auto sym = quantity.symbol;
-        auto account = account_t(to);
-        vector<pair<uint64_t, double>> fee_rates = _gstate.fee_rates;
+        auto account = account_t(user);
+        vector<balance_config> fee_rates = _gstate.fee_rates;
 
-        double balance;
-
-        for (auto &fee_info : fee_rates)
-        {
-            if (fee_info.first < (quantity.amount))
-            {
-                balance = fee_info.second;
-            }
+        uint16_t percent = 0;
+        for(auto &fee_info : fee_rates){
+            if(quantity.amount >= fee_info.quantity_limit) percent = fee_info.balance_precent;
+            else break;
         }
-        int64_t amount = fee.amount * balance;
+        int64_t amount = fee.amount * percent/percent_boost;
         account.balance += amount;
         account.sum += amount;
         _db.set(account, _self);
     }
 
-    ACTION otcswap::setrates(const vector<pair<uint64_t, double>> rates)
+    ACTION otcswap::setrates(const vector<balance_config> rates)
     {
         require_auth(_gstate.admin);
         _gstate.fee_rates = rates;
