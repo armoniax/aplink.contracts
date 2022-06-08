@@ -4,8 +4,9 @@
 #include <otcbook/utils.hpp>
 #include "otc.settle/otc.settle.hpp"
 
+static constexpr eosio::name active_permission{"active"_n};
 #define SETTLE_DEAL(deal_id, merchant, user, quantity, fee, arbit_status, start_at, end_at) \
-    {	otc::settle::deal_action act{ SETTLE_ARC, { {_self, active_perm} } };\
+    {	otc::settle::deal_action act{ SETTLE_ARC, { {_self, active_permission} } };\
 			act.send( deal_id, merchant, user, quantity, fee, arbit_status, start_at, end_at );}
 
 
@@ -444,8 +445,6 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
                 deal_itr->created_at, 
                 deal_itr->closed_at);
 }
-
-
 void otcbook::canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id,
                          const string& session_msg, bool is_taker_black) {
     require_auth( account );

@@ -3,7 +3,7 @@
 #include "utils.hpp"
 #include "eosio.token/eosio.token.hpp"
 #include "aplink.farm/aplink.farm.hpp"
-#include "otcswap.hpp"
+#include "otcswap/otcswap.hpp"
 
 using namespace otc;
 using namespace eosio;
