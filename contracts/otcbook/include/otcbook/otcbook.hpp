@@ -305,7 +305,6 @@ public:
     // void timeoutdeal();
 
 
-
 private:
     asset _calc_order_stakes(const asset &quantity, const asset &price);
 

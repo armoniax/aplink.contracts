@@ -27,6 +27,6 @@ public:
                 const time_point_sec& start_at, 
                 const time_point_sec& end_at);
 
-    using deal_action = eosio::action_wrapper<"grow"_n, &settle::deal>;
+    using deal_action = eosio::action_wrapper<"deal"_n, &settle::deal>;
 };
 }

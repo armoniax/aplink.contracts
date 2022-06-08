@@ -81,7 +81,7 @@ public:
     [[eosio::action]]
     void pick(const name& reciptian, vector<uint64_t> rewards);
 
-    using deal_action = eosio::action_wrapper<"grow"_n, &settle::deal>;
+    using deal_action = eosio::action_wrapper<"deal"_n, &settle::deal>;
 
 private:
     global_singleton    _global;
