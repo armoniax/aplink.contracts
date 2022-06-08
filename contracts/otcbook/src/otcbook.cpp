@@ -437,9 +437,10 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
     _add_fund_log(order_maker, "dealfee"_n, -deal_fee, deal_id, deal_itr->order_side);
 
+    asset deal_amount = _calc_deal_amount(deal_itr->deal_quantity, deal_itr->order_price);
     SETTLE_DEAL(deal_id, deal_itr->order_maker,
                 deal_itr->order_taker, 
-                deal_itr->deal_quantity, 
+                deal_amount,
                 deal_itr->deal_fee,
                 0, 
                 deal_itr->created_at, 
