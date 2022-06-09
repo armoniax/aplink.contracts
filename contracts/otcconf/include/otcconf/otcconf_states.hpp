@@ -26,6 +26,16 @@ using namespace wasm;
 
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
 
+static constexpr name MIRROR_BNAK = name("amax.mtoken");
+static constexpr name AMAX_BNAK = name("amax.token");
+static constexpr name CNYD_BANK = name("cnyd.token");
+
+// crypto coins for staking
+static constexpr symbol STAKE_CNYD = SYMBOL("CNYD",4);
+static constexpr symbol STAKE_AMAX = SYMBOL("AMAX",8);
+static constexpr symbol STAKE_USDT = SYMBOL("MUSDT",6);
+
+
 // crypto coins for trading
 static constexpr symbol USDT_ERC20 = SYMBOL("USDTERC", 6);
 static constexpr symbol USDT_TRC20 = SYMBOL("USDTTRC", 6);
@@ -68,7 +78,7 @@ typedef set<symbol> symbol_set;
 typedef set<name> name_set;
 
 struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
-    name otc_name = "oxo.cash"_n;
+    name otc_name = "meta.balance"_n;
 
     AppInfo_t app_info = {
         "0.1.0",
@@ -86,6 +96,20 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
 
     name fee_recv_addr = "oxo.feeadmin"_n;
     uint64_t fee_pct   = 50;
+
+    map<symbol, name> stake_coins_conf = {
+        {STAKE_AMAX, AMAX_BNAK},
+        {STAKE_CNYD, CNYD_BANK},
+        {STAKE_USDT, MIRROR_BNAK}
+    };
+
+    map<symbol, symbol> coin_to_asset = {
+        {AMAX_ARC20, STAKE_AMAX},
+        {CNYD_ARC20, STAKE_CNYD},
+        {USDT_ERC20, STAKE_USDT},
+        {USDT_TRC20, STAKE_USDT},
+        {USDT_BEP20, STAKE_USDT}
+    };
 
     /**
      * crypto coins that OTC merchants can buy in orders
@@ -109,12 +133,6 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
         USDT_BEP20
     };
 
-
-    map<symbol, asset> prices_quote_cny {
-        { USD,  ASSET(6.3000, CNY) },
-        { CNYD, ASSET(1.0000, CNY) }
-    };
-
     uint64_t accepted_timeout   = 1800;
     uint64_t payed_timeout   = 10800;
 
@@ -125,40 +143,10 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
 
     EOSLIB_SERIALIZE( global_t, (otc_name)(app_info)(pay_type)(arbiters)(coin_type)
                                 (fiat_type)(fee_recv_addr)(fee_pct)
-                                (buy_coins_conf)(sell_coins_conf)(prices_quote_cny)
+                                (stake_coins_conf)(coin_to_asset)
+                                (buy_coins_conf)(sell_coins_conf)
                                 (accepted_timeout)(payed_timeout)
     )
-    // template<typename DataStream>
-    // friend DataStream& operator << ( DataStream& ds, const global_t& t ) {
-    //     return ds << t.otc_name
-    //         << t.app_info
-    //         << t.pay_type
-    //         << t.arbiters
-    //         << t.coin_type
-    //         << t.fiat_type
-    //         << t.fee_recv_addr
-    //         << t.fee_pct
-    //         << t.buy_coins_conf
-    //         << t.sell_coins_conf
-    //         << t.prices_quote_cny
-    //         << t.accepted_timeout
-    //         << t.payed_timeout;
-    // }
-
-    // template<typename DataStream>
-    // friend DataStream& operator >> ( DataStream& ds, global_t& t ) {
-    //     return ds >> t.otc_name
-    //         >> t.app_info
-    //         >> t.pay_type
-    //         >> t.arbiters
-    //         >> t.coin_type
-    //         >> t.fiat_type
-    //         >> t.fee_recv_addr
-    //         >> t.fee_pct
-    //         >> t.buy_coins_conf
-    //         >> t.sell_coins_conf
-    //         >> t.prices_quote_cny;
-    // }
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 

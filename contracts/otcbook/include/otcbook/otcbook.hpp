@@ -98,6 +98,14 @@ public:
     void setadmin(const name& admin);
 
     /**
+     * set running status by admin
+     * @param running 
+     * @note require contract admin auth
+     */
+    [[eosio::action]]
+    void setrunning(const bool& running);
+
+    /**
      * set merchant
      * @param owner account name
      * @param merchant account name
@@ -269,7 +277,7 @@ public:
      * @param memo memo
      * @note require from auth
      */
-    [[eosio::on_notify("cnyd.token::transfer")]]
+    [[eosio::on_notify("*::transfer")]]
     void deposit(name from, name to, asset quantity, string memo);
 
     /**
@@ -304,21 +312,29 @@ public:
     // [[eosio::action]]
     // void timeoutdeal();
 
+    [[eosio::action]]
+    void stakechanged(const name& account, const asset &quantity, const string& memo);
+    using stakechanged_action = eosio::action_wrapper<"stakechanged"_n, &otcbook::stakechanged>;
+         
 
 private:
-    asset _calc_order_stakes(const asset &quantity, const asset &price);
+    asset _calc_order_stakes(const asset &quantity);
 
-    asset _calc_deal_fee(const asset &quantity, const asset &price);
+    asset _calc_deal_fee(const asset &quantity);
 
-    asset _calc_deal_amount(const asset &quantity, const asset &price);
+    asset _calc_deal_amount(const asset &quantity);
 
     void _set_conf(const name &conf_contract);
 
     const conf_t& _conf(bool refresh = false);
 
-    void _add_fund_log(const name& owner, const name & action, const asset &quantity, const uint64_t& order_id, const name& order_side);
-
+    
     void _set_blacklist(const name& account, uint64_t duration_second, const name& payer);
+
+    void _add_balance(merchant_t& merchant, const asset& quantity, const string & memo);
+    void _sub_balance(merchant_t& merchant, const asset& quantity, const string & memo);
+    void _frozen(merchant_t& merchant, const asset& quantity);
+    void _unfrozen(merchant_t& merchant, const asset& quantityl);
 };
 
 }

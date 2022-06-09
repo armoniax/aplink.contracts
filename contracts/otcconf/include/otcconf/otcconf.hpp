@@ -56,9 +56,6 @@ public:
     void init();
 
     [[eosio::action]]
-    void setrate(const map<symbol, asset>& prices_quote_cny);
-
-    [[eosio::action]]
     void setarbiters(const set<name>& arbiters);
 
     [[eosio::action]]

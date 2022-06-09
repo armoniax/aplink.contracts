@@ -27,20 +27,6 @@ void otcconf::init() {
     _gstate = {};
 }
 
-
-/**
- * update price
- */
-void otcconf::setrate(const map<symbol, asset>& prices_quote_cny) {
-    require_auth( _self );
-
-    check(!prices_quote_cny.empty(), "prices_quote_cny empty");
-    for (const auto& item : prices_quote_cny) {
-        CHECK( item.first != CNY, "base symbol can not equal to quote symbol");
-        _gstate.prices_quote_cny[item.first] = item.second;
-    }
-}
-
 void otcconf::setotcname(const name& otc_name) {
     require_auth( _self );
     _gstate.otc_name = otc_name;
