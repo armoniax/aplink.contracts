@@ -5,7 +5,10 @@ add_contract(otcbook otcbook
 target_include_directories(otcbook
    PUBLIC
    ${CMAKE_CURRENT_SOURCE_DIR}/include
-   ${CMAKE_CURRENT_SOURCE_DIR}/../otcconf/include )
+   ${CMAKE_CURRENT_SOURCE_DIR}/../otcconf/include 
+   ${CMAKE_CURRENT_SOURCE_DIR}/../otcsettle/include 
+   ${CMAKE_CURRENT_SOURCE_DIR}/../otcswap/include 
+   )
 
 set_target_properties(otcbook
    PROPERTIES

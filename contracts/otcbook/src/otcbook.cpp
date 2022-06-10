@@ -1,12 +1,13 @@
 #include <eosio.token/eosio.token.hpp>
 #include <otcbook/amax_math.hpp>
 #include <otcbook/otcbook.hpp>
-#include <otcbook/utils.hpp>
-#include "otc.settle/otc.settle.hpp"
+#include <otcconf/utils.hpp>
+#include <otcsettle.hpp>
+#include <otcswap.hpp>
 
 static constexpr eosio::name active_permission{"active"_n};
-#define SETTLE_DEAL(deal_id, merchant, user, quantity, fee, arbit_status, start_at, end_at) \
-    {	otc::settle::deal_action act{ SETTLE_ARC, { {_self, active_permission} } };\
+#define SETTLE_DEAL(bank, deal_id, merchant, user, quantity, fee, arbit_status, start_at, end_at) \
+    {	otcsettle::settle::deal_action act{ bank, { {_self, active_permission} } };\
 			act.send( deal_id, merchant, user, quantity, fee, arbit_status, start_at, end_at );}
 
 #define STAKE_CHANGED(account, quantity, memo) \
@@ -18,6 +19,7 @@ namespace amax {
 using namespace std;
 using namespace eosio;
 using namespace wasm::safemath;
+using namespace otc;
 
 inline int64_t get_precision(const symbol &s) {
     int64_t digit = s.precision();
@@ -31,21 +33,21 @@ inline int64_t get_precision(const asset &a) {
 
 asset otcbook::_calc_order_stakes(const asset &quantity) {
     // calc order quantity value by price
-    auto stake_symbol = _conf().coin_to_asset.at(quantity.symbol);
+    auto stake_symbol = _conf().coin_as_stake.at(quantity.symbol);
     auto value = multiply_decimal64( quantity.amount, get_precision(stake_symbol), get_precision(quantity) );
     int64_t amount = divide_decimal64(value, order_stake_pct, percent_boost);
     return asset(amount, stake_symbol);
 }
 
 asset otcbook::_calc_deal_amount(const asset &quantity) {
-    auto stake_symbol = _conf().coin_to_asset.at(quantity.symbol);
+    auto stake_symbol = _conf().coin_as_stake.at(quantity.symbol);
     auto value = multiply_decimal64( quantity.amount, get_precision(stake_symbol), get_precision(quantity) );
     return asset(value, stake_symbol);
 }
 
 asset otcbook::_calc_deal_fee(const asset &quantity) {
     // calc order quantity value by price
-    auto stake_symbol = _conf().coin_to_asset.at(quantity.symbol);
+    auto stake_symbol = _conf().coin_as_stake.at(quantity.symbol);
     auto value = multiply_decimal64( quantity.amount, get_precision(stake_symbol), get_precision(quantity) );
     const auto & fee_pct = _conf().fee_pct;
     int64_t amount = multiply_decimal64(value, fee_pct, percent_boost);
@@ -53,39 +55,17 @@ asset otcbook::_calc_deal_fee(const asset &quantity) {
     return asset(amount, stake_symbol);
 }
 
-
-void otcbook::init(const name &conf_contract) {
-    require_auth( _gstate.admin );
-    _set_conf(conf_contract);
-    _gstate.initialized = true;
-}
-
 void otcbook::setconf(const name &conf_contract) {
-    require_auth( _gstate.admin );
-    _set_conf(conf_contract);
-}
-
-void otcbook::_set_conf(const name &conf_contract) {
-    require_auth( _gstate.admin );
+    require_auth( get_self() );    
     CHECK( is_account(conf_contract), "Invalid account of conf_contract");
     _gstate.conf_contract = conf_contract;
     _conf(true);
 }
 
-void otcbook::setadmin(const name& admin) {
-    require_auth( _self );
-    _gstate.admin = admin;
-}
-
-void otcbook::setrunning(const bool& running){
-    require_auth(_gstate.admin);
-    _gstate.running = running;
-}
-
 void otcbook::setmerchant(const name& owner, const name& merchant, const string &merchant_name, const string &merchant_detail, const string& email, const string& memo) {
-    require_auth( owner );
-
-    auto isAdmin = (owner == _gstate.admin);
+    name admin = _conf().managers.at(otc::manager_type::admin);
+    require_auth(admin);
+    auto isAdmin = (owner == admin);
     if (!isAdmin) {
         check(owner == merchant, "non-admin not allowed to set merchant" );
     }
@@ -103,11 +83,11 @@ void otcbook::setmerchant(const name& owner, const name& merchant, const string 
     merchant_raw.memo = memo;
     merchant_raw.updated_at = time_point_sec(current_time_point());
 
-    _dbc.set( merchant_raw );
+    _dbc.set( merchant_raw, admin );
 }
 
 void otcbook::enbmerchant(const name& owner, bool is_enabled) {
-    require_auth( _gstate.admin );
+    require_auth( _conf().managers.at(otc::manager_type::admin) );
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
@@ -129,14 +109,14 @@ void otcbook::enbmerchant(const name& owner, bool is_enabled) {
 void otcbook::openorder(const name& owner, const name& order_side, const set<name> &pay_methods, const asset& va_quantity, const asset& va_price,
     const asset& va_min_take_quantity,  const asset& va_max_take_quantity, const string &memo
 ){
-    check(_gstate.running, "service is in maintenance");
+    check(_conf().status == (uint8_t)status_type::RUNNING, "service is in maintenance");
     require_auth( owner );
     check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
     check( va_quantity.is_valid(), "Invalid quantity");
     check( va_price.is_valid(), "Invalid va_price");
     const auto& conf = _conf();
     check( va_price.symbol == conf.fiat_type, "va price symbol not allow");
-    check( conf.coin_to_asset.count(va_quantity.symbol), "va quantity symbol hasn't config stake asset");
+    check( conf.coin_as_stake.count(va_quantity.symbol), "va quantity symbol hasn't config stake asset");
     if (order_side == BUY_SIDE) {
         check( conf.buy_coins_conf.count(va_quantity.symbol) != 0, "va quantity symbol not allowed for buying" );
     } else {
@@ -281,7 +261,8 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     const asset& deal_quantity, const uint64_t& order_sn,
     const string& session_msg
 ) {
-    check(_gstate.running, "service is in maintenance");
+    auto conf = _conf();
+    check(conf.status == (uint8_t)status_type::RUNNING, "service is in maintenance");
     require_auth( taker );
 
     check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
@@ -370,7 +351,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         check( deal_itr->order_taker == account, "taker account mismatched");
         break;
     case account_type_t::ADMIN:
-        check( _gstate.admin == account, "admin account mismatched");
+        check( _conf().managers.at(otc::manager_type::admin) == account, "admin account mismatched");
         break;
     case account_type_t::ARBITER:
         check( deal_itr->arbiter == account, "abiter account mismatched");
@@ -427,18 +408,32 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     _unfrozen(merchant, stake_quantity);
     _sub_balance(merchant, deal_fee, "fee:"+to_string(deal_id));
 
-    const auto &fee_recv_addr  = _conf().fee_recv_addr;
-    TRANSFER( _conf().stake_coins_conf.at(deal_fee.symbol), fee_recv_addr, deal_fee, 
+    const auto &fee_recv_addr  = _conf().managers.at(otc::manager_type::feetaker);
+    TRANSFER( _conf().stake_assets_contract.at(deal_fee.symbol), fee_recv_addr, deal_fee, 
         "otcfee:"+to_string(order_id) + ":" +  to_string(deal_id));
+
+    name settle_arc = _conf().managers.at(otc::manager_type::settlement);
+    asset deal_amount = _calc_deal_amount(deal_itr->deal_quantity);
+    if(is_account(settle_arc)){
+        SETTLE_DEAL(settle_arc,
+                    deal_id, 
+                    deal_itr->order_maker,
+                    deal_itr->order_taker, 
+                    deal_amount,
+                    deal_itr->deal_fee,
+                    0, 
+                    deal_itr->created_at, 
+                    deal_itr->closed_at);
+    }    
+
+    name swap_arc = _conf().managers.at(otc::manager_type::swaper);
+    if(is_account(swap_arc)){
+        SWAP_SETTLE(swap_arc, 
+                    deal_itr->order_taker, 
+                    deal_itr->deal_fee, 
+                    deal_amount);
+    }
     
-    // asset deal_amount = _calc_deal_amount(deal_itr->deal_quantity);
-    // SETTLE_DEAL(deal_id, deal_itr->order_maker,
-    //             deal_itr->order_taker, 
-    //             deal_amount,
-    //             deal_itr->deal_fee,
-    //             0, 
-    //             deal_itr->created_at, 
-    //             deal_itr->closed_at);
 }
 
 void otcbook::canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id,
@@ -485,7 +480,7 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
         break;
     }
     case account_type_t::ADMIN:
-        check( _gstate.admin == account, "admin account mismatched");
+        check( _conf().managers.at(otc::manager_type::admin) == account, "admin account mismatched");
         break;
     case account_type_t::ARBITER:
         check( deal_itr->arbiter == account, "abiter account mismatched");
@@ -638,8 +633,7 @@ void otcbook::startarbit(const name& account, const uint8_t& account_type, const
         break;
     }
 
-    // check arbiter is vaild
-    check( _conf().arbiters.count(arbiter) != 0, "arbiter illegal: " + arbiter.to_string() );
+    check( _conf().managers.at(otc::manager_type::arbiter) == arbiter, "arbiter illegal: " + arbiter.to_string() );
 
     auto status = (deal_status_t)deal_itr->status;
     auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
@@ -718,7 +712,7 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
         _unfrozen(merchant, stake_quantity);
         _sub_balance(merchant, stake_quantity, "arbit fine:"+to_string(deal_id));
 
-        TRANSFER(_conf().stake_coins_conf.at(stake_quantity.symbol), order_taker, 
+        TRANSFER(_conf().stake_assets_contract.at(stake_quantity.symbol), order_taker, 
             stake_quantity, "arbit fine: "+to_string(deal_id));
    }
 }
@@ -763,7 +757,7 @@ void otcbook::resetdeal(const name& account, const uint64_t& deal_id, const stri
 
     require_auth( account );
 
-    CHECK( _gstate.admin == account, "Only admin allowed" );
+    CHECK( _conf().managers.at(otc::manager_type::admin) == account, "Only admin allowed" );
 
     deal_t::idx_t deals(_self, _self.value);
     auto deal_itr = deals.find(deal_id);
@@ -783,12 +777,13 @@ void otcbook::resetdeal(const name& account, const uint64_t& deal_id, const stri
 }
 
 void otcbook::withdraw(const name& owner, asset quantity){
-    check(_gstate.running, "service is in maintenance");
+    auto conf = _conf();
+    check(conf.status == (uint8_t)status_type::RUNNING, "service is in maintenance");
     require_auth( owner );
 
     check( quantity.amount > 0, "quanity must be positive" );
     check( quantity.symbol.is_valid(), "Invalid quantity symbol name" );
-    check( _conf().stake_coins_conf.count(quantity.symbol), "Token Symbol not allowed" );
+    check( _conf().stake_assets_contract.count(quantity.symbol), "Token Symbol not allowed" );
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
@@ -800,7 +795,7 @@ void otcbook::withdraw(const name& owner, asset quantity){
 
     _sub_balance(merchant, quantity, "merchant withdraw");
 
-    TRANSFER( _conf().stake_coins_conf.at(quantity.symbol), owner, quantity, "merchant withdraw" )
+    TRANSFER( _conf().stake_assets_contract.at(quantity.symbol), owner, quantity, "merchant withdraw" )
 }
 
 /*************** Begin of eosio.token transfer trigger function ******************/
@@ -810,8 +805,8 @@ void otcbook::withdraw(const name& owner, asset quantity){
 void otcbook::deposit(name from, name to, asset quantity, string memo) {
     if(_self == from || to != _self) return;
 
-    check( _conf().stake_coins_conf.count(quantity.symbol), "Token Symbol not allowed" );
-    check( _conf().stake_coins_conf.at(quantity.symbol) == get_first_receiver(), "Token Symbol not allowed" );
+    check( _conf().stake_assets_contract.count(quantity.symbol), "Token Symbol not allowed" );
+    check( _conf().stake_assets_contract.at(quantity.symbol) == get_first_receiver(), "Token Symbol not allowed" );
     
     merchant_t merchant(from);
     check(_dbc.get( merchant ),"merchant is not set, from:" + from.to_string()+ ",to:" + to.to_string());
@@ -822,13 +817,13 @@ void otcbook::deposit(name from, name to, asset quantity, string memo) {
 
 
 void otcbook::setblacklist(const name& account, uint64_t duration_second) {
-    require_auth( _gstate.admin );
+    require_auth( _conf().managers.at(otc::manager_type::admin) );
 
     CHECK( is_account(account), "account does not exist: " + account.to_string() );
     CHECK( duration_second <= max_blacklist_duration_second,
            "duration_second too large than: " + to_string(max_blacklist_duration_second));
 
-   _set_blacklist(account, duration_second, _gstate.admin);
+   _set_blacklist(account, duration_second, _conf().managers.at(otc::manager_type::admin));
 }
 
 const otcbook::conf_t& otcbook::_conf(bool refresh/* = false*/) {

@@ -9,7 +9,7 @@
 #include <string>
 
 #include <otcconf/otcconf_states.hpp>
-#include "wasm_db.hpp"
+#include <otcconf/wasm_db.hpp>
 #include "otcbook_states.hpp"
 
 using namespace wasm::db;
@@ -63,7 +63,6 @@ public:
             _gstate = _global.get();
         } else { // first init
             _gstate = global_t{};
-            _gstate.admin = _self;
         }
         // _gstate2 = _global2.exists() ? _global2.get() : global2_t{};
     }
@@ -74,36 +73,12 @@ public:
     }
 
     /**
-     * initialize contract by admin
-     * @param conf_contract conf contract
-     * @note require admin auth
-     */
-    [[eosio::action]]
-    void init(const name &conf_contract);
-
-    /**
      * set conf contract by admin
      * @param conf_contract conf contract
      * @note require admin auth
      */
     [[eosio::action]]
     void setconf(const name &conf_contract);
-
-    /**
-     * set admin by contract self account
-     * @param admin new admin
-     * @note require contract self auth
-     */
-    [[eosio::action]]
-    void setadmin(const name& admin);
-
-    /**
-     * set running status by admin
-     * @param running 
-     * @note require contract admin auth
-     */
-    [[eosio::action]]
-    void setrunning(const bool& running);
 
     /**
      * set merchant
@@ -324,11 +299,8 @@ private:
 
     asset _calc_deal_amount(const asset &quantity);
 
-    void _set_conf(const name &conf_contract);
-
     const conf_t& _conf(bool refresh = false);
 
-    
     void _set_blacklist(const name& account, uint64_t duration_second, const name& payer);
 
     void _add_balance(merchant_t& merchant, const asset& quantity, const string & memo);

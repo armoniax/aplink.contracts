@@ -6,6 +6,7 @@
 #include <eosio/system.hpp>
 #include <eosio/time.hpp>
 #include <eosio/name.hpp>
+#include <otcconf/wasm_db.hpp>
 
 #include <optional>
 #include <string>
@@ -26,8 +27,8 @@ using namespace wasm;
 
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
 
-static constexpr name MIRROR_BNAK = name("amax.mtoken");
-static constexpr name AMAX_BNAK = name("amax.token");
+static constexpr name MIRROR_BANK = name("amax.mtoken");
+static constexpr name AMAX_BANK = name("amax.token");
 static constexpr name CNYD_BANK = name("cnyd.token");
 
 // crypto coins for staking
@@ -49,6 +50,7 @@ static constexpr symbol AMAX_ARC20 = SYMBOL("AMAXARC", 8);
 // static constexpr symbol ETH        = SYMBOL("ETH", 8);
 static constexpr symbol CNYD       = SYMBOL("CNYD", 4);
 
+static constexpr symbol SCORE_SYMBOL              = SYMBOL("METAS", 4);
 // fiat currency symbols
 static constexpr symbol   CNY      = SYMBOL("CNY", 4);
 static constexpr symbol   USD      = SYMBOL("USD", 4);
@@ -69,86 +71,78 @@ static constexpr name PAYPAL        = "paypal"_n;
  */
 struct AppInfo_t {
     string latest_app_version;
-    string android_apk_download_url; //ipfs url
+    string homepage; //ipfs url
     string upgrade_log;
-    bool force_upgrade;
 };
 
 typedef set<symbol> symbol_set;
 typedef set<name> name_set;
 
+namespace manager_type {
+    static constexpr eosio::name admin         = "admin"_n;
+    static constexpr eosio::name feetaker         = "feetaker"_n;
+    static constexpr eosio::name arbiter         = "arbiter"_n;
+    static constexpr eosio::name otcbook        = "otcbook"_n;
+    static constexpr eosio::name settlement         = "settlement"_n;
+    static constexpr eosio::name swaper         = "swaper"_n;
+    static constexpr eosio::name cashbank         = "cashbank"_n;
+    static constexpr eosio::name scorebank         = "scorebank"_n;
+    static constexpr eosio::name aplinkfarm         = "aplinkfarm"_n;
+};
+
+enum class status_type: uint8_t {
+   UN_INITIALIZE        = 0,
+   INITIALIZED          = 1,
+   RUNNING              = 2,
+   MAINTAINING          = 9
+};
+
+struct settle_level_config {
+    uint64_t sum_limit;
+    uint16_t cash_rate;
+    uint16_t score_rate;
+};
+
+struct swap_step_config {
+    uint64_t quantity_step;
+    uint16_t quote_reward_pct;
+};
+
 struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
-    name otc_name = "meta.balance"_n;
+    uint8_t status = 0;
+    name otc_name;
+    AppInfo_t app_info;
+    map<name,name> managers;
 
-    AppInfo_t app_info = {
-        "0.1.0",
-        "https://ipfs.io/ipfs/QmZUmzu96uKBLcCjNcnbD12hmjtMnaTs7ymLDHio3qbeDi",
-        "initial beta testing release",
-        false
-    };
+    // for book config
+    set<name> pay_type;
+    symbol fiat_type;
+    uint64_t fee_pct;
+    map<symbol, name> stake_assets_contract; //get the contract 
+    map<symbol, symbol> coin_as_stake;  //get stake asset for a coin
+    symbol_set buy_coins_conf;  //crypto coins that OTC merchants can buy in orders
+    symbol_set sell_coins_conf; //crypto coins that OTC merchants can sell in orders
+    uint64_t accepted_timeout;
+    uint64_t payed_timeout;
 
-    set<name> pay_type = { CNYDPAY, BANK, WECHAT, ALIPAY };
+    // for settle config
+    vector<settle_level_config> settle_levels;
+    uint64_t farm_id = 0;
+    uint32_t farm_scale = 0;
 
-    name_set arbiters { "casharbitoo1"_n };
+    // for swap config
+    vector<swap_step_config> swap_steps;
 
-    symbol_set coin_type = { AMAX_ARC20, CNYD_ARC20, USDT_ERC20, USDT_TRC20, USDT_BEP20 };
-    symbol fiat_type = CNY;
-
-    name fee_recv_addr = "oxo.feeadmin"_n;
-    uint64_t fee_pct   = 50;
-
-    map<symbol, name> stake_coins_conf = {
-        {STAKE_AMAX, AMAX_BNAK},
-        {STAKE_CNYD, CNYD_BANK},
-        {STAKE_USDT, MIRROR_BNAK}
-    };
-
-    map<symbol, symbol> coin_to_asset = {
-        {AMAX_ARC20, STAKE_AMAX},
-        {CNYD_ARC20, STAKE_CNYD},
-        {USDT_ERC20, STAKE_USDT},
-        {USDT_TRC20, STAKE_USDT},
-        {USDT_BEP20, STAKE_USDT}
-    };
-
-    /**
-     * crypto coins that OTC merchants can buy in orders
-     */
-    symbol_set buy_coins_conf = {
-        AMAX_ARC20,
-        CNYD_ARC20,
-        USDT_ERC20,
-        USDT_TRC20,
-        USDT_BEP20
-    };
-
-    /**
-     * crypto coins that OTC merchants can sell in orders
-     */
-    symbol_set sell_coins_conf = {
-        AMAX_ARC20,
-        CNYD_ARC20,
-        USDT_ERC20,
-        USDT_TRC20,
-        USDT_BEP20
-    };
-
-    uint64_t accepted_timeout   = 1800;
-    uint64_t payed_timeout   = 10800;
-
-
-    global_t() {
-
-    }
-
-    EOSLIB_SERIALIZE( global_t, (otc_name)(app_info)(pay_type)(arbiters)(coin_type)
-                                (fiat_type)(fee_recv_addr)(fee_pct)
-                                (stake_coins_conf)(coin_to_asset)
+    global_t() {}
+    EOSLIB_SERIALIZE( global_t, (status)(otc_name)(app_info)(managers)
+                                (pay_type)(fiat_type)(fee_pct)
+                                (stake_assets_contract)(coin_as_stake)
                                 (buy_coins_conf)(sell_coins_conf)
                                 (accepted_timeout)(payed_timeout)
+                                (settle_levels)(farm_id)(farm_scale)
+                                (swap_steps)
     )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
-
 
 } // OTC

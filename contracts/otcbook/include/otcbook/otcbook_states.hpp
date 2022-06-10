@@ -21,7 +21,6 @@ using namespace eosio;
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
 
 static constexpr eosio::name active_perm{"active"_n};
-static constexpr eosio::name SETTLE_ARC{"oxo.settle"_n};
 
 // crypto assets
 static constexpr symbol   CNYD_SYMBOL           = SYMBOL("CNYD", 4);
@@ -30,7 +29,6 @@ static constexpr symbol   CNY                   = SYMBOL("CNY", 4);
 static constexpr uint64_t percent_boost     = 10000;
 static constexpr uint64_t order_stake_pct   = 10000; // 100%
 static constexpr uint64_t max_memo_size     = 1024;
-
 
 static constexpr uint64_t seconds_per_day                   = 24 * 3600;
 static constexpr uint64_t seconds_per_year                  = 365 * seconds_per_day;
@@ -53,13 +51,8 @@ static constexpr uint64_t default_withdraw_limit_second = DEFAULT_WITHDRAW_LIMIT
 #define OTCBOOK_TBL [[eosio::table, eosio::contract("otcbook")]]
 
 struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
-    name admin;             // default is contract self
     name conf_contract      = "otcconf"_n;
-    bool initialized        = false;
-    bool running            = false;
-
-    EOSLIB_SERIALIZE( global_t, (admin)(conf_contract)(initialized)(running)
-    )
+    EOSLIB_SERIALIZE( global_t, (conf_contract))
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
@@ -357,7 +350,7 @@ struct OTCBOOK_TBL blacklist_t {
     uint64_t primary_key() const { return account.value; }
     uint64_t scope() const { return /*order_price.symbol.code().raw()*/ 0; }
 
-    typedef wasm::db::multi_index_ex  <"blacklist"_n, blacklist_t> idx_t;
+    typedef wasm::db::multi_index_ex <"blacklist"_n, blacklist_t> idx_t;
 };
 
 } // AMA
