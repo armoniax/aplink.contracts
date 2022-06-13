@@ -1,16 +1,11 @@
 #include "otcsettle.hpp"
 #include <eosio/permission.hpp>
 #include "eosio.token/eosio.token.hpp"
-#include "aplink.farm/aplink.farm.hpp"
 #include <otcconf/utils.hpp>
 
 using namespace otcsettle;
 using namespace eosio;
 using namespace otc;
-
-#define GROW(bank, land_id, customer, quantity, memo) \
-    {	aplink::farm::grow_action act{ bank, { {_self, active_perm} } };\
-			act.send( land_id, customer, quantity , memo );}
 
 inline int64_t get_precision(const symbol &s) {
     int64_t digit = s.precision();
@@ -64,7 +59,7 @@ void settle::deal(const uint64_t& deal_id,
     CHECKC(fee.amount > 0, err::PARAM_ERROR, "quantity must be positive");
     CHECKC(conf.settle_levels.size()>0, err::UN_INITIALIZE, "level config hasn't set");
     CHECKC(end_at > start_at, err::PARAM_ERROR, "end time should later than start time");
-    CHECKC(quantity.symbol == CASH_SYMBOL && fee.symbol == CASH_SYMBOL, err::PARAM_ERROR, "quantity and fee symbol invalid");
+    if(quantity.symbol != CASH_SYMBOL || fee.symbol != CASH_SYMBOL) return;
 
     auto user_settle_data = settle_t(user);
     auto merchant_settle_data = settle_t(merchant);
@@ -122,13 +117,6 @@ void settle::deal(const uint64_t& deal_id,
     reward.created_at = time_point_sec(current_time_point());
 
     _db.set(reward, _self);
-
-    name farm_arc = conf.managers.at(otc::manager_type::aplinkfarm);
-    if(is_account(farm_arc) && conf.farm_id > 0 && conf.farm_scale > 0){
-        auto value = multiply_decimal64( fee.amount, get_precision(APLINK_SYMBOL), get_precision(fee.symbol));
-        value = value * conf.farm_scale / RATE_BOOST;
-        GROW(farm_arc, conf.farm_id, user, asset(value, APLINK_SYMBOL), "metabalance farm grow: "+to_string(deal_id));
-    }
 }
 
 void settle::pick(const name& reciptian, vector<uint64_t> rewards){

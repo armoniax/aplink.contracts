@@ -290,7 +290,6 @@ public:
     [[eosio::action]]
     void stakechanged(const name& account, const asset &quantity, const string& memo);
     using stakechanged_action = eosio::action_wrapper<"stakechanged"_n, &otcbook::stakechanged>;
-         
 
 private:
     asset _calc_order_stakes(const asset &quantity);

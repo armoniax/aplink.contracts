@@ -77,8 +77,10 @@ void otcconf::init(const name& admin) {
         {20000000000000, 4000, 6000}
     };
 
-    _gstate.farm_id = 1;
-    _gstate.farm_scale = 60000;
+    // _gstate.farm_id = 1;
+    // _gstate.farm_scale = 60000;      1 USDT = 6 APL
+    _gstate.farm_id = 0;
+    _gstate.farm_scale = 0;
 
     _gstate.swap_steps = {
         {0, 1500}, {2000000000, 2500}, {10000000000, 3500}, {25000000000, 5000}};

@@ -9,13 +9,15 @@
 
 using namespace eosio;
 using namespace wasm::db;
-
-namespace otcsettle {
-
-
 using std::string;
 
-class [[eosio::contract("otc.settle")]] settle : public contract {    
+#define SETTLE_DEAL(bank, deal_id, merchant, user, quantity, fee, arbit_status, start_at, end_at) \
+    {	otcsettle::settle::deal_action act{ bank, { {_self, active_permission} } };\
+			act.send( deal_id, merchant, user, quantity, fee, arbit_status, start_at, end_at );}
+
+namespace otcsettle {
+class [[eosio::contract("otcsettle")]] settle : public contract { 
+       
 using conf_t = otc::global_t;
 using conf_table_t = otc::global_singleton;
 
@@ -37,6 +39,8 @@ public:
     {
         _gstate = _global.exists() ? _global.get() : gsettle_t{};
     }
+
+    ~settle() { _global.set(_gstate, get_self()); }
 
     [[eosio::action]]
     void setconf(const name &conf_contract);

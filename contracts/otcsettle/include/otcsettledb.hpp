@@ -15,7 +15,6 @@ using namespace wasm;
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
 
 static constexpr symbol CASH_SYMBOL              = SYMBOL("MUSDT", 6);
-static constexpr symbol APLINK_SYMBOL              = SYMBOL("APL", 4);
 
 static constexpr uint32_t MAX_CONTENT_SIZE = 64;            // 4*0 behind 1
 static constexpr uint16_t RATE_BOOST        = 10000;
@@ -33,7 +32,7 @@ namespace wasm { namespace db {
 #define SETTLE_TBL_NAME(name) [[eosio::table(name), eosio::contract("otcsettle")]]
 
 struct SETTLE_TBL_NAME("global") gsettle_t {
-    name conf_contract      = "otcconf"_n;
+    name conf_contract = "otcconf"_n;
     EOSLIB_SERIALIZE( gsettle_t, (conf_contract))
 };
 typedef eosio::singleton< "global"_n, gsettle_t > gsettle_singleton;
