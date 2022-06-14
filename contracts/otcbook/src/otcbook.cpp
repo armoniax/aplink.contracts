@@ -9,15 +9,20 @@
 static constexpr eosio::name active_permission{"active"_n};
 
 #define STAKE_CHANGED(account, quantity, memo) \
-    {	amax::otcbook::stakechanged_action act{ _self, { {_self, active_permission} } };\
+    {	metabalance::otcbook::stakechanged_action act{ _self, { {_self, active_permission} } };\
 			act.send( account, quantity , memo );}
+
+
+#define NOTIFICATION(account, info, memo) \
+    {	metabalance::otcbook::notification_action act{ _self, { {_self, active_permission} } };\
+			act.send( account, info , memo );}
+
 
 #define GROW(bank, land_id, customer, quantity, memo) \
     {	aplink::farm::grow_action act{ bank, { {_self, active_perm} } };\
 			act.send( land_id, customer, quantity , memo );}
 
-namespace amax {
-
+using namespace metabalance;
 using namespace std;
 using namespace eosio;
 using namespace wasm::safemath;
@@ -331,6 +336,9 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.va_frozen_quantity 	+= deal_quantity;
         row.updated_at          = time_point_sec(current_time_point());
     });
+
+    NOTIFICATION(order_maker, conf.app_info, 
+        "deal.new, meta.taker "+ taker.to_string() + ", meta.quantity " + deal_quantity.to_string());
 }
 
 /**
@@ -443,7 +451,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         GROW(farm_arc, conf.farm_id, deal_itr->order_taker, asset(value, APLINK_SYMBOL), "metabalance farm grow: "+to_string(deal_id));
     }
 }
-}
+
 
 void otcbook::canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id,
                          const string& session_msg, bool is_taker_black) {
@@ -526,7 +534,7 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
 
 
 void otcbook::processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id,
-    uint8_t action, const string& session_msg
+    uint8_t action_type, const string& session_msg
 ) {
     require_auth( account );
 
@@ -544,9 +552,13 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     switch ((account_type_t) account_type) {
     case account_type_t::MERCHANT:
         check( deal_itr->order_maker == account, "maker account mismatched");
+        NOTIFICATION(deal_itr->order_taker, _conf().app_info, 
+            "deal.process, meta.maker "+ account.to_string() + "meta.processed meta.deal " + to_string(deal_id) + " deal.status"+to_string(action_type));
         break;
     case account_type_t::USER:
         check( deal_itr->order_taker == account, "taker account mismatched");
+        NOTIFICATION(deal_itr->order_maker, _conf().app_info, 
+            "deal.process, meta.taker "+ account.to_string() + "meta.processed meta.deal " + to_string(deal_id) + " deal.status"+to_string(action_type));
         break;
     case account_type_t::ARBITER:
         check( deal_itr->arbiter == account, "arbiter account mismatched");
@@ -573,7 +585,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
         next_status = deal_status_t::_next_status;                                      \
         break;
 
-    switch ((deal_action_t)action)
+    switch ((deal_action_t)action_type)
     {
     // /*               action              account_type  arbit_status, limited_status   next_status  */
     DEAL_ACTION_CASE(MAKER_ACCEPT,          MERCHANT,     UNARBITTED,   CREATED,         MAKER_ACCEPTED)
@@ -581,21 +593,21 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     DEAL_ACTION_CASE(MAKER_RECV_AND_SENT,   MERCHANT,     UNARBITTED,   TAKER_SENT,      MAKER_RECV_AND_SENT)
     DEAL_ACTION_CASE(ADD_SESSION_MSG,       NONE,         NONE,         NONE,            NONE)
     default:
-        check(false, "unsupported process deal action:" + to_string((uint8_t)action));
+        check(false, "unsupported process deal action:" + to_string((uint8_t)action_type));
         break;
     }
 
     if (limited_status != deal_status_t::NONE)
-        check(limited_status == status, "can not process deal action:" + to_string((uint8_t)action)
+        check(limited_status == status, "can not process deal action:" + to_string((uint8_t)action_type)
              + " at status: " + to_string((uint8_t)status) );
     if (limited_account_type != account_type_t::NONE)
         check(limited_account_type == (account_type_t)account_type,
-            "can not process deal action:" + to_string((uint8_t)action)
+            "can not process deal action:" + to_string((uint8_t)action_type)
              + " by account_type: " + to_string((uint8_t)account_type) );
 
     if ( (uint8_t)limit_arbit_status != (uint8_t)arbit_status_t::NONE)
         check(arbit_status == limit_arbit_status,
-            "can not process deal action:" + to_string((uint8_t)action)
+            "can not process deal action:" + to_string((uint8_t)action_type)
              + " by arbit status: " + to_string((uint8_t)arbit_status) );
 
     deals.modify( *deal_itr, account, [&]( auto& row ) {
@@ -603,14 +615,14 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
             row.status = (uint8_t)next_status;
             row.updated_at = time_point_sec(current_time_point());
         }
-        if((uint8_t)deal_action_t::MAKER_ACCEPT == action) {
+        if((uint8_t)deal_action_t::MAKER_ACCEPT == action_type) {
             row.merchant_accepted_at = time_point_sec(current_time_point());
         }
-        if((uint8_t)deal_action_t::MAKER_RECV_AND_SENT == action ) {
+        if((uint8_t)deal_action_t::MAKER_RECV_AND_SENT == action_type ) {
             row.merchant_paid_at = time_point_sec(current_time_point());
         }
 
-        row.session.push_back({account_type, account, (uint8_t)status, action, session_msg, now});
+        row.session.push_back({account_type, account, (uint8_t)status, action_type, session_msg, now});
     });
 }
 
@@ -848,8 +860,13 @@ const otcbook::conf_t& otcbook::_conf(bool refresh/* = false*/) {
 void otcbook::stakechanged(const name& account, const asset &quantity, const string& memo){
     require_auth(get_self());
     require_recipient(account);
+    
 }
 
+void otcbook::notification(const name& account, const AppInfo_t &info, const string& memo){
+    require_auth(get_self());
+    require_recipient(account);
+}
 
 void otcbook::_set_blacklist(const name& account, uint64_t duration_second, const name& payer) {
     blacklist_t::idx_t blacklist_tbl(_self, _self.value);
@@ -894,5 +911,4 @@ void otcbook::_unfrozen(merchant_t& merchant, const asset& quantity){
     merchant.assets[quantity.symbol].balance += quantity.amount;
     merchant.updated_at = current_time_point();
     _dbc.set( merchant , get_self());
-}
 }

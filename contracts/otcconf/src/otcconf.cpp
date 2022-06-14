@@ -21,10 +21,10 @@ void otcconf::init(const name& admin) {
     // check(_gstate.status==status_type::UN_INITIALIZE, "contract has initialzed");
     _gstate = {};
     _gstate.status = uint8_t(status_type::INITIALIZED);
-    _gstate.otc_name = "meta.balance"_n;
     _gstate.app_info = {
+        "meta.balance"_n,
         "0.2.0",
-        "https://ipfs.io/ipfs/QmZUmzu96uKBLcCjNcnbD12hmjtMnaTs7ymLDHio3qbeDi",
+        "https://m.oxo.cash",
         "initial beta testing release"
     };
     _gstate.managers = {
@@ -110,9 +110,9 @@ void otcconf::setfarm(const name& farmname, const uint64_t& farm_id, const uint3
     _gstate.farm_scale = farm_scale;
 }
 
-void otcconf::setotcname(const name& otc_name) {
+void otcconf::setappname(const name& otc_name) {
     require_auth(_gstate.managers.at(manager_type::admin));
-    _gstate.otc_name = otc_name;
+    _gstate.app_info.app_name = otc_name;
 }
 
 void otcconf::setstatus(const uint8_t& status){

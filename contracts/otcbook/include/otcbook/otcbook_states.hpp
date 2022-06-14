@@ -13,7 +13,7 @@
 #include <set>
 #include <type_traits>
 
-namespace amax {
+namespace metabalance {
 
 using namespace std;
 using namespace eosio;

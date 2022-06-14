@@ -13,8 +13,9 @@
 #include "otcbook_states.hpp"
 
 using namespace wasm::db;
+using namespace otc;
 
-namespace amax {
+namespace metabalance {
 
 using eosio::asset;
 using eosio::check;
@@ -289,7 +290,13 @@ public:
 
     [[eosio::action]]
     void stakechanged(const name& account, const asset &quantity, const string& memo);
+
+    [[eosio::action]]
+    void notification(const name& account, const otc::AppInfo_t &info, const string& memo);
+
+
     using stakechanged_action = eosio::action_wrapper<"stakechanged"_n, &otcbook::stakechanged>;
+    using notification_action = eosio::action_wrapper<"notification"_n, &otcbook::notification>;
 
 private:
     asset _calc_order_stakes(const asset &quantity);

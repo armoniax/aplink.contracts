@@ -70,9 +70,10 @@ static constexpr name PAYPAL        = "paypal"_n;
  * App upgrade info
  */
 struct AppInfo_t {
-    string latest_app_version;
-    string homepage; //ipfs url
-    string upgrade_log;
+    name app_name;
+    string app_version;
+    string url;
+    string logo;
 };
 
 typedef set<symbol> symbol_set;
@@ -110,7 +111,6 @@ struct swap_step_config {
 
 struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     uint8_t status = 0;
-    name otc_name;
     AppInfo_t app_info;
     map<name,name> managers;
 
@@ -135,7 +135,7 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     vector<swap_step_config> swap_steps;
 
     global_t() {}
-    EOSLIB_SERIALIZE( global_t, (status)(otc_name)(app_info)(managers)
+    EOSLIB_SERIALIZE( global_t, (status)(app_info)(managers)
                                 (pay_type)(fiat_type)(fee_pct)
                                 (stake_assets_contract)(coin_as_stake)
                                 (buy_coins_conf)(sell_coins_conf)

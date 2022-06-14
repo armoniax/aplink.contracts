@@ -73,7 +73,7 @@ public:
     void setfarm(const name& farmname, const uint64_t& farm_id, const uint32_t& farm_scale);
 
     [[eosio::action]]
-    void setotcname(const name& otc_name);
+    void setappname(const name& otc_name);
 
     [[eosio::action]]
     void setsettlelv(const vector<settle_level_config>& configs);
