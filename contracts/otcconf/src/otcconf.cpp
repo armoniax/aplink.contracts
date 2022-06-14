@@ -25,7 +25,7 @@ void otcconf::init(const name& admin) {
         "meta.balance"_n,
         "0.2.0",
         "https://m.oxo.cash",
-        "initial beta testing release"
+        "https://nftstorage.link/ipfs/bafkreicrlzf4rix5wt6bcnslosdgw7px5gg6fkdi5inva6y7hkyc3fu4ua"
     };
     _gstate.managers = {
         {manager_type::admin,admin},
