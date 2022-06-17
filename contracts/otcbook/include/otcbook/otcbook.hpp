@@ -293,8 +293,7 @@ public:
 
     [[eosio::action]]
     void notification(const name& account, const otc::AppInfo_t &info, const string& memo);
-
-
+    
     using stakechanged_action = eosio::action_wrapper<"stakechanged"_n, &otcbook::stakechanged>;
     using notification_action = eosio::action_wrapper<"notification"_n, &otcbook::notification>;
 

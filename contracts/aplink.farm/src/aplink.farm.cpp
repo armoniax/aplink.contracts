@@ -47,6 +47,7 @@ void farm::lease(const name& farmer,
     auto current_time = current_time_point();
     auto lands = land_t::idx_t(_self, _self.value);
     auto pid = lands.available_primary_key();
+    if(pid == 0) pid = 1;
     auto land = land_t(pid);
     land.farmer = farmer;
     land.title = title;
@@ -73,12 +74,11 @@ void farm::allot(const uint64_t& land_id, const name& customer, const asset& qua
     CHECKC( customer != land.farmer, err::ACCOUNT_INVALID, "can not crop to farmer" );
 
     require_auth(land.farmer);
-    auto current_time = time_point_sec(current_time_point());
+    auto now = time_point_sec(current_time_point());
     //TODO CHECK
-    if(land.avaliable_apples < quantity) return;
-    if(current_time < land.opened_at)  return;
-    if(current_time > land.closed_at)  return;
-    if(land.status != land_status_t::LAND_ENABLED) return;
+    CHECKC(quantity <= land.avaliable_apples, err::OVERSIZED, "land's apples less than respect")
+    CHECKC(now >= land.opened_at && now <= land.closed_at, err::TIME_INVALID, "land is not in openning time")
+    CHECKC(land.status == land_status_t::LAND_ENABLED, err::NOT_STARTED, "land is not in openning")
 
     land.avaliable_apples -= quantity;
     land.alloted_apples += quantity;
@@ -87,11 +87,10 @@ void farm::allot(const uint64_t& land_id, const name& customer, const asset& qua
     auto apples = apple_t::idx_t(_self, _self.value);
     auto pid = apples.available_primary_key();
     auto apple = apple_t(pid);
-    //TODO picker->picker, weight->quantity
     apple.picker = customer;
     apple.quantity = quantity;
     apple.memo = memo;
-    apple.expired_at = current_time + MONTH_SECONDS;
+    apple.expired_at = now + MONTH_SECONDS;
 
     _db.set(apple, land.farmer);
 }
