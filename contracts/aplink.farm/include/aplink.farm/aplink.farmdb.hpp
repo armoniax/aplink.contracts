@@ -44,10 +44,11 @@ struct FARM_LAND_TBL land_t {
     string          title;                      //land title: <=64 chars
     string          uri;                        //land uri: <=64 chars
     string          banner;                        //banner uri: <=64 chars
-    asset           seeds;
+    asset           avaliable_apples;
+    asset           alloted_apples;
     uint8_t         status = LAND_ENABLED;         //status of land, see land_status_t
-    time_point_sec      open_at;              //customer can crop at
-    time_point_sec      close_at;                //customer stop crop at
+    time_point_sec      opened_at;              //customer can crop at
+    time_point_sec      closed_at;                //customer stop crop at
     time_point_sec      created_at;                 //creation time (UTC time)
     time_point_sec      updated_at;                 //update time: last updated atuint8_t  
     
@@ -64,31 +65,31 @@ struct FARM_LAND_TBL land_t {
         indexed_by<"farmeridx"_n,  const_mem_fun<land_t, uint128_t, &land_t::by_farmer> >
     > idx_t;
 
-    EOSLIB_SERIALIZE( land_t, (id)(farmer)(title)(uri)(banner)(seeds)(status)
-    (open_at)(close_at)(created_at)(updated_at) )
+    EOSLIB_SERIALIZE( land_t, (id)(farmer)(title)(uri)(banner)(avaliable_apples)(alloted_apples)(status)
+    (opened_at)(closed_at)(created_at)(updated_at) )
 
 };
 
 struct FARM_APPLE_TBL apple_t {
     uint64_t        id;
-    name            croper;                     //land farmer
-    asset           weight;
+    name            picker;                     //land farmer
+    asset           quantity;
     string          memo;                       //land uri: <=64 chars
-    time_point_sec  expire_at;                  //expire time (UTC time)
+    time_point_sec  expired_at;                  //expire time (UTC time)
 
     apple_t() {}
     apple_t(const uint64_t& pid): id(pid) {}
     uint64_t primary_key() const { return id; }
 
-    uint64_t by_expireid() const { return ((uint64_t)expire_at.sec_since_epoch() << 32) | (id & 0x00000000FFFFFFFF); }
-    uint128_t by_croper() const { return (uint128_t)croper.value << 64 | (uint128_t)id; }
+    uint64_t by_expireid() const { return ((uint64_t)expired_at.sec_since_epoch() << 32) | (id & 0x00000000FFFFFFFF); }
+    uint128_t by_picker() const { return (uint128_t)picker.value << 64 | (uint128_t)id; }
 
     typedef eosio::multi_index<"apples"_n, apple_t,
         indexed_by<"expireid"_n,  const_mem_fun<apple_t, uint64_t, &apple_t::by_expireid> >,
-        indexed_by<"cropidx"_n,  const_mem_fun<apple_t, uint128_t, &apple_t::by_croper> >
+        indexed_by<"pickeridx"_n,  const_mem_fun<apple_t, uint128_t, &apple_t::by_picker> >
     > idx_t;
 
-    EOSLIB_SERIALIZE( apple_t, (id)(croper)(weight)(memo)(expire_at) )
+    EOSLIB_SERIALIZE( apple_t, (id)(picker)(quantity)(memo)(expired_at) )
 };
 
 } }

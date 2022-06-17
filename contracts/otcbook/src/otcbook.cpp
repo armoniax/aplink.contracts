@@ -18,8 +18,8 @@ static constexpr eosio::name active_permission{"active"_n};
 			act.send( account, info , memo );}
 
 
-#define GROW(bank, land_id, customer, quantity, memo) \
-    {	aplink::farm::grow_action act{ bank, { {_self, active_perm} } };\
+#define ALLOT(bank, land_id, customer, quantity, memo) \
+    {	aplink::farm::allot_action act{ bank, { {_self, active_perm} } };\
 			act.send( land_id, customer, quantity , memo );}
 
 using namespace metabalance;
@@ -448,7 +448,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
     if(is_account(farm_arc) && conf.farm_id > 0 && conf.farm_scale > 0){
         auto value = multiply_decimal64( fee.amount, get_precision(APLINK_SYMBOL), get_precision(fee.symbol));
         value = value * conf.farm_scale / percent_boost;
-        GROW(farm_arc, conf.farm_id, deal_itr->order_taker, asset(value, APLINK_SYMBOL), "metabalance farm grow: "+to_string(deal_id));
+        ALLOT(farm_arc, conf.farm_id, deal_itr->order_taker, asset(value, APLINK_SYMBOL), "metabalance farm allot: "+to_string(deal_id));
     }
 }
 
@@ -860,7 +860,6 @@ const otcbook::conf_t& otcbook::_conf(bool refresh/* = false*/) {
 void otcbook::stakechanged(const name& account, const asset &quantity, const string& memo){
     require_auth(get_self());
     require_recipient(account);
-    
 }
 
 void otcbook::notification(const name& account, const AppInfo_t &info, const string& memo){
