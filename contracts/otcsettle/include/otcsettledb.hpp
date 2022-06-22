@@ -37,7 +37,6 @@ struct SETTLE_TBL_NAME("global") gsettle_t {
 };
 typedef eosio::singleton< "global"_n, gsettle_t > gsettle_singleton;
 
-
 struct SETTLE_TBL settle_t {
     name        account;
     uint8_t     level = 0;

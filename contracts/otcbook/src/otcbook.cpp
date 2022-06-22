@@ -700,7 +700,7 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
     }
 
     deals.modify( *deal_itr, account, [&]( auto& row ) {
-            row.arbit_status = (uint8_t)arbit_status_t::FINISHED;
+            row.arbit_status = uint8_t(arbit_result == 0 ? arbit_status_t::CLOSENOFINE : arbit_status_t::CLOSEWITHFINE );
             row.status = (uint8_t)deal_status_t::CLOSED;
             row.closed_at = time_point_sec(current_time_point());
             row.updated_at = time_point_sec(current_time_point());

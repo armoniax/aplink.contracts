@@ -117,7 +117,8 @@ enum class arbit_status_t: uint8_t {
     NONE        =0,
     UNARBITTED = 1,
     ARBITING   = 2,
-    FINISHED   = 3
+    CLOSENOFINE = 3,
+    CLOSEWITHFINE = 4
 };
 
 struct asset_stake{
