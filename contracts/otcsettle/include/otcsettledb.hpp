@@ -16,7 +16,7 @@ using namespace wasm;
 
 static constexpr symbol CASH_SYMBOL              = SYMBOL("MUSDT", 6);
 
-static constexpr uint32_t MAX_CONTENT_SIZE = 64;            // 4*0 behind 1
+static constexpr uint32_t MAX_CONTENT_SIZE = 64;
 static constexpr uint16_t RATE_BOOST        = 10000;
 
 enum class arbit_status_t: uint8_t {
