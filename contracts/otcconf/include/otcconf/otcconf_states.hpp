@@ -120,7 +120,6 @@ struct [[eosio::table("global"), eosio::contract("otcconf")]] global_t {
     uint64_t fee_pct;
     map<symbol, name> stake_assets_contract; //get the contract 
     map<symbol, symbol> coin_as_stake;  //get stake asset for a coin
-    map<symbol, uint32_t> stake_as_usd;    //get stake asset for a coin
     symbol_set buy_coins_conf;  //crypto coins that OTC merchants can buy in orders
     symbol_set sell_coins_conf; //crypto coins that OTC merchants can sell in orders
     uint64_t accepted_timeout;
