@@ -27,6 +27,28 @@ using namespace std;
 #define TRACE_L(...) TRACE(__VA_ARGS__, "\n")
 
 #define CHECK(exp, msg) { if (!(exp)) eosio::check(false, msg); }
+#define CHECKC(exp, code, msg) \
+   { if (!(exp)) eosio::check(false, string("$$$") + to_string((int)code) + string("$$$ ") + msg); }
+
+enum class err: uint8_t {
+   NONE                 = 0,
+   RECORD_NOT_FOUND     = 1,
+   RECORD_EXISTING      = 2,
+   SYMBOL_MISMATCH      = 4,
+   PARAM_ERROR          = 5,
+   PAUSED               = 6,
+   NO_AUTH              = 7,
+   NOT_POSITIVE         = 8,
+   NOT_STARTED          = 9,
+   OVERSIZED            = 10,
+   TIME_EXPIRED         = 11,
+   NOTIFY_UNRELATED     = 12,
+   ACTION_REDUNDANT     = 13,
+   ACCOUNT_INVALID      = 14,
+   UN_INITIALIZE        = 16,
+   HAS_INITIALIZE       = 17,
+   UNRESPECT_RESULT     = 18
+};
 
 
 template<typename T>

@@ -1,7 +1,14 @@
 #pragma once
 
+#include <string>
+#include <algorithm>
+#include <iterator>
 #include <eosio/eosio.hpp>
-#include <vector>
+#include "safe.hpp"
+
+#include <eosio/asset.hpp>
+
+using namespace std;
 
 #define EMPTY_MACRO_FUNC(...)
 
@@ -20,59 +27,57 @@
 #define TRACE_L(...) TRACE(__VA_ARGS__, "\n")
 
 #define CHECK(exp, msg) { if (!(exp)) eosio::check(false, msg); }
+#define CHECKC(exp, code, msg) \
+   { if (!(exp)) eosio::check(false, string("$$$") + to_string((int)code) + string("$$$ ") + msg); }
 
-namespace wasm {
+enum class err: uint8_t {
+   NONE                 = 0,
+   RECORD_NOT_FOUND     = 1,
+   RECORD_EXISTING      = 2,
+   SYMBOL_MISMATCH      = 4,
+   PARAM_ERROR          = 5,
+   PAUSED               = 6,
+   NO_AUTH              = 7,
+   NOT_POSITIVE         = 8,
+   NOT_STARTED          = 9,
+   OVERSIZED            = 10,
+   TIME_EXPIRED         = 11,
+   NOTIFY_UNRELATED     = 12,
+   ACTION_REDUNDANT     = 13,
+   ACCOUNT_INVALID      = 14,
+   UN_INITIALIZE        = 16,
+   HAS_INITIALIZE       = 17
+};
 
-using namespace std;
 
-uint64_t char_to_symbol( char c );
-uint64_t string_to_name( const char* str );
-
-//===----------------------------------------------------------------------===//
-// WebAssemblyAsmPrinter Implementation.
-//===----------------------------------------------------------------------===//
-uint64_t char_to_symbol( char c ) {
-   if( c >= 'a' && c <= 'z' )
-      return (c - 'a') + 6;
-   if( c >= '1' && c <= '5' )
-      return (c - '1') + 1;
-   return 0;
+template<typename T>
+int128_t multiply(int128_t a, int128_t b) {
+    int128_t ret = a * b;
+    CHECK(ret >= std::numeric_limits<T>::min() && ret <= std::numeric_limits<T>::max(),
+          "overflow exception of multiply");
+    return ret;
 }
 
-inline vector <string> string_split(string str, char delimiter) {
-      vector <string> r;
-      string tmpstr;
-      while (!str.empty()) {
-          int ind = str.find_first_of(delimiter);
-          if (ind == -1) {
-              r.push_back(str);
-              str.clear();
-          } else {
-              r.push_back(str.substr(0, ind));
-              str = str.substr(ind + 1, str.size() - ind - 1);
-          }
-      }
-      return r;
-
+template<typename T>
+int128_t divide_decimal(int128_t a, int128_t b, int128_t precision) {
+    int128_t tmp = 10 * a * precision  / b;
+    CHECK(tmp >= std::numeric_limits<T>::min() && tmp <= std::numeric_limits<T>::max(),
+          "overflow exception of divide_decimal");
+    return (tmp + 5) / 10;
 }
 
-uint64_t string_to_name( const std::string& str ) {
-   uint64_t name = 0;
-   int i = 0;
-   for ( ; str[i] && i < 12; ++i) {
-       // NOTE: char_to_symbol() returns char type, and without this explicit
-       // expansion to uint64 type, the compilation fails at the point of usage
-       // of string_to_name(), where the usage requires constant (compile time) expression.
-        name |= (char_to_symbol(str[i]) & 0x1f) << (64 - 5 * (i + 1));
-    }
-
-   // The for-loop encoded up to 60 high bits into uint64 'name' variable,
-   // if (strlen(str) > 12) then encode str[12] into the low (remaining)
-   // 4 bits of 'name'
-   if (i == 12)
-       name |= char_to_symbol(str[12]) & 0x0F;
-   return name;
+template<typename T>
+int128_t multiply_decimal(int128_t a, int128_t b, int128_t precision) {
+    int128_t tmp = 10 * a * b / precision;
+    CHECK(tmp >= std::numeric_limits<T>::min() && tmp <= std::numeric_limits<T>::max(),
+          "overflow exception of multiply_decimal");
+    return (tmp + 5) / 10;
 }
+
+#define divide_decimal64(a, b, precision) divide_decimal<int64_t>(a, b, precision)
+#define multiply_decimal64(a, b, precision) multiply_decimal<int64_t>(a, b, precision)
+#define multiply_i64(a, b) multiply<int64_t>(a, b)
+
 
 inline constexpr int64_t power(int64_t base, int64_t exp) {
     int64_t ret = 1;
@@ -90,9 +95,89 @@ inline constexpr int64_t calc_precision(int64_t digit) {
     return power10(digit);
 }
 
-/**
- *  @param quantity: quantity * precision == amount
- */
-#define ASSET(quantity, sym) asset(quantity * calc_precision(sym.precision()), sym)
+string_view trim(string_view sv) {
+    sv.remove_prefix(std::min(sv.find_first_not_of(" "), sv.size())); // left trim
+    sv.remove_suffix(std::min(sv.size()-sv.find_last_not_of(" ")-1, sv.size())); // right trim
+    return sv;
+}
 
+vector<string_view> split(string_view str, string_view delims = " ")
+{
+    vector<string_view> res;
+    std::size_t current, previous = 0;
+    current = str.find_first_of(delims);
+    while (current != std::string::npos) {
+        res.push_back(trim(str.substr(previous, current - previous)));
+        previous = current + 1;
+        current = str.find_first_of(delims, previous);
+    }
+    res.push_back(trim(str.substr(previous, current - previous)));
+    return res;
+}
+
+bool starts_with(string_view sv, string_view s) {
+    return sv.size() >= s.size() && sv.compare(0, s.size(), s) == 0;
+}
+
+template <class T>
+void to_int(string_view sv, T& res) {
+    res = 0;
+    T p = 1;
+    for( auto itr = sv.rbegin(); itr != sv.rend(); ++itr ) {
+        CHECK( *itr <= '9' && *itr >= '0', "invalid numeric character of int");
+        res += p * T(*itr-'0');
+        p   *= T(10);
+    }
+}
+template <class T>
+void precision_from_decimals(int8_t decimals, T& p10)
+{
+    CHECK(decimals <= 18, "precision should be <= 18");
+    p10 = 1;
+    T p = decimals;
+    while( p > 0  ) {
+        p10 *= 10; --p;
+    }
+}
+
+asset asset_from_string(string_view from)
+{
+    string_view s = trim(from);
+
+    // Find space in order to split amount and symbol
+    auto space_pos = s.find(' ');
+    CHECK(space_pos != string::npos, "Asset's amount and symbol should be separated with space");
+    auto symbol_str = trim(s.substr(space_pos + 1));
+    auto amount_str = s.substr(0, space_pos);
+
+    // Ensure that if decimal point is used (.), decimal fraction is specified
+    auto dot_pos = amount_str.find('.');
+    if (dot_pos != string::npos) {
+        CHECK(dot_pos != amount_str.size() - 1, "Missing decimal fraction after decimal point");
+    }
+
+    // Parse symbol
+    uint8_t precision_digit = 0;
+    if (dot_pos != string::npos) {
+        precision_digit = amount_str.size() - dot_pos - 1;
+    }
+
+    symbol sym = symbol(symbol_str, precision_digit);
+
+    // Parse amount
+    safe<int64_t> int_part, fract_part;
+    if (dot_pos != string::npos) {
+        to_int(amount_str.substr(0, dot_pos), int_part);
+        to_int(amount_str.substr(dot_pos + 1), fract_part);
+        if (amount_str[0] == '-') fract_part *= -1;
+    } else {
+        to_int(amount_str, int_part);
+    }
+
+    safe<int64_t> amount = int_part;
+    safe<int64_t> precision; precision_from_decimals(sym.precision(), precision);
+    amount *= precision;
+    amount += fract_part;
+
+    return asset(amount.value, sym);
 }

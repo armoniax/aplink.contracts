@@ -13,7 +13,7 @@
 #include <set>
 #include <type_traits>
 
-namespace amax {
+namespace metabalance {
 
 using namespace std;
 using namespace eosio;
@@ -21,19 +21,15 @@ using namespace eosio;
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
 
 static constexpr eosio::name active_perm{"active"_n};
-static constexpr eosio::name SYS_BANK{"cnyd.token"_n};
-
-static constexpr eosio::name SETTLE_ARC{"oxo.settle"_n};
 
 // crypto assets
 static constexpr symbol   CNYD_SYMBOL           = SYMBOL("CNYD", 4);
 static constexpr symbol   CNY                   = SYMBOL("CNY", 4);
-static constexpr symbol   STAKE_SYMBOL          = CNYD_SYMBOL;
+static constexpr symbol   APLINK_SYMBOL              = SYMBOL("APL", 4);
 
 static constexpr uint64_t percent_boost     = 10000;
 static constexpr uint64_t order_stake_pct   = 10000; // 100%
 static constexpr uint64_t max_memo_size     = 1024;
-
 
 static constexpr uint64_t seconds_per_day                   = 24 * 3600;
 static constexpr uint64_t seconds_per_year                  = 365 * seconds_per_day;
@@ -46,24 +42,18 @@ static constexpr uint64_t default_blacklist_duration_second = 3 * seconds_per_da
 static constexpr uint64_t default_blacklist_duration_second = DEFAULT_BLACKLIST_DURATION_SECOND_FOR_TEST;
 #endif//DEFAULT_BLACKLIST_DURATION_SECOND_FOR_TEST
 
+#ifndef DEFAULT_WITHDRAW_LIMIT_SECOND_FOR_TEST
+static constexpr uint64_t default_withdraw_limit_second = 3 * seconds_per_day;    // 3 days
+#else
+#warning "DEFAULT_WITHDRAW_LIMIT_SECOND_FOR_TEST should only be used for test
+static constexpr uint64_t default_withdraw_limit_second = DEFAULT_WITHDRAW_LIMIT_SECOND_FOR_TEST;
+#endif//DEFAULT_WITHDRAW_LIMIT_SECOND_FOR_TEST
 
 #define OTCBOOK_TBL [[eosio::table, eosio::contract("otcbook")]]
 
 struct [[eosio::table("global"), eosio::contract("otcbook")]] global_t {
-    // asset min_buy_order_quantity;
-    // asset min_sell_order_quantity;
-    // asset min_pos_stake_frozen;
-    // uint64_t withhold_expire_sec = 600;   // the amount hold will be unfrozen upon expiry
-    // name transaction_fee_receiver;  // receiver account to transaction fees
-    // uint64_t transaction_fee_ratio = 0; // fee ratio boosted by 10000
-    name admin;             // default is contract self
     name conf_contract      = "otcconf"_n;
-    bool initialized        = false;
-
-    EOSLIB_SERIALIZE( global_t, /*(min_buy_order_quantity)(min_sell_order_quantity)*/
-                                /*(withhold_expire_sec)(transaction_fee_receiver)
-                                (transaction_fee_ratio)*/(admin)(conf_contract)(initialized)
-    )
+    EOSLIB_SERIALIZE( global_t, (conf_contract))
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
@@ -127,7 +117,13 @@ enum class arbit_status_t: uint8_t {
     NONE        =0,
     UNARBITTED = 1,
     ARBITING   = 2,
-    FINISHED   = 3
+    CLOSENOFINE = 3,
+    CLOSEWITHFINE = 4
+};
+
+struct asset_stake{
+    uint64_t balance;
+    uint64_t frozen;
 };
 
 struct OTCBOOK_TBL merchant_t {
@@ -137,8 +133,7 @@ struct OTCBOOK_TBL merchant_t {
     string email;                   // email
     string memo;                    // memo
     uint8_t state;                 // status, merchant_state_t
-    asset stake_free = asset(0, STAKE_SYMBOL);      // staked and free to make orders
-    asset stake_frozen = asset(0, STAKE_SYMBOL);     // staked and frozen in orders
+    map<symbol, asset_stake> assets;
     time_point_sec updated_at;
 
     merchant_t() {}
@@ -156,7 +151,7 @@ struct OTCBOOK_TBL merchant_t {
     > idx_t;
 
     EOSLIB_SERIALIZE(merchant_t,  (owner)(merchant_name)(merchant_detail)
-                                  (email)(memo)(state)(stake_free)(stake_frozen)(updated_at)
+                                  (email)(memo)(state)(assets)(updated_at)
     )
 };
 
@@ -177,9 +172,7 @@ struct OTCBOOK_TBL order_t {
     asset va_max_take_quantity;                     // va(virtual asset) max take quantity quantity for taker, symbol must equal to quantity's
     asset va_frozen_quantity;                       // va(virtual asset) frozen quantity of sell/buy coin
     asset va_fulfilled_quantity;                    // va(virtual asset) fulfilled quantity of sell/buy coin, support partial fulfillment
-    asset stake_frozen = asset(0, STAKE_SYMBOL);    // stake frozen asset
-    asset total_fee = asset(0, STAKE_SYMBOL);
-    asset fine_amount= asset(0, STAKE_SYMBOL);      // aarbit fine amount, not contain fee
+    asset stake_frozen;                             // stake frozen asset
     string memo;                                    // memo
 
     uint8_t status;                                 //
@@ -214,7 +207,7 @@ struct OTCBOOK_TBL order_t {
 
     EOSLIB_SERIALIZE(order_t,   (id)(owner)(merchant_name)(accepted_payments)(va_price)(va_quantity)
                                 (va_min_take_quantity)(va_max_take_quantity)(va_frozen_quantity)(va_fulfilled_quantity)
-                                (stake_frozen)(total_fee)(fine_amount)
+                                (stake_frozen)
                                 (memo)(status)(created_at)(closed_at)(updated_at))
 };
 
@@ -350,82 +343,6 @@ struct OTCBOOK_TBL deal_t {
                                 (created_at)(closed_at)(updated_at)(order_sn)
                                 (session)
                                 (merchant_accepted_at)(merchant_paid_at))
-
-    // template<typename DataStream>
-    // friend DataStream& operator << ( DataStream& ds, const deal_t& t ) {
-    //     return ds << t.id
-    //         << t.order_side
-    //         << t.order_id
-    //         << t.order_price
-    //         << t.deal_quantity
-    //         << t.order_maker
-    //         << t.merchant_name
-    //         << t.order_taker
-    //         << t.deal_fee
-    //         << t.fine_amount
-    //         << t.status
-    //         << t.arbit_status
-    //         << t.arbiter
-    //         << t.created_at
-    //         << t.closed_at
-    //         << t.updated_at
-    //         << t.order_sn
-    //         << t.session
-    //         << t.merchant_accepted_at
-    //         << t.merchant_paid_at;
-    // }
-
-    // template<typename DataStream>
-    // friend DataStream& operator >> ( DataStream& ds, deal_t& t ) {
-    //     return ds >> t.id
-    //         >> t.order_side
-    //         >> t.order_id
-    //         >> t.order_price
-    //         >> t.deal_quantity
-    //         >> t.order_maker
-    //         >> t.merchant_name
-    //         >> t.order_taker
-    //         >> t.deal_fee
-    //         >> t.fine_amount
-    //         >> t.status
-    //         >> t.arbit_status
-    //         >> t.arbiter
-    //         >> t.created_at
-    //         >> t.closed_at
-    //         >> t.updated_at
-    //         >> t.order_sn
-    //         >> t.session;
-    // }
-};
-
-/**
- * deposit log
- */
-struct OTCBOOK_TBL fund_log_t {
-    uint64_t id = 0;        // PK: available_primary_key, auto increase
-    name owner;             // merchant
-    uint64_t order_id;
-    name order_side;
-    name action;            // operation action, [deposit, withdraw, openorder, closeorder]
-    asset quantity;         // maybe positive(plus) or negative(minus)
-    time_point_sec log_at;  // log time at
-    time_point_sec updated_at;
-
-    fund_log_t() {}
-    fund_log_t(uint64_t i): id(i) {}
-    uint64_t primary_key() const { return id; }
-    uint64_t scope() const { return /*order_price.symbol.code().raw()*/ 0; }
-
-    uint64_t by_update_time() const {
-        return (uint64_t) updated_at.utc_seconds ;
-    }
-
-    typedef eosio::multi_index
-    <"fundlog"_n, fund_log_t,
-        indexed_by<"updatedat"_n, const_mem_fun<fund_log_t, uint64_t, &fund_log_t::by_update_time> >
-    > table_t;
-
-    EOSLIB_SERIALIZE(fund_log_t,    (id)(owner)(order_id)(order_side)(action)(quantity)(log_at)(updated_at) )
 };
 
 struct OTCBOOK_TBL blacklist_t {
@@ -435,7 +352,7 @@ struct OTCBOOK_TBL blacklist_t {
     uint64_t primary_key() const { return account.value; }
     uint64_t scope() const { return /*order_price.symbol.code().raw()*/ 0; }
 
-    typedef wasm::db::multi_index_ex  <"blacklist"_n, blacklist_t> idx_t;
+    typedef wasm::db::multi_index_ex <"blacklist"_n, blacklist_t> idx_t;
 };
 
 } // AMA

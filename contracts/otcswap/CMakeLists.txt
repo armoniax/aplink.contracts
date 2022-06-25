@@ -5,6 +5,7 @@ add_contract(otcswap otcswap
 target_include_directories(otcswap
    PUBLIC
    ${CMAKE_CURRENT_SOURCE_DIR}/include
+   ${CMAKE_CURRENT_SOURCE_DIR}/../otcconf/include 
  )
 
 set_target_properties(otcswap

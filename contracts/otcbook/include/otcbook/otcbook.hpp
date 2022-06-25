@@ -9,12 +9,13 @@
 #include <string>
 
 #include <otcconf/otcconf_states.hpp>
-#include "wasm_db.hpp"
+#include <otcconf/wasm_db.hpp>
 #include "otcbook_states.hpp"
 
 using namespace wasm::db;
+using namespace otc;
 
-namespace amax {
+namespace metabalance {
 
 using eosio::asset;
 using eosio::check;
@@ -63,7 +64,6 @@ public:
             _gstate = _global.get();
         } else { // first init
             _gstate = global_t{};
-            _gstate.admin = _self;
         }
         // _gstate2 = _global2.exists() ? _global2.get() : global2_t{};
     }
@@ -74,28 +74,12 @@ public:
     }
 
     /**
-     * initialize contract by admin
-     * @param conf_contract conf contract
-     * @note require admin auth
-     */
-    [[eosio::action]]
-    void init(const name &conf_contract);
-
-    /**
      * set conf contract by admin
      * @param conf_contract conf contract
      * @note require admin auth
      */
     [[eosio::action]]
     void setconf(const name &conf_contract);
-
-    /**
-     * set admin by contract self account
-     * @param admin new admin
-     * @note require contract self auth
-     */
-    [[eosio::action]]
-    void setadmin(const name& admin);
 
     /**
      * set merchant
@@ -269,7 +253,7 @@ public:
      * @param memo memo
      * @note require from auth
      */
-    [[eosio::on_notify("cnyd.token::transfer")]]
+    [[eosio::on_notify("*::transfer")]]
     void deposit(name from, name to, asset quantity, string memo);
 
     /**
@@ -304,21 +288,30 @@ public:
     // [[eosio::action]]
     // void timeoutdeal();
 
+    [[eosio::action]]
+    void stakechanged(const name& account, const asset &quantity, const string& memo);
+
+    [[eosio::action]]
+    void notification(const name& account, const otc::AppInfo_t &info, const string& memo);
+    
+    using stakechanged_action = eosio::action_wrapper<"stakechanged"_n, &otcbook::stakechanged>;
+    using notification_action = eosio::action_wrapper<"notification"_n, &otcbook::notification>;
 
 private:
-    asset _calc_order_stakes(const asset &quantity, const asset &price);
+    asset _calc_order_stakes(const asset &quantity);
 
-    asset _calc_deal_fee(const asset &quantity, const asset &price);
+    asset _calc_deal_fee(const asset &quantity);
 
-    asset _calc_deal_amount(const asset &quantity, const asset &price);
-
-    void _set_conf(const name &conf_contract);
+    asset _calc_deal_amount(const asset &quantity);
 
     const conf_t& _conf(bool refresh = false);
 
-    void _add_fund_log(const name& owner, const name & action, const asset &quantity, const uint64_t& order_id, const name& order_side);
-
     void _set_blacklist(const name& account, uint64_t duration_second, const name& payer);
+
+    void _add_balance(merchant_t& merchant, const asset& quantity, const string & memo);
+    void _sub_balance(merchant_t& merchant, const asset& quantity, const string & memo);
+    void _frozen(merchant_t& merchant, const asset& quantity);
+    void _unfrozen(merchant_t& merchant, const asset& quantityl);
 };
 
 }

@@ -37,11 +37,14 @@ class [[eosio::contract("otcconf")]] otcconf: public eosio::contract {
 private:
     global_singleton    _global;
     global_t            _gstate;
+    dbc           _db;
     
 public:
     using contract::contract;
     otcconf(eosio::name receiver, eosio::name code, datastream<const char*> ds):
+        _db(_self),
         contract(receiver, code, ds), _global(_self, _self.value) {
+        _gstate = _global.exists() ? _global.get() : global_t{};
     }
 
     ~otcconf() {
@@ -53,16 +56,30 @@ public:
      * only code maintainer can init
      */
     [[eosio::action]] 
-    void init();
+    void init(const name& admin);
+
+    /**
+     * set running status by admin
+     * @param status, 1 initialized, 2 running, 9 maintianing 
+     * @note require contract admin auth
+     */
+    [[eosio::action]]
+    void setstatus(const uint8_t& status);
 
     [[eosio::action]]
-    void setrate(const map<symbol, asset>& prices_quote_cny);
+    void setmanager(const name& type, const name& account);
 
     [[eosio::action]]
-    void setarbiters(const set<name>& arbiters);
+    void setfarm(const name& farmname, const uint64_t& farm_id, const uint32_t& farm_scale);
 
     [[eosio::action]]
-    void setotcname(const name& otc_name);
+    void setappname(const name& otc_name);
+
+    [[eosio::action]]
+    void setsettlelv(const vector<settle_level_config>& configs);
+
+    [[eosio::action]]
+    void setswapstep(const vector<swap_step_config> rates);
 
     [[eosio::action]]
     void settimeout(const uint64_t& accepted_timeout, const uint64_t& payed_timeout);

@@ -1,20 +1,32 @@
 #include <eosio.token/eosio.token.hpp>
 #include <otcbook/amax_math.hpp>
 #include <otcbook/otcbook.hpp>
-#include <otcbook/utils.hpp>
-#include "otc.settle/otc.settle.hpp"
+#include <otcconf/utils.hpp>
+#include <otcsettle.hpp>
+#include <otcswap.hpp>
+#include "aplink.farm/aplink.farm.hpp"
 
 static constexpr eosio::name active_permission{"active"_n};
-#define SETTLE_DEAL(deal_id, merchant, user, quantity, fee, arbit_status, start_at, end_at) \
-    {	otc::settle::deal_action act{ SETTLE_ARC, { {_self, active_permission} } };\
-			act.send( deal_id, merchant, user, quantity, fee, arbit_status, start_at, end_at );}
+
+#define STAKE_CHANGED(account, quantity, memo) \
+    {	metabalance::otcbook::stakechanged_action act{ _self, { {_self, active_permission} } };\
+			act.send( account, quantity , memo );}
 
 
-namespace amax {
+#define NOTIFICATION(account, info, memo) \
+    {	metabalance::otcbook::notification_action act{ _self, { {_self, active_permission} } };\
+			act.send( account, info , memo );}
 
+
+#define ALLOT(bank, land_id, customer, quantity, memo) \
+    {	aplink::farm::allot_action act{ bank, { {_self, active_perm} } };\
+			act.send( land_id, customer, quantity , memo );}
+
+using namespace metabalance;
 using namespace std;
 using namespace eosio;
 using namespace wasm::safemath;
+using namespace otc;
 
 inline int64_t get_precision(const symbol &s) {
     int64_t digit = s.precision();
@@ -26,73 +38,41 @@ inline int64_t get_precision(const asset &a) {
     return get_precision(a.symbol);
 }
 
-asset otcbook::_calc_order_stakes(const asset &quantity, const asset &price) {
+asset otcbook::_calc_order_stakes(const asset &quantity) {
     // calc order quantity value by price
-    auto value = multiply_decimal64( quantity.amount, price.amount, get_precision(price) );
-
-    const auto & prices_quote_cny = _conf().prices_quote_cny;
-    if (price.symbol != CNY)
-    {
-        auto price_itr = prices_quote_cny.find(price.symbol);
-        CHECK(price_itr != prices_quote_cny.end() && price_itr->second.amount > 0, "the fiat symbol not have price/cny");
-        const auto &price_cny = price_itr->second;
-        value = multiply_decimal64( value, price_cny.amount, get_precision(price) );
-    }
-    // adjust precision
-    if (quantity.symbol.precision() != STAKE_SYMBOL.precision()) {
-       value = multiply_decimal64( value, get_precision(STAKE_SYMBOL), get_precision(quantity) );
-    }
-
+    auto stake_symbol = _conf().coin_as_stake.at(quantity.symbol);
+    auto value = multiply_decimal64( quantity.amount, get_precision(stake_symbol), get_precision(quantity) );
     int64_t amount = divide_decimal64(value, order_stake_pct, percent_boost);
-
-    return asset(amount, STAKE_SYMBOL);
+    return asset(amount, stake_symbol);
 }
 
-asset otcbook::_calc_deal_amount(const asset &quantity, const asset &price) {
-    auto value = multiply_decimal64( quantity.amount, price.amount, get_precision(price));
-    int64_t amount = multiply_decimal64(value, get_precision(STAKE_SYMBOL), get_precision(quantity));
-    return asset(amount, STAKE_SYMBOL);
+asset otcbook::_calc_deal_amount(const asset &quantity) {
+    auto stake_symbol = _conf().coin_as_stake.at(quantity.symbol);
+    auto value = multiply_decimal64( quantity.amount, get_precision(stake_symbol), get_precision(quantity) );
+    return asset(value, stake_symbol);
 }
 
-asset otcbook::_calc_deal_fee(const asset &quantity, const asset &price) {
+asset otcbook::_calc_deal_fee(const asset &quantity) {
     // calc order quantity value by price
-    auto value = multiply_decimal64(quantity.amount, price.amount, get_precision(price));
-
+    auto stake_symbol = _conf().coin_as_stake.at(quantity.symbol);
+    auto value = multiply_decimal64( quantity.amount, get_precision(stake_symbol), get_precision(quantity) );
     const auto & fee_pct = _conf().fee_pct;
     int64_t amount = multiply_decimal64(value, fee_pct, percent_boost);
-    amount = multiply_decimal64(amount, get_precision(STAKE_SYMBOL), get_precision(quantity));
-
-    return asset(amount, STAKE_SYMBOL);
-}
-
-
-void otcbook::init(const name &conf_contract) {
-    require_auth( _gstate.admin );
-    _set_conf(conf_contract);
-    _gstate.initialized = true;
+    amount = multiply_decimal64(amount, get_precision(stake_symbol), get_precision(quantity));
+    return asset(amount, stake_symbol);
 }
 
 void otcbook::setconf(const name &conf_contract) {
-    require_auth( _gstate.admin );
-    _set_conf(conf_contract);
-}
-
-void otcbook::_set_conf(const name &conf_contract) {
-    require_auth( _gstate.admin );
+    require_auth( get_self() );    
     CHECK( is_account(conf_contract), "Invalid account of conf_contract");
     _gstate.conf_contract = conf_contract;
     _conf(true);
 }
 
-void otcbook::setadmin(const name& admin) {
-    require_auth( _self );
-    _gstate.admin = admin;
-}
-
 void otcbook::setmerchant(const name& owner, const name& merchant, const string &merchant_name, const string &merchant_detail, const string& email, const string& memo) {
-    require_auth( owner );
-
-    auto isAdmin = (owner == _gstate.admin);
+    name admin = _conf().managers.at(otc::manager_type::admin);
+    require_auth(admin);
+    auto isAdmin = (owner == admin);
     if (!isAdmin) {
         check(owner == merchant, "non-admin not allowed to set merchant" );
     }
@@ -110,11 +90,11 @@ void otcbook::setmerchant(const name& owner, const name& merchant, const string 
     merchant_raw.memo = memo;
     merchant_raw.updated_at = time_point_sec(current_time_point());
 
-    _dbc.set( merchant_raw );
+    _dbc.set( merchant_raw, get_self() );
 }
 
 void otcbook::enbmerchant(const name& owner, bool is_enabled) {
-    require_auth( _gstate.admin );
+    require_auth( _conf().managers.at(otc::manager_type::admin) );
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
@@ -127,7 +107,7 @@ void otcbook::enbmerchant(const name& owner, bool is_enabled) {
             "merchant has been disabled");
         merchant.state = (uint8_t)merchant_state_t::DISABLED;
     }
-    _dbc.set( merchant );
+    _dbc.set( merchant , get_self());
 }
 
 /**
@@ -136,12 +116,14 @@ void otcbook::enbmerchant(const name& owner, bool is_enabled) {
 void otcbook::openorder(const name& owner, const name& order_side, const set<name> &pay_methods, const asset& va_quantity, const asset& va_price,
     const asset& va_min_take_quantity,  const asset& va_max_take_quantity, const string &memo
 ){
+    check(_conf().status == (uint8_t)status_type::RUNNING, "service is in maintenance");
     require_auth( owner );
     check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
     check( va_quantity.is_valid(), "Invalid quantity");
     check( va_price.is_valid(), "Invalid va_price");
     const auto& conf = _conf();
     check( va_price.symbol == conf.fiat_type, "va price symbol not allow");
+    check( conf.coin_as_stake.count(va_quantity.symbol), "va quantity symbol hasn't config stake asset");
     if (order_side == BUY_SIDE) {
         check( conf.buy_coins_conf.count(va_quantity.symbol) != 0, "va quantity symbol not allowed for buying" );
     } else {
@@ -168,11 +150,8 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
     check((merchant_state_t)merchant.state == merchant_state_t::ENABLED,
         "merchant not enabled");
 
-    auto stake_frozen = _calc_order_stakes(va_quantity, va_price); // TODO: process 70% used-rate of stake
-    check( merchant.stake_free >= stake_frozen, "merchant stake quantity insufficient, expected: " + stake_frozen.to_string() );
-    merchant.stake_free -= stake_frozen;
-    merchant.stake_frozen += stake_frozen;
-    _dbc.set( merchant );
+    auto stake_frozen = _calc_order_stakes(va_quantity); // TODO: process 70% used-rate of stake
+    _frozen(merchant, stake_frozen);
 
     // TODO: check pos_staking_contract
     // if (_gstate.min_pos_stake_frozen.amount > 0) {
@@ -191,6 +170,7 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
     order.va_min_take_quantity      = va_min_take_quantity;
     order.va_max_take_quantity      = va_max_take_quantity;
     order.memo                      = memo;
+    order.stake_frozen              = stake_frozen;
     order.status				    = (uint8_t)order_status_t::RUNNING;
     order.created_at			    = time_point_sec(current_time_point());
     order.va_frozen_quantity       = asset(0, va_quantity.symbol);
@@ -213,7 +193,6 @@ void otcbook::openorder(const name& owner, const name& order_side, const set<nam
             row = order;
         });
     }
-    _add_fund_log(owner, "openorder"_n, -stake_frozen, order.id, order_side);
 }
 
 void otcbook::pauseorder(const name& owner, const name& order_side, const uint64_t& order_id) {
@@ -273,14 +252,9 @@ void otcbook::closeorder(const name& owner, const name& order_side, const uint64
     check( order.va_frozen_quantity.amount == 0, "order being processed" );
     check( order.va_quantity >= order.va_fulfilled_quantity, "order quantity insufficient" );
 
-    check( merchant.stake_frozen >= order.stake_frozen, "merchant stake quantity insufficient" );
-    // 撤单后币未交易完成的币退回
-    merchant.stake_frozen -= order.stake_frozen;
-    merchant.stake_free += order.stake_frozen;
-    merchant.stake_free -= order.total_fee;
-    merchant.stake_free -= order.fine_amount;
-    _dbc.set( merchant );
-    _add_fund_log(owner, "closeorder"_n, order.stake_frozen, order_id, order_side);
+    _unfrozen(merchant, order.stake_frozen);
+
+    _dbc.set( merchant , get_self());
 
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
         row.status = (uint8_t)order_status_t::CLOSED;
@@ -294,6 +268,8 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     const asset& deal_quantity, const uint64_t& order_sn,
     const string& session_msg
 ) {
+    auto conf = _conf();
+    check(conf.status == (uint8_t)status_type::RUNNING, "service is in maintenance");
     require_auth( taker );
 
     check( ORDER_SIDES.count(order_side) != 0, "Invalid order side" );
@@ -305,7 +281,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     const auto &order = order_wrapper_ptr->get_order();
     check( order.owner != taker, "taker can not be equal to maker");
     check( deal_quantity.symbol == order.va_quantity.symbol, "Token Symbol mismatch" );
-    check( order.status == (uint8_t)order_status_t::RUNNING, "Order not runing" );
+    check( order.status == (uint8_t)order_status_t::RUNNING, "order not running" );
     check( order.va_quantity >= order.va_frozen_quantity + order.va_fulfilled_quantity + deal_quantity,
         "Order's quantity insufficient" );
     check( deal_quantity >= order.va_min_take_quantity, "Order's min accept quantity not met!" );
@@ -326,7 +302,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
     auto ordersn_index 			= deals.get_index<"ordersn"_n>();
 
     check( ordersn_index.find(order_sn) == ordersn_index.end() , "order_sn already existing!" );
-    auto deal_fee = _calc_deal_fee(deal_quantity, order_price);
+    auto deal_fee = _calc_deal_fee(deal_quantity);
 
     auto deal_id = deals.available_primary_key();
     deals.emplace( taker, [&]( auto& row ) {
@@ -360,6 +336,9 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.va_frozen_quantity 	+= deal_quantity;
         row.updated_at          = time_point_sec(current_time_point());
     });
+
+    NOTIFICATION(order_maker, conf.app_info, 
+        "deal.new, meta.taker "+ taker.to_string() + ", meta.quantity " + deal_quantity.to_string());
 }
 
 /**
@@ -367,7 +346,7 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
  */
 void otcbook::closedeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id, const string& session_msg) {
     require_auth( account );
-
+    auto conf = _conf();
     deal_t::idx_t deals(_self, _self.value);
     auto deal_itr = deals.find(deal_id);
     check( deal_itr != deals.end(), "deal not found: " + to_string(deal_id) );
@@ -382,7 +361,7 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         check( deal_itr->order_taker == account, "taker account mismatched");
         break;
     case account_type_t::ADMIN:
-        check( _gstate.admin == account, "admin account mismatched");
+        check( _conf().managers.at(otc::manager_type::admin) == account, "admin account mismatched");
         break;
     case account_type_t::ARBITER:
         check( deal_itr->arbiter == account, "abiter account mismatched");
@@ -419,10 +398,11 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
                 + " at status: " + to_string((uint8_t)status) );
     }
 
+    auto stake_quantity = _calc_order_stakes(deal_quantity);
     order_wrapper_ptr->modify(_self, [&]( auto& row ) {
+        row.stake_frozen -= stake_quantity;
         row.va_frozen_quantity -= deal_quantity;
         row.va_fulfilled_quantity += deal_quantity;
-        row.total_fee += deal_fee;
         row.updated_at = time_point_sec(current_time_point());
     });
 
@@ -433,19 +413,48 @@ void otcbook::closedeal(const name& account, const uint8_t& account_type, const 
         row.session.push_back({account_type, account, (uint8_t)status, (uint8_t)action, session_msg, row.closed_at});
     });
 
-    const auto &fee_recv_addr  = _conf().fee_recv_addr;
-    TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
-    _add_fund_log(order_maker, "dealfee"_n, -deal_fee, deal_id, deal_itr->order_side);
+    merchant_t merchant(order_maker);
+    check( _dbc.get(merchant), "merchant not found: " + order_maker.to_string() );
+    _unfrozen(merchant, stake_quantity);
+    _sub_balance(merchant, deal_fee, "fee:"+to_string(deal_id));
 
-    asset deal_amount = _calc_deal_amount(deal_itr->deal_quantity, deal_itr->order_price);
-    SETTLE_DEAL(deal_id, deal_itr->order_maker,
-                deal_itr->order_taker, 
-                deal_amount,
-                deal_itr->deal_fee,
-                0, 
-                deal_itr->created_at, 
-                deal_itr->closed_at);
+    const auto &fee_recv_addr  = conf.managers.at(otc::manager_type::feetaker);
+    TRANSFER( conf.stake_assets_contract.at(deal_fee.symbol), fee_recv_addr, deal_fee, 
+        "otcfee:"+to_string(order_id) + ":" +  to_string(deal_id));
+
+    auto fee = deal_itr->deal_fee;
+    asset deal_amount = _calc_deal_amount(deal_itr->deal_quantity);
+    name settle_arc = conf.managers.at(otc::manager_type::settlement);
+    if(is_account(settle_arc)){
+        SETTLE_DEAL(settle_arc,
+                    deal_id, 
+                    deal_itr->order_maker,
+                    deal_itr->order_taker, 
+                    deal_amount,
+                    fee,
+                    0, 
+                    deal_itr->created_at, 
+                    deal_itr->closed_at);
+    }    
+
+    name swap_arc = conf.managers.at(otc::manager_type::swaper);
+    if(is_account(swap_arc)){
+        SWAP_SETTLE(swap_arc, 
+                    deal_itr->order_taker, 
+                    fee ,
+                    deal_amount);
+    }
+    name farm_arc = conf.managers.at(otc::manager_type::aplinkfarm);
+    if(is_account(farm_arc) 
+        && conf.farm_id > 0 && conf.farm_scale > 0 ){
+        auto value = multiply_decimal64( fee.amount, get_precision(APLINK_SYMBOL), get_precision(fee.symbol));
+        value = value * conf.farm_scale / percent_boost;
+        if (aplink::farm::get_avaliable_apples(farm_arc, conf.farm_id).amount>value)
+            ALLOT(farm_arc, conf.farm_id, deal_itr->order_taker,
+                asset(value, APLINK_SYMBOL), "metabalance farm allot: "+to_string(deal_id));
+    }
 }
+
 void otcbook::canceldeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id,
                          const string& session_msg, bool is_taker_black) {
     require_auth( account );
@@ -459,7 +468,6 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
 
     switch ((account_type_t) account_type) {
     case account_type_t::USER:
-
         switch ((deal_status_t) status) {
             case deal_status_t::CREATED:
                 break;
@@ -491,7 +499,7 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
         break;
     }
     case account_type_t::ADMIN:
-        check( _gstate.admin == account, "admin account mismatched");
+        check( _conf().managers.at(otc::manager_type::admin) == account, "admin account mismatched");
         break;
     case account_type_t::ARBITER:
         check( deal_itr->arbiter == account, "abiter account mismatched");
@@ -528,7 +536,7 @@ void otcbook::canceldeal(const name& account, const uint8_t& account_type, const
 
 
 void otcbook::processdeal(const name& account, const uint8_t& account_type, const uint64_t& deal_id,
-    uint8_t action, const string& session_msg
+    uint8_t action_type, const string& session_msg
 ) {
     require_auth( account );
 
@@ -546,9 +554,13 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     switch ((account_type_t) account_type) {
     case account_type_t::MERCHANT:
         check( deal_itr->order_maker == account, "maker account mismatched");
+        NOTIFICATION(deal_itr->order_taker, _conf().app_info, 
+            "deal.process, meta.maker "+ account.to_string() + "meta.processed meta.deal " + to_string(deal_id) + " deal.status"+to_string(action_type));
         break;
     case account_type_t::USER:
         check( deal_itr->order_taker == account, "taker account mismatched");
+        NOTIFICATION(deal_itr->order_maker, _conf().app_info, 
+            "deal.process, meta.taker "+ account.to_string() + "meta.processed meta.deal " + to_string(deal_id) + " deal.status"+to_string(action_type));
         break;
     case account_type_t::ARBITER:
         check( deal_itr->arbiter == account, "arbiter account mismatched");
@@ -575,7 +587,7 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
         next_status = deal_status_t::_next_status;                                      \
         break;
 
-    switch ((deal_action_t)action)
+    switch ((deal_action_t)action_type)
     {
     // /*               action              account_type  arbit_status, limited_status   next_status  */
     DEAL_ACTION_CASE(MAKER_ACCEPT,          MERCHANT,     UNARBITTED,   CREATED,         MAKER_ACCEPTED)
@@ -583,21 +595,21 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     DEAL_ACTION_CASE(MAKER_RECV_AND_SENT,   MERCHANT,     UNARBITTED,   TAKER_SENT,      MAKER_RECV_AND_SENT)
     DEAL_ACTION_CASE(ADD_SESSION_MSG,       NONE,         NONE,         NONE,            NONE)
     default:
-        check(false, "unsupported process deal action:" + to_string((uint8_t)action));
+        check(false, "unsupported process deal action:" + to_string((uint8_t)action_type));
         break;
     }
 
     if (limited_status != deal_status_t::NONE)
-        check(limited_status == status, "can not process deal action:" + to_string((uint8_t)action)
+        check(limited_status == status, "can not process deal action:" + to_string((uint8_t)action_type)
              + " at status: " + to_string((uint8_t)status) );
     if (limited_account_type != account_type_t::NONE)
         check(limited_account_type == (account_type_t)account_type,
-            "can not process deal action:" + to_string((uint8_t)action)
+            "can not process deal action:" + to_string((uint8_t)action_type)
              + " by account_type: " + to_string((uint8_t)account_type) );
 
     if ( (uint8_t)limit_arbit_status != (uint8_t)arbit_status_t::NONE)
         check(arbit_status == limit_arbit_status,
-            "can not process deal action:" + to_string((uint8_t)action)
+            "can not process deal action:" + to_string((uint8_t)action_type)
              + " by arbit status: " + to_string((uint8_t)arbit_status) );
 
     deals.modify( *deal_itr, account, [&]( auto& row ) {
@@ -605,14 +617,14 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
             row.status = (uint8_t)next_status;
             row.updated_at = time_point_sec(current_time_point());
         }
-        if((uint8_t)deal_action_t::MAKER_ACCEPT == action) {
+        if((uint8_t)deal_action_t::MAKER_ACCEPT == action_type) {
             row.merchant_accepted_at = time_point_sec(current_time_point());
         }
-        if((uint8_t)deal_action_t::MAKER_RECV_AND_SENT == action ) {
+        if((uint8_t)deal_action_t::MAKER_RECV_AND_SENT == action_type ) {
             row.merchant_paid_at = time_point_sec(current_time_point());
         }
 
-        row.session.push_back({account_type, account, (uint8_t)status, action, session_msg, now});
+        row.session.push_back({account_type, account, (uint8_t)status, action_type, session_msg, now});
     });
 }
 
@@ -644,8 +656,7 @@ void otcbook::startarbit(const name& account, const uint8_t& account_type, const
         break;
     }
 
-    // check arbiter is vaild
-    check( _conf().arbiters.count(arbiter) != 0, "arbiter illegal: " + arbiter.to_string() );
+    check( _conf().managers.at(otc::manager_type::arbiter) == arbiter, "arbiter illegal: " + arbiter.to_string() );
 
     auto status = (deal_status_t)deal_itr->status;
     auto arbit_status = (arbit_status_t)deal_itr->arbit_status;
@@ -664,7 +675,6 @@ void otcbook::startarbit(const name& account, const uint8_t& account_type, const
 
 void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uint8_t& arbit_result, const string& session_msg) {
     require_auth( account );
-    eosio::print("closearbit: ", deal_id);
 
     deal_t::idx_t deals(_self, _self.value);
     auto deal_itr = deals.find(deal_id);
@@ -690,7 +700,7 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
     }
 
     deals.modify( *deal_itr, account, [&]( auto& row ) {
-            row.arbit_status = (uint8_t)arbit_status_t::FINISHED;
+            row.arbit_status = uint8_t(arbit_result == 0 ? arbit_status_t::CLOSENOFINE : arbit_status_t::CLOSEWITHFINE );
             row.status = (uint8_t)deal_status_t::CLOSED;
             row.closed_at = time_point_sec(current_time_point());
             row.updated_at = time_point_sec(current_time_point());
@@ -700,7 +710,7 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
     auto deal_quantity = deal_itr->deal_quantity;
     auto deal_fee = deal_itr->deal_fee;
     auto deal_price = deal_itr->order_price;
-    auto deal_amount = _calc_deal_amount(deal_quantity, deal_price);
+    auto deal_amount = _calc_deal_amount(deal_quantity);
     auto order_id = deal_itr->order_id;
 
     if (arbit_result == 0) {
@@ -711,20 +721,23 @@ void otcbook::closearbit(const name& account, const uint64_t& deal_id, const uin
         });
     } else {
         // end deal - finished
+        auto stake_quantity = _calc_order_stakes(deal_quantity);
         order_wrapper_ptr->modify(_self, [&]( auto& row ) {
+            row.stake_frozen -= stake_quantity;
             row.va_frozen_quantity -= deal_quantity;
             row.va_fulfilled_quantity += deal_quantity;
-            row.fine_amount = deal_amount;
             row.updated_at = time_point_sec(current_time_point());
         });
 
-        //< send CNYD to user
-        TRANSFER(SYS_BANK, order_taker, deal_amount, "");
+        //sub arbit fine
+        merchant_t merchant(order_maker);
+        check( _dbc.get(merchant), "merchant not found: " + order_maker.to_string() );
+        _unfrozen(merchant, stake_quantity);
+        _sub_balance(merchant, stake_quantity, "arbit fine:"+to_string(deal_id));
 
-        // const auto &fee_recv_addr  = _conf().fee_recv_addr;
-        // TRANSFER( SYS_BANK, fee_recv_addr, deal_fee, to_string(order_id) + ":" +  to_string(deal_id));
-        // _add_fund_log(order_maker, "dealfee"_n, -deal_fee, deal_id, deal_itr->order_side);
-    }
+        TRANSFER(_conf().stake_assets_contract.at(stake_quantity.symbol), order_taker, 
+            stake_quantity, "arbit fine: "+to_string(deal_id));
+   }
 }
 
 void otcbook::cancelarbit( const uint8_t& account_type, const name& account, const uint64_t& deal_id, const string& session_msg )
@@ -767,7 +780,7 @@ void otcbook::resetdeal(const name& account, const uint64_t& deal_id, const stri
 
     require_auth( account );
 
-    CHECK( _gstate.admin == account, "Only admin allowed" );
+    CHECK( _conf().managers.at(otc::manager_type::admin) == account, "Only admin allowed" );
 
     deal_t::idx_t deals(_self, _self.value);
     auto deal_itr = deals.find(deal_id);
@@ -786,28 +799,26 @@ void otcbook::resetdeal(const name& account, const uint64_t& deal_id, const stri
     });
 }
 
-/**
- *  提取
- *
- */
 void otcbook::withdraw(const name& owner, asset quantity){
+    auto conf = _conf();
+    check(conf.status == (uint8_t)status_type::RUNNING, "service is in maintenance");
     require_auth( owner );
 
     check( quantity.amount > 0, "quanity must be positive" );
     check( quantity.symbol.is_valid(), "Invalid quantity symbol name" );
-    check( quantity.symbol == STAKE_SYMBOL, "Token Symbol not allowed" );
+    check( _conf().stake_assets_contract.count(quantity.symbol), "Token Symbol not allowed" );
 
     merchant_t merchant(owner);
     check( _dbc.get(merchant), "merchant not found: " + owner.to_string() );
     check((merchant_state_t)merchant.state == merchant_state_t::ENABLED,
     "merchant not enabled");
-    check( merchant.stake_free >= quantity, "The withdrawl amount must be less than the balance" );
-    merchant.stake_free -= quantity;
-    _dbc.set(merchant);
 
-    TRANSFER( SYS_BANK, owner, quantity, "withdraw" )
+    check((time_point_sec(current_time_point())-merchant.updated_at) > seconds(default_withdraw_limit_second),
+        "Can only withdraw after 3 days from fund changed");
 
-    _add_fund_log(owner, "withdraw"_n, -quantity, 0, ""_n);
+    _sub_balance(merchant, quantity, "merchant withdraw");
+
+    TRANSFER( _conf().stake_assets_contract.at(quantity.symbol), owner, quantity, "merchant withdraw" )
 }
 
 /*************** Begin of eosio.token transfer trigger function ******************/
@@ -815,33 +826,27 @@ void otcbook::withdraw(const name& owner, asset quantity){
  * This happens when a merchant decides to open sell orders
  */
 void otcbook::deposit(name from, name to, asset quantity, string memo) {
-    eosio::print("from: ", from, ", to:", to, ", quantity:" , quantity, ", memo:" , memo);
-    if(_self == from ){
-        return;
-    }
-    if (to != _self)
-        return;
+    if(_self == from || to != _self) return;
 
-    if (get_first_receiver() == SYS_BANK && quantity.symbol == CNYD_SYMBOL){
-        merchant_t merchant(from);
-        check(_dbc.get( merchant ),"merchant is not set, from:" + from.to_string()+ ",to:" + to.to_string());
-        check((merchant_state_t)merchant.state == merchant_state_t::ENABLED,
-            "merchant not enabled");
-        merchant.stake_free += quantity;
-        _dbc.set( merchant );
-        _add_fund_log(from, "deposit"_n, quantity, 0, ""_n);
-    }
+    check( _conf().stake_assets_contract.count(quantity.symbol), "Token Symbol not allowed" );
+    check( _conf().stake_assets_contract.at(quantity.symbol) == get_first_receiver(), "Token Symbol not allowed" );
+    
+    merchant_t merchant(from);
+    check(_dbc.get( merchant ),"merchant is not set, from:" + from.to_string()+ ",to:" + to.to_string());
+    check((merchant_state_t)merchant.state == merchant_state_t::ENABLED,
+        "merchant not enabled");
+    _add_balance(merchant, quantity, "merchant deposit");
 }
 
 
 void otcbook::setblacklist(const name& account, uint64_t duration_second) {
-    require_auth( _gstate.admin );
+    require_auth( _conf().managers.at(otc::manager_type::admin) );
 
     CHECK( is_account(account), "account does not exist: " + account.to_string() );
     CHECK( duration_second <= max_blacklist_duration_second,
            "duration_second too large than: " + to_string(max_blacklist_duration_second));
 
-   _set_blacklist(account, duration_second, _gstate.admin);
+   _set_blacklist(account, duration_second, _conf().managers.at(otc::manager_type::admin));
 }
 
 const otcbook::conf_t& otcbook::_conf(bool refresh/* = false*/) {
@@ -854,20 +859,14 @@ const otcbook::conf_t& otcbook::_conf(bool refresh/* = false*/) {
     return *_conf_ptr;
 }
 
-void otcbook::_add_fund_log(const name& owner, const name & action, const asset &quantity, const uint64_t& order_id, const name& order_side) {
-    auto now = time_point_sec(current_time_point());
-    fund_log_t::table_t stake_log_tbl(_self, _self.value);
-    auto id = stake_log_tbl.available_primary_key();
-    stake_log_tbl.emplace( _self, [&]( auto& row ) {
-        row.id 					= id;
-        row.owner 			    = owner;
-        row.order_id            = order_id;
-        row.order_side          = order_side;
-        row.action			    = action;
-        row.quantity		    = quantity;
-        row.log_at			    = now;
-        row.updated_at          = time_point_sec(current_time_point());
-    });
+void otcbook::stakechanged(const name& account, const asset &quantity, const string& memo){
+    require_auth(get_self());
+    require_recipient(account);
+}
+
+void otcbook::notification(const name& account, const AppInfo_t &info, const string& memo){
+    require_auth(get_self());
+    require_recipient(account);
 }
 
 void otcbook::_set_blacklist(const name& account, uint64_t duration_second, const name& payer) {
@@ -883,4 +882,34 @@ void otcbook::_set_blacklist(const name& account, uint64_t duration_second, cons
     }
 }
 
-}  //end of namespace:: amaxbpvoting
+void otcbook::_add_balance(merchant_t& merchant, const asset& quantity, const string & memo){
+    merchant.assets[quantity.symbol].balance += quantity.amount;
+    merchant.updated_at = current_time_point();
+    _dbc.set( merchant , get_self());
+    if(memo.length() > 0) STAKE_CHANGED(merchant.owner, quantity, memo);
+}
+
+void otcbook::_sub_balance(merchant_t& merchant, const asset& quantity, const string & memo){
+    check( merchant.assets[quantity.symbol].balance >= quantity.amount, "merchant stake balance quantity insufficient");
+    merchant.assets[quantity.symbol].balance -= quantity.amount;
+    merchant.updated_at = current_time_point();
+    _dbc.set( merchant , get_self());
+    if(memo.length() > 0) STAKE_CHANGED(merchant.owner, -quantity, memo);
+}
+
+void otcbook::_frozen(merchant_t& merchant, const asset& quantity){
+    check( merchant.assets[quantity.symbol].balance >= quantity.amount, "merchant stake balance quantity insufficient");
+    merchant.assets[quantity.symbol].balance -= quantity.amount;
+    merchant.assets[quantity.symbol].frozen += quantity.amount;
+    merchant.updated_at = current_time_point();
+    _dbc.set( merchant , get_self());
+}
+
+
+void otcbook::_unfrozen(merchant_t& merchant, const asset& quantity){
+    check( merchant.assets[quantity.symbol].frozen >= quantity.amount, "merchant stake frozen quantity insufficient");
+    merchant.assets[quantity.symbol].frozen -= quantity.amount;
+    merchant.assets[quantity.symbol].balance += quantity.amount;
+    merchant.updated_at = current_time_point();
+    _dbc.set( merchant , get_self());
+}
