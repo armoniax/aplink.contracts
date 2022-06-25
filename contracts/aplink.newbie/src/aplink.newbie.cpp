@@ -8,9 +8,9 @@
     {	aplink::token::transfer_action act{ bank, { {_self, active_perm} } };\
 			act.send( _self, to, quantity, memo );}
 
-using grow_action = aplink::farm::grow_action;
-#define GROW_APPLE(farm, land_id, to, quantity) \
-    {   grow_action(farm, { {_self, active_perm} }).send( \
+using allot_action = aplink::farm::allot_action;
+#define ALLOT_APPLE(farm, land_id, to, quantity) \
+    {   allot_action(farm, { {_self, active_perm} }).send( \
             to, land_id, quantity );}
 
 void newbie::claimreward(const name& newbie)
@@ -30,10 +30,10 @@ void newbie::rewardinvite(const name& to)
     //        "newbie reward not yet claimed by: " + to.to_string() )
 
     auto parent_inviter = get_account_creator( to );
-    GROW_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, parent_inviter, _gstate.apl_farm.parent_inviter_reward )
+    ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, parent_inviter, _gstate.apl_farm.parent_inviter_reward )
 
     auto grand_parent_inviter = get_account_creator( parent_inviter );
-    GROW_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, grand_parent_inviter, _gstate.apl_farm.grandparent_inviter_reward )
+    ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, grand_parent_inviter, _gstate.apl_farm.grandparent_inviter_reward )
 
 }
 

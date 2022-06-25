@@ -91,5 +91,4 @@ struct FARM_APPLE_TBL apple_t {
 
     EOSLIB_SERIALIZE( apple_t, (id)(picker)(quantity)(memo)(expired_at) )
 };
-
 } }
