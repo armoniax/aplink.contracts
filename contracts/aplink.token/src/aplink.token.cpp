@@ -146,7 +146,7 @@ void token::transfer( const name&    from,
     accounts to_acnts( get_self(), to.value );
     auto to_acnt = to_acnts.find( quantity.symbol.code().raw());
 
-    if(from_acnt == from_acnts.end() || !from_acnt->allow_send) {
+    if (from_acnt == from_acnts.end() || !from_acnt->allow_send) {
        check( to_acnt != to_acnts.end() && to_acnt->allow_recv, "no permistion for transfer" );
     }
 
