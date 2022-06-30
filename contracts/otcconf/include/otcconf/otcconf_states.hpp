@@ -50,7 +50,7 @@ static constexpr symbol AMAX_ARC20 = SYMBOL("AMAXARC", 8);
 // static constexpr symbol ETH        = SYMBOL("ETH", 8);
 static constexpr symbol CNYD       = SYMBOL("CNYD", 4);
 
-static constexpr symbol SCORE_SYMBOL              = SYMBOL("METAS", 4);
+static constexpr symbol SCORE_SYMBOL  = SYMBOL("METAS", 4);
 // fiat currency symbols
 static constexpr symbol   CNY      = SYMBOL("CNY", 4);
 static constexpr symbol   USD      = SYMBOL("USD", 4);
