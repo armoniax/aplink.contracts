@@ -53,7 +53,7 @@ void otcswap::settleto(const name &user, const asset &fee, asset quantity)
     require_auth(_conf().managers.at(otc::manager_type::otcbook));
     check(quantity.amount > 0, "quantity must be positive");
     check(fee.amount > 0, "quantity must be positive");
-    check(STAKE_USDT==quantity.symbol, "only support settling for MUSDT";
+    check(STAKE_USDT == quantity.symbol, "only support settling for MUSDT");
     check(is_account(user), "owner account does not exist");
     auto sym = quantity.symbol;
     auto account = account_t(user);
