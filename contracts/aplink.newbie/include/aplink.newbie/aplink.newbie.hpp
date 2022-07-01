@@ -13,6 +13,9 @@
 using namespace eosio;
 using namespace wasm::db;
 
+static constexpr name APL_BANK   = "aplink.token"_n;
+static constexpr symbol   APL    = symbol(symbol_code("APL"), 4);
+
 // static constexpr aplink_token_contract = "aplink.token"_n;
 
 class [[eosio::contract("aplink.newbie")]] newbie : public contract {
@@ -36,7 +39,7 @@ public:
         _global.set( _gstate, get_self() );
     }
 
-    ACTION claimreward(const name& newbie);
+    ACTION claimreward(const vector<name> newbies);
 
     ACTION rewardinvite(const name& to);
 
@@ -52,5 +55,10 @@ public:
 
     // using claimreward_action = eosio::action_wrapper<"claimreward"_n, &newbie::claimreward>;
     // using setstate_action = eosio::action_wrapper<"setstate"_n, &newbie::setstate>;
+    struct accounts {
+      asset balance;
+      uint64_t primary_key() const {return balance.symbol.code().raw();}
+    };
+    typedef eosio::multi_index< name("accounts"), accounts > apl_accounts;
 
 };

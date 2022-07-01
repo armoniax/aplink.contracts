@@ -13,14 +13,21 @@ using grow_action = aplink::farm::grow_action;
     {   grow_action(farm, { {_self, active_perm} }).send( \
             to, land_id, quantity );}
 
-void newbie::claimreward(const name& newbie)
+
+void newbie::claimreward(const vector<name> newbies)
 {
-    require_auth( newbie );
-    CHECK( _gstate.enable, "not enabled" )
-    CHECK( !aplink::token::account_exist(_gstate.aplink_token_contract, newbie, _gstate.newbie_reward.symbol.code()),
+    require_auth( "aplink.admin"_n );
+
+    // CHECK( _gstate.enable, "not enabled" )
+    CHECK( newbies.size() > 0, "none newbie" )
+    CHECK( newbies.size() < 20, "oversized newbies" )
+
+    for( auto& newbie : newbies ){
+        CHECK( !aplink::token::account_exist(_gstate.aplink_token_contract, newbie, _gstate.newbie_reward.symbol.code()),
            "newbie reward already claimed by: " + newbie.to_string() )
 
-    TRANSFER( _gstate.aplink_token_contract, newbie, _gstate.newbie_reward, "newbie reward" )
+        TRANSFER( _gstate.aplink_token_contract, newbie, _gstate.newbie_reward, "newbie reward" )
+    }
 }
 
 void newbie::rewardinvite(const name& to)
