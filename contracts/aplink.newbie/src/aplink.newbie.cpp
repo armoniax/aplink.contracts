@@ -22,7 +22,7 @@ void newbie::claimreward(const set<name> newbies)
     CHECK( newbies.size() > 0, "none newbie" )
     CHECK( newbies.size() < 20, "oversized newbies" )
 
-    for( auto& newbie : newbies ){
+    for( auto newbie : newbies ){
         CHECK( !aplink::token::account_exist(_gstate.aplink_token_contract, newbie, _gstate.newbie_reward.symbol.code()),
            "newbie reward already claimed by: " + newbie.to_string() )
 
