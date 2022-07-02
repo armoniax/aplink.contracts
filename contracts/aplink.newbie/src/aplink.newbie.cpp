@@ -14,7 +14,7 @@ using grow_action = aplink::farm::grow_action;
             to, land_id, quantity );}
 
 
-void newbie::claimreward(const vector<name> newbies)
+void newbie::claimreward(const set<name> newbies)
 {
     require_auth( "aplink.admin"_n );
 

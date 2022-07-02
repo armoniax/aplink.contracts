@@ -39,7 +39,7 @@ public:
         _global.set( _gstate, get_self() );
     }
 
-    ACTION claimreward(const vector<name> newbies);
+    ACTION claimreward(const set<name> newbies);
 
     ACTION rewardinvite(const name& to);
 
@@ -55,10 +55,4 @@ public:
 
     // using claimreward_action = eosio::action_wrapper<"claimreward"_n, &newbie::claimreward>;
     // using setstate_action = eosio::action_wrapper<"setstate"_n, &newbie::setstate>;
-    struct accounts {
-      asset balance;
-      uint64_t primary_key() const {return balance.symbol.code().raw();}
-    };
-    typedef eosio::multi_index< name("accounts"), accounts > apl_accounts;
-
 };
