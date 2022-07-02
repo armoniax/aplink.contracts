@@ -32,16 +32,16 @@ struct aplink_farm {
 };
 
 struct [[eosio::table("global"), eosio::contract("aplink.newbie")]] global_t {
-    asset               newbie_reward;  //"100.0000 APL"
-    name                aplink_token_contract;
-    name                aplink_admin = "aplink.admin"_n;
+    asset               newbie_reward           = asset_from_string("100.000000 APL");
+    name                aplink_token_contract   = "aplink.token"_n;
+    name                aplink_admin            = "aplink.admin"_n;
+    uint8_t             batch_issue_size        = 20;
     aplink_farm         apl_farm;
-    uint8_t             batch_issue_size = 20;
     
     global_t() {}
 
     EOSLIB_SERIALIZE( global_t, (newbie_reward)(aplink_token_contract)(aplink_admin)
-                                (apl_farm)(batch_issue_size) )
+                                (batch_issue_size)(apl_farm) )
 
     //write op
     // template<typename DataStream>
@@ -49,8 +49,8 @@ struct [[eosio::table("global"), eosio::contract("aplink.newbie")]] global_t {
     //     return ds   << t.newbie_reward 
     //                 << t.aplink_token_contract
     //                 << t.aplink_admin
-    //                 << t.apl_farm
-    //                 << t.batch_issue_size;
+    //                 << t.batch_issue_size
+    //                 << t.apl_farm;
     // }
 
     //read op (read as is)
