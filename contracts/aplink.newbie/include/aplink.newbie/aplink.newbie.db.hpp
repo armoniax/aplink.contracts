@@ -27,27 +27,30 @@ using namespace wasm;
 struct aplink_farm {
     name contract = "aplink.farm"_n;
     uint64_t land_id;
-    asset parent_inviter_reward = asset_from_string("100 APL");
-    asset grandparent_inviter_reward = asset_from_string("100 APL");
+    asset parent_inviter_reward = asset_from_string("100.000000 APL");
+    asset grandparent_inviter_reward = asset_from_string("100.000000 APL");
 };
 
 struct [[eosio::table("global"), eosio::contract("aplink.newbie")]] global_t {
     asset               newbie_reward;  //"100.0000 APL"
     name                aplink_token_contract;
+    name                aplink_admin = "aplink.admin"_n;
     aplink_farm         apl_farm;
-    bool                enable = true;
+    uint8_t             batch_issue_size = 20;
     
     global_t() {}
 
-    EOSLIB_SERIALIZE( global_t, (newbie_reward)(aplink_token_contract)(apl_farm)(enable) )
+    EOSLIB_SERIALIZE( global_t, (newbie_reward)(aplink_token_contract)(aplink_admin)
+                                (apl_farm)(batch_issue_size) )
 
     //write op
     // template<typename DataStream>
     // friend DataStream& operator << ( DataStream& ds, const global_t& t ) {
     //     return ds   << t.newbie_reward 
     //                 << t.aplink_token_contract
+    //                 << t.aplink_admin
     //                 << t.apl_farm
-    //                 << t.enable;
+    //                 << t.batch_issue_size;
     // }
 
     //read op (read as is)

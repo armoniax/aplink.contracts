@@ -40,10 +40,10 @@ public:
     }
 
     ACTION claimreward(const set<name> newbies);
-
     ACTION rewardinvite(const name& to);
 
-    ACTION setstate(const bool& enable, const asset& newbie_reward, const name& aplink_token_contract);
+    ACTION setstate(const asset& newbie_reward, const name& aplink_token_contract, const name& aplink_admin);
+    ACTION setbatchsize(const uint8_t batch_issue_size);
 
     /**
      * recycle db

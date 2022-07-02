@@ -14,13 +14,16 @@ using grow_action = aplink::farm::grow_action;
             to, land_id, quantity );}
 
 
+void newbie::setbatchsize(const uint8_t batch_issue_size) {
+    _gstate.batch_issue_size = batch_issue_size;
+}
+
 void newbie::claimreward(const set<name> newbies)
 {
-    require_auth( "aplink.admin"_n );
+    require_auth( _gstate.aplink_admin );
 
-    // CHECK( _gstate.enable, "not enabled" )
     CHECK( newbies.size() > 0, "none newbie" )
-    CHECK( newbies.size() < 20, "oversized newbies" )
+    CHECK( newbies.size() <= _gstate.batch_issue_size, "oversized newbies" )
 
     for( auto newbie : newbies ){
         CHECK( !aplink::token::account_exist(_gstate.aplink_token_contract, newbie, _gstate.newbie_reward.symbol.code()),
@@ -44,16 +47,16 @@ void newbie::rewardinvite(const name& to)
 
 }
 
-void newbie::setstate(const bool& enable, const asset& newbie_reward, const name& aplink_token_contract)
+void newbie::setstate(const asset& newbie_reward, const name& aplink_token_contract, const name& aplink_admin)
 {
     require_auth( _self );
 
     CHECK( newbie_reward.is_valid(), "invalid quantity");
     CHECK( newbie_reward.amount > 0, "reward_value must be positive");
 
-    _gstate.enable = enable;
     _gstate.newbie_reward = newbie_reward;
     _gstate.aplink_token_contract = aplink_token_contract;
+    _gstate.aplink_admin = aplink_admin;
 }
 
 // void newbie::recycledb(uint32_t max_rows) {
