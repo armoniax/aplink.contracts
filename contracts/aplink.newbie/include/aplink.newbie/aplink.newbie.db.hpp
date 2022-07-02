@@ -39,22 +39,22 @@ struct [[eosio::table("global"), eosio::contract("aplink.newbie")]] global_t {
     
     global_t() {}
 
-    // EOSLIB_SERIALIZE( global_t, (newbie_reward)(aplink_token_contract)(apl_farm)(enable) )
+    EOSLIB_SERIALIZE( global_t, (newbie_reward)(aplink_token_contract)(apl_farm)(enable) )
 
     //write op
-    template<typename DataStream>
-    friend DataStream& operator << ( DataStream& ds, const global_t& t ) {
-        return ds   << t.newbie_reward 
-                    << t.aplink_token_contract
-                    << t.apl_farm
-                    << t.enable;
-    }
+    // template<typename DataStream>
+    // friend DataStream& operator << ( DataStream& ds, const global_t& t ) {
+    //     return ds   << t.newbie_reward 
+    //                 << t.aplink_token_contract
+    //                 << t.apl_farm
+    //                 << t.enable;
+    // }
 
     //read op (read as is)
-    template<typename DataStream>
-    friend DataStream& operator >> ( DataStream& ds, global_t& t ) {   
-        return ds; 
-    }
+    // template<typename DataStream>
+    // friend DataStream& operator >> ( DataStream& ds, global_t& t ) {   
+    //     return ds; 
+    // }
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
