@@ -35,27 +35,42 @@ struct [[eosio::table("global"), eosio::contract("aplink.newbie")]] global_t {
     asset               newbie_reward;  //"100.0000 APL"
     name                aplink_token_contract;
     aplink_farm         apl_farm;
-    bool                enable = false;
-
+    bool                enable = true;
+    
     global_t() {}
 
-    EOSLIB_SERIALIZE( global_t, (newbie_reward)(aplink_token_contract)(apl_farm)(enable) )
+    // EOSLIB_SERIALIZE( global_t, (newbie_reward)(aplink_token_contract)(apl_farm)(enable) )
+
+    //write op
+    template<typename DataStream>
+    friend DataStream& operator << ( DataStream& ds, const global_t& t ) {
+        return ds   << t.newbie_reward 
+                    << t.aplink_token_contract
+                    << t.apl_farm
+                    << t.enable;
+    }
+
+    //read op (read as is)
+    template<typename DataStream>
+    friend DataStream& operator >> ( DataStream& ds, global_t& t ) {   
+        return ds; 
+    }
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
-struct CUSTODY_TBL claim_t {
-    name        claimer;
-    time_point  claimed_at;
+// struct CUSTODY_TBL claim_t {
+//     name        claimer;
+//     time_point  claimed_at;
 
-    uint64_t    primary_key()const { return claimer.value; }
-    uint64_t    scope() const { return 0; }
+//     uint64_t    primary_key()const { return claimer.value; }
+//     uint64_t    scope() const { return 0; }
 
-    claim_t() {}
-    claim_t(const name& c): claimer(c) {}
+//     claim_t() {}
+//     claim_t(const name& c): claimer(c) {}
 
-    EOSLIB_SERIALIZE( claim_t, (claimer)(claimed_at) )
+//     EOSLIB_SERIALIZE( claim_t, (claimer)(claimed_at) )
 
-    typedef eosio::multi_index<"claims"_n, claim_t > tbl_t;
-};
+//     typedef eosio::multi_index<"claims"_n, claim_t > tbl_t;
+// };
 
 } } //wasm
