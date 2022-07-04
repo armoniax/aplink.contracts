@@ -78,7 +78,7 @@ void farm::grow(const uint64_t& land_id, const name& customer, const asset& quan
     auto apples = apple_t::idx_t(_self, _self.value);
     auto pid = apples.available_primary_key();
     auto apple = apple_t(pid);
-    apple.croper = customer;
+    apple.cropper = customer;
     apple.weight = quantity;
     apple.memo = memo;
     apple.expire_at = current_time + MONTH_SECONDS;
@@ -86,12 +86,12 @@ void farm::grow(const uint64_t& land_id, const name& customer, const asset& quan
     _db.set(apple, land.farmer);
 }
 
-void farm::pick(const name& croper, vector<uint64_t> appleids){
-    CHECKC( aplink::token::account_exist(APLINK_BANK, croper, APLINK_SYMBOL.code()), 
-        err::ACCOUNT_INVALID, "croper should get newbie reward first");
-    require_auth(croper);
+void farm::pick(const name& cropper, vector<uint64_t> appleids){
+    CHECKC( aplink::token::account_exist(APLINK_BANK, cropper, APLINK_SYMBOL.code()), 
+        err::ACCOUNT_INVALID, "cropper should get newbie reward first");
+    require_auth(cropper);
 
-    auto croper_quantity = asset(0, APLINK_SYMBOL);
+    auto cropper_quantity = asset(0, APLINK_SYMBOL);
     auto factory_quantity = asset(0, APLINK_SYMBOL);
     auto current = time_point_sec(current_time_point());
 
@@ -103,19 +103,19 @@ void farm::pick(const name& croper, vector<uint64_t> appleids){
         auto apple_id = appleids[i];
         auto apple = apple_t(apple_id);
         CHECKC( _db.get( apple ), err::RECORD_NOT_FOUND, "apple not found: " + to_string(apple_id));
-        CHECKC( apple.croper == croper || _gstate.jamfactory == croper, err::ACCOUNT_INVALID, "account invalid");
+        CHECKC( apple.cropper == cropper || _gstate.jamfactory == cropper, err::ACCOUNT_INVALID, "account invalid");
         
         if( current > apple.expire_at) {
             factory_quantity += apple.weight;
         }
         else {
             if(appleids.size() == 1 && memo.size() == 0) memo = apple.memo;
-            croper_quantity += apple.weight;
+            cropper_quantity += apple.weight;
         }
         _db.del(apple);
 	}
 
-    if(croper_quantity.amount > 0) TRANSFER( APLINK_BANK, croper, croper_quantity, memo.size()==0?"group crop":memo);
+    if(cropper_quantity.amount > 0) TRANSFER( APLINK_BANK, cropper, cropper_quantity, memo.size()==0?"group crop":memo);
     if(factory_quantity.amount > 0) TRANSFER( APLINK_BANK, _gstate.jamfactory, factory_quantity, "jam");
 }
 

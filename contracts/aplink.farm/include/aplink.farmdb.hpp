@@ -70,7 +70,7 @@ struct FARM_LAND_TBL land_t {
 
 struct FARM_APPLE_TBL apple_t {
     uint64_t        id;
-    name            croper;                     //land farmer
+    name            cropper;                     //land farmer
     asset           weight;
     string          memo;                       //land uri: <=64 chars
     time_point_sec  expire_at;                  //expire time (UTC time)
@@ -80,14 +80,14 @@ struct FARM_APPLE_TBL apple_t {
     uint64_t primary_key() const { return id; }
 
     uint64_t by_expireid() const { return ((uint64_t)expire_at.sec_since_epoch() << 32) | (id & 0x00000000FFFFFFFF); }
-    uint128_t by_croper() const { return (uint128_t)croper.value << 64 | (uint128_t)id; }
+    uint128_t by_cropper() const { return (uint128_t)cropper.value << 64 | (uint128_t)id; }
 
     typedef eosio::multi_index<"apples"_n, apple_t,
         indexed_by<"expireid"_n,  const_mem_fun<apple_t, uint64_t, &apple_t::by_expireid> >,
-        indexed_by<"cropidx"_n,  const_mem_fun<apple_t, uint128_t, &apple_t::by_croper> >
+        indexed_by<"cropperidx"_n,  const_mem_fun<apple_t, uint128_t, &apple_t::by_cropper> >
     > idx_t;
 
-    EOSLIB_SERIALIZE( apple_t, (id)(croper)(weight)(memo)(expire_at) )
+    EOSLIB_SERIALIZE( apple_t, (id)(cropper)(weight)(memo)(expire_at) )
 };
 
 } }
