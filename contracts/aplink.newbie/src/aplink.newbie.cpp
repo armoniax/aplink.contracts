@@ -40,11 +40,12 @@ void newbie::rewardinvite(const name& to)
     //        "newbie reward not yet claimed by: " + to.to_string() )
 
     auto parent_inviter = get_account_creator( to );
-    GROW_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, parent_inviter, _gstate.apl_farm.parent_inviter_reward )
+    if (parent_inviter != "amax"_n)
+        GROW_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, parent_inviter, _gstate.apl_farm.parent_inviter_reward )
 
     auto grand_parent_inviter = get_account_creator( parent_inviter );
-    GROW_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, grand_parent_inviter, _gstate.apl_farm.grandparent_inviter_reward )
-
+    if (grand_parent_inviter != "amax"_n)
+        GROW_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, grand_parent_inviter, _gstate.apl_farm.grandparent_inviter_reward )
 }
 
 void newbie::setstate(const asset& newbie_reward, const name& aplink_token_contract, const name& aplink_admin)
