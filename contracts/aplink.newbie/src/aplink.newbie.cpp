@@ -42,6 +42,8 @@ void newbie::rewardinvite(const name& to)
     auto parent_inviter = get_account_creator( to );
     if (parent_inviter != "amax"_n)
         GROW_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, parent_inviter, _gstate.apl_farm.parent_inviter_reward )
+    else 
+        return;
 
     auto grand_parent_inviter = get_account_creator( parent_inviter );
     if (grand_parent_inviter != "amax"_n)
