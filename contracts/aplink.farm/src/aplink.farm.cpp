@@ -76,8 +76,7 @@ void farm::grow(const uint64_t& land_id, const name& customer, const asset& quan
     _db.set( land );
 
     auto apples = apple_t::idx_t(_self, _self.value);
-    auto pid = apples.available_primary_key();
-    auto apple = apple_t(pid);
+    auto apple = apple_t( apples.available_primary_key() );
     apple.farmer = customer;
     apple.weight = quantity;
     apple.memo = memo;
