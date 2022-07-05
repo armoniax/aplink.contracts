@@ -8,10 +8,11 @@
     {	aplink::token::transfer_action act{ bank, { {_self, active_perm} } };\
 			act.send( _self, to, quantity, memo );}
 
+
 using allot_action = aplink::farm::allot_action;
-#define ALLOT_APPLE(farm, land_id, to, quantity) \
+#define ALLOT_APPLE(farm, land_id, to, quantity, memo) \
     {   allot_action(farm, { {_self, active_perm} }).send( \
-            to, land_id, quantity );}
+            land_id, to, quantity , memo);}
 
 void newbie::claimreward(const name& newbie)
 {
@@ -26,15 +27,16 @@ void newbie::claimreward(const name& newbie)
 void newbie::rewardinvite(const name& to)
 {
     require_auth( _gstate.aplink_token_contract );
-    // CHECK( aplink::token::account_exist(_gstate.aplink_token_contract, to, _gstate.newbie_reward.symbol.code()),
-    //        "newbie reward not yet claimed by: " + to.to_string() )
 
     auto parent_inviter = get_account_creator( to );
-    ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, parent_inviter, _gstate.apl_farm.parent_inviter_reward )
+    if(parent_inviter == SYS_ACCT) 
+        return;
+    ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, parent_inviter, _gstate.apl_farm.parent_inviter_reward, "inviter reward")
 
     auto grand_parent_inviter = get_account_creator( parent_inviter );
-    ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, grand_parent_inviter, _gstate.apl_farm.grandparent_inviter_reward )
-
+    if(grand_parent_inviter == SYS_ACCT) 
+        return;
+    ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, grand_parent_inviter, _gstate.apl_farm.grandparent_inviter_reward , "grand inviter reward")
 }
 
 void newbie::setstate(const bool& enable, const asset& newbie_reward, const name& aplink_token_contract)
