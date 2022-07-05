@@ -61,11 +61,11 @@ public:
      * @param farmer account who can crop the land, always be a contract
      * @param title the land's name
      * @param uri  the details info of the farmer
-     * @param open_at  farmer can crop after open_at
-     * @param close_at farmer can crop before close_at
+     * @param opened_at  farmer can crop after opened_at
+     * @param closed_at farmer can crop before closed_at
      */
     [[eosio::action]]
-    void lease(const name& farmer, const string& title, const string& uri, const time_point& open_at, const time_point& close_at);
+    void lease(const name& farmer, const string& title, const string& uri, const time_point& opened_at, const time_point& closed_at);
 
     /**
      * @brief reclaim a land, only for disabled land

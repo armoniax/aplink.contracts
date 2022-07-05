@@ -23,7 +23,7 @@ void newbie::claimreward(const set<name> newbies)
     require_auth( _gstate.aplink_admin );
 
     CHECK( newbies.size() > 0, "none newbie" )
-    CHECK( newbies.size() <= _gstate.batch_issue_size, "oversized newbies" )
+    CHECK( newbies.size() <= _gstate.batch_issue_size, "batch oversized" )
 
     for( auto newbie : newbies ){
         CHECK( !aplink::token::account_exist(_gstate.aplink_token_contract, newbie, _gstate.newbie_reward.symbol.code()),

@@ -25,10 +25,10 @@ using namespace wasm;
 #define CUSTODY_TBL [[eosio::table, eosio::contract("aplink.newbie")]]
 
 struct aplink_farm {
-    name contract = "aplink.farm"_n;
-    uint64_t land_id;
-    asset parent_inviter_reward = asset_from_string("100.0000 APL");
-    asset grandparent_inviter_reward = asset_from_string("100.0000 APL");
+    name contract                               = "aplink.farm"_n;
+    uint64_t land_id                            = 0;
+    asset parent_inviter_reward                 = asset_from_string("100.0000 APL");
+    asset grandparent_inviter_reward            = asset_from_string("100.0000 APL");
 };
 
 struct [[eosio::table("global"), eosio::contract("aplink.newbie")]] global_t {
@@ -37,11 +37,12 @@ struct [[eosio::table("global"), eosio::contract("aplink.newbie")]] global_t {
     name                aplink_admin            = "aplink.admin"_n;
     uint8_t             batch_issue_size        = 20;
     aplink_farm         apl_farm;
-    
+    bool                enable                  = true;
+
     global_t() {}
 
     EOSLIB_SERIALIZE( global_t, (newbie_reward)(aplink_token_contract)(aplink_admin)
-                                (batch_issue_size)(apl_farm) )
+                                (batch_issue_size)(apl_farm)(enable) )
 
     //write op
     // template<typename DataStream>
@@ -50,7 +51,8 @@ struct [[eosio::table("global"), eosio::contract("aplink.newbie")]] global_t {
     //                 << t.aplink_token_contract
     //                 << t.aplink_admin
     //                 << t.batch_issue_size
-    //                 << t.apl_farm;
+    //                 << t.apl_farm
+    //                 << t.enable;
     // }
 
     //read op (read as is)

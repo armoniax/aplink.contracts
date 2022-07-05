@@ -39,6 +39,8 @@ public:
         _global.set( _gstate, get_self() );
     }
 
+    // ACTION init() {}
+
     ACTION claimreward(const set<name> newbies);
     ACTION rewardinvite(const name& to);
 

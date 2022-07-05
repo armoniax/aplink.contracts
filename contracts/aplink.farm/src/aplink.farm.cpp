@@ -30,14 +30,14 @@ void farm::setlord(const name& lord, const name& jamfactory) {
 void farm::lease(const name& farmer, 
                     const string& title, 
                     const string& uri, 
-                    const time_point& open_at, 
-                    const time_point& close_at){
+                    const time_point& opened_at, 
+                    const time_point& closed_at){
     require_auth( _gstate.lord );
     CHECKC(is_account(farmer), err::ACCOUNT_INVALID, "Invalid account of farmer");
     CHECKC(title.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "title size too large, respect " + to_string(max_text_size));
     CHECKC(uri.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "url size too large, respect " + to_string(max_text_size));
-    CHECKC(open_at > current_time_point(), err::TIME_INVALID, "start time cannot earlier than now");
-    CHECKC(close_at > open_at, err::TIME_INVALID, "end time cannot earlier than start time");
+    CHECKC(opened_at > current_time_point(), err::TIME_INVALID, "start time cannot earlier than now");
+    CHECKC(closed_at > opened_at, err::TIME_INVALID, "end time cannot earlier than start time");
 
     auto current_time = time_point_sec(current_time_point());
     auto lands = land_t::idx_t(_self, _self.value);
@@ -47,8 +47,8 @@ void farm::lease(const name& farmer,
     land.title = title;
     land.uri = uri;
     land.apples = asset(0, APLINK_SYMBOL);
-    land.open_at = time_point_sec(open_at);
-    land.close_at = time_point_sec(close_at);
+    land.opened_at = time_point_sec(opened_at);
+    land.closed_at = time_point_sec(closed_at);
     land.created_at = current_time;
     land.updated_at = current_time;
 
@@ -70,8 +70,8 @@ void farm::grow(const uint64_t& land_id, const name& farmer, const asset& quanti
     auto now = time_point_sec(current_time_point());
     if (land.status != land_status_t::LAND_ENABLED ||
         land.apples.amount < quantity.amount ||
-        now < land.open_at ||
-        now > land.close_at) return;
+        now < land.opened_at ||
+        now > land.closed_at) return;
 
     land.apples -= quantity;
     _db.set( land );
@@ -146,7 +146,7 @@ void farm::reclaim(const uint64_t& land_id, const name& recipient, const string&
 
     auto land = land_t(land_id);
     CHECKC( _db.get( land ), err::RECORD_NOT_FOUND, "land not found: " + to_string(land_id) );
-    CHECKC( land.status == land_status_t::LAND_DISABLED, err::NOT_DISABLED, "land not found: " + to_string(land_id) );
+    CHECKC( land.status == land_status_t::LAND_DISABLED, err::NOT_DISABLED, "land still enabled: " + to_string(land_id) );
     CHECKC( land.apples.amount > 0, err::NOT_POSITIVE, "non-positive quantity not allowed");
     
     TRANSFER( APLINK_BANK, recipient, land.apples, memo);
