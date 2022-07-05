@@ -67,11 +67,11 @@ public:
     /**
      * @brief pick apples
      * 
-     * @param croper 
+     * @param farmer 
      * @param appleids apple_id array, support lessthan 20 apples
      */
     [[eosio::action]]
-    void pick(const name& croper, vector<uint64_t> appleids);
+    void pick(const name& farmer, vector<uint64_t> appleids);
 
     /**
      * @brief topup seeds for a land
