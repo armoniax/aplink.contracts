@@ -43,7 +43,7 @@ struct FARM_LAND_TBL land_t {
     name            farmer;                     //land farmer
     string          title;                      //land title: <=64 chars
     string          uri;                        //land uri: <=64 chars
-    asset           seeds;
+    asset           apples;
     uint8_t         status = LAND_ENABLED;         //status of land, see land_status_t
     time_point_sec      open_at;              //customer can crop at
     time_point_sec      close_at;                //customer stop crop at
@@ -63,7 +63,7 @@ struct FARM_LAND_TBL land_t {
         indexed_by<"farmeridx"_n,  const_mem_fun<land_t, uint128_t, &land_t::by_farmer> >
     > idx_t;
 
-    EOSLIB_SERIALIZE( land_t, (id)(farmer)(title)(uri)(seeds)(status)
+    EOSLIB_SERIALIZE( land_t, (id)(farmer)(title)(uri)(apples)(status)
     (open_at)(close_at)(created_at)(updated_at) )
 
 };

@@ -46,7 +46,7 @@ void farm::lease(const name& farmer,
     land.farmer = farmer;
     land.title = title;
     land.uri = uri;
-    land.seeds = asset(0, APLINK_SYMBOL);
+    land.apples = asset(0, APLINK_SYMBOL);
     land.open_at = time_point_sec(open_at);
     land.close_at = time_point_sec(close_at);
     land.created_at = current_time;
@@ -67,12 +67,12 @@ void farm::grow(const uint64_t& land_id, const name& customer, const asset& quan
 
     require_auth(land.farmer);
     auto current_time = time_point_sec(current_time_point());
-    if(land.seeds.amount < quantity.amount) return;
+    if(land.apples.amount < quantity.amount) return;
     if(current_time < land.open_at)  return;
     if(current_time > land.close_at)  return;
     if(land.status != land_status_t::LAND_ENABLED) return;
 
-    land.seeds -= quantity;
+    land.apples -= quantity;
     _db.set( land );
 
     auto apples = apple_t::idx_t(_self, _self.value);
@@ -135,7 +135,7 @@ void farm::ontransfer(const name& from,
         CHECKC( _db.get( land ), err::RECORD_NOT_FOUND, "land not found: " + to_string(land_id) );
         CHECKC( land.status == land_status_t::LAND_ENABLED, err::NOT_DISABLED, "land not open");
 
-        land.seeds += quantity;
+        land.apples += quantity;
         _db.set( land ); 
     }
 }
@@ -147,11 +147,11 @@ void farm::reclaim(const uint64_t& land_id, const name& recipient, const string&
     auto land = land_t(land_id);
     CHECKC( _db.get( land ), err::RECORD_NOT_FOUND, "land not found: " + to_string(land_id) );
     CHECKC( land.status == land_status_t::LAND_DISABLED, err::NOT_DISABLED, "land not found: " + to_string(land_id) );
-    CHECKC( land.seeds.amount > 0, err::NOT_POSITIVE, "non-positive quantity not allowed");
+    CHECKC( land.apples.amount > 0, err::NOT_POSITIVE, "non-positive quantity not allowed");
     
-    TRANSFER( APLINK_BANK, recipient, land.seeds, memo);
+    TRANSFER( APLINK_BANK, recipient, land.apples, memo);
 
-    land.seeds -= land.seeds;
+    land.apples -= land.apples;
     _db.set( land );
 }
 

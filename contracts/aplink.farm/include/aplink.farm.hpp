@@ -71,7 +71,7 @@ public:
      * @brief reclaim a land, only for disabled land
      * 
      * @param land_id 
-     * @param recipient all seeds on this land will send to 
+     * @param recipient all apples on this land will send to 
      * @param memo 
      */
     [[eosio::action]]
@@ -87,10 +87,10 @@ public:
     void setstatus(const uint64_t& land_id, const uint8_t& status);
 
     /**
-     * @brief farmer can plant seeds to customer
+     * @brief farmer can plant apples to customer
      * 
      * @param land_id 
-     * @param customer  send seeds to account
+     * @param customer  send apples to account
      * @param quantity
      * @param memo 
      */
@@ -107,7 +107,7 @@ public:
     void pick(const name& farmer, vector<uint64_t> appleids);
 
     /**
-     * @brief topup seeds for a land
+     * @brief topup apples for a land
      * @param from 
      * @param to 
      * @param quantity 
