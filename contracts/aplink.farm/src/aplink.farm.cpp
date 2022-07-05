@@ -56,39 +56,41 @@ void farm::lease(const name& farmer,
 }
 
 
-void farm::grow(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo){
-    CHECKC( is_account(customer), err::ACCOUNT_INVALID, "Invalid account of farmer" );
+void farm::grow(const uint64_t& land_id, const name& farmer, const asset& quantity, const string& memo){
+    CHECKC( is_account(farmer), err::ACCOUNT_INVALID, "Invalid account of farmer" );
     CHECKC( quantity.amount > 0, err::PARAM_ERROR, "non-positive quantity not allowed" );
     CHECKC( quantity.symbol == APLINK_SYMBOL, err::SYMBOL_MISMATCH, "symbol not allowed" );
     CHECKC( memo.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "title size too large, respect " + to_string(max_text_size));
+    
     auto land = land_t(land_id);
-    CHECKC( _db.get( land ), err::RECORD_NOT_FOUND, "land not found: " + to_string(land_id) );
-    CHECKC( customer != land.farmer, err::ACCOUNT_INVALID, "can not crop to farmer" );
-
+    CHECKC( _db.get( land ), err::RECORD_NOT_FOUND, "land not found: " + to_string(land_id) )
+    CHECKC( farmer != land.farmer, err::ACCOUNT_INVALID, "land's farmer: " + land.farmer.to_string() )
     require_auth(land.farmer);
-    auto current_time = time_point_sec(current_time_point());
-    if(land.apples.amount < quantity.amount) return;
-    if(current_time < land.open_at)  return;
-    if(current_time > land.close_at)  return;
-    if(land.status != land_status_t::LAND_ENABLED) return;
+
+    auto now = time_point_sec(current_time_point());
+    if (land.status != land_status_t::LAND_ENABLED ||
+        land.apples.amount < quantity.amount ||
+        now < land.open_at ||
+        now > land.close_at) return;
 
     land.apples -= quantity;
     _db.set( land );
 
     auto apples = apple_t::idx_t(_self, _self.value);
     auto apple = apple_t( apples.available_primary_key() );
-    apple.farmer = customer;
-    apple.weight = quantity;
+    apple.farmer = farmer;
+    apple.quantity = quantity;
     apple.memo = memo;
-    apple.expire_at = current_time + MONTH_SECONDS;
+    apple.expired_at = now + MONTH_SECONDS;
 
     _db.set(apple, land.farmer);
 }
 
-void farm::pick(const name& farmer, vector<uint64_t> appleids){
-    CHECKC( aplink::token::account_exist(APLINK_BANK, farmer, APLINK_SYMBOL.code()), 
-        err::ACCOUNT_INVALID, "farmer should get newbie reward first");
+void farm::pick(const name& farmer, vector<uint64_t> appleids) {
     require_auth(farmer);
+    
+    auto has_apl = aplink::token::account_exist(APLINK_BANK, farmer, APLINK_SYMBOL.code());
+    CHECKC( has_apl, err::RECORD_NOT_FOUND, "farmer should get newbie reward first" )
 
     auto farmer_quantity = asset(0, APLINK_SYMBOL);
     auto factory_quantity = asset(0, APLINK_SYMBOL);
@@ -97,31 +99,29 @@ void farm::pick(const name& farmer, vector<uint64_t> appleids){
     CHECKC( appleids.size() <= 20, err::CONTENT_LENGTH_INVALID, "appleids too long, expect length 20" );
 
     string memo = "";
-    for (int i = 0; i<appleids.size(); ++i)
-	{
-        auto apple_id = appleids[i];
+    for (auto& apple_id : appleids) {
         auto apple = apple_t(apple_id);
-        CHECKC( _db.get( apple ), err::RECORD_NOT_FOUND, "apple not found: " + to_string(apple_id));
-        CHECKC( apple.farmer == farmer || _gstate.jamfactory == farmer, err::ACCOUNT_INVALID, "account invalid");
+        CHECKC( _db.get( apple ), err::RECORD_NOT_FOUND, "apple not found: " + to_string(apple_id) )
+        CHECKC( apple.farmer == farmer || _gstate.jamfactory == farmer, err::ACCOUNT_INVALID, "account invalid" )
         
-        if( current > apple.expire_at) {
-            factory_quantity += apple.weight;
-        }
-        else {
+        if (current > apple.expired_at) {
+            factory_quantity += apple.quantity;
+
+        } else {
             if(appleids.size() == 1 && memo.size() == 0) memo = apple.memo;
-            farmer_quantity += apple.weight;
+            farmer_quantity += apple.quantity;
         }
         _db.del(apple);
 	}
 
-    if(farmer_quantity.amount > 0) TRANSFER( APLINK_BANK, farmer, farmer_quantity, memo.size()==0?"group crop":memo);
-    if(factory_quantity.amount > 0) TRANSFER( APLINK_BANK, _gstate.jamfactory, factory_quantity, "jam");
+    if (farmer_quantity.amount > 0) 
+        TRANSFER( APLINK_BANK, farmer, farmer_quantity, memo.size()==0?"group crop":memo)
+
+    if (factory_quantity.amount > 0) 
+        TRANSFER( APLINK_BANK, _gstate.jamfactory, factory_quantity, "jam");
 }
 
-void farm::ontransfer(const name& from, 
-                       const name& to, 
-                       const asset& quantity, 
-                       const string& memo){
+void farm::ontransfer(const name& from, const name& to, const asset& quantity, const string& memo) {
     if (to == _self){
         CHECKC( quantity.amount > 0, err::PARAM_ERROR, "non-positive quantity not allowed" )
         CHECKC( memo != "", err::PARAM_ERROR, "empty memo!" )  
@@ -139,9 +139,10 @@ void farm::ontransfer(const name& from,
     }
 }
 
-void farm::reclaim(const uint64_t& land_id, const name& recipient, const string& memo){
-    CHECKC( is_account(recipient), err::ACCOUNT_INVALID, "Invalid account of recipient" );
+void farm::reclaim(const uint64_t& land_id, const name& recipient, const string& memo) {
     require_auth(_gstate.lord);
+
+    CHECKC( is_account(recipient), err::ACCOUNT_INVALID, "Invalid account of recipient" )
 
     auto land = land_t(land_id);
     CHECKC( _db.get( land ), err::RECORD_NOT_FOUND, "land not found: " + to_string(land_id) );
