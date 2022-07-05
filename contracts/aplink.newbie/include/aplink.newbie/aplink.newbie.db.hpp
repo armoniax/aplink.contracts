@@ -16,6 +16,8 @@ using namespace eosio;
 // static constexpr symbol APL_SYMBOL              = SYMBOL("APL", 4);
 // static constexpr name   APL_BANK                { "aplink.token"_n };   //NTT token
 
+static constexpr name   SYS_ACCT                { "amax"_n };   //NTT token
+
 namespace wasm { namespace db {
 
 using namespace std;
@@ -28,7 +30,7 @@ struct aplink_farm {
     name contract = "aplink.farm"_n;
     uint64_t land_id;
     asset parent_inviter_reward = asset_from_string("100 APL");
-    asset grandparent_inviter_reward = asset_from_string("100 APL");
+    asset grandparent_inviter_reward = asset_from_string("50 APL");
 };
 
 struct [[eosio::table("global"), eosio::contract("aplink.newbie")]] global_t {
