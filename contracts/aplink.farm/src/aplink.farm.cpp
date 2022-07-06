@@ -183,6 +183,7 @@ void farm::reclaimallot(const name& issuer, const uint64_t& allot_id, const stri
         lease.alloted_apples    -= allot.apples;
 
         _db.set( lease );
+        _db.del( allot );
 
     } else {
         CHECKC( false, err::NO_AUTH, "neither landlord nor lease tenant" )
