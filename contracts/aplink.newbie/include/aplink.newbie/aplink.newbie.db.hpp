@@ -16,6 +16,8 @@ using namespace eosio;
 // static constexpr symbol APL_SYMBOL              = SYMBOL("APL", 4);
 // static constexpr name   APL_BANK                { "aplink.token"_n };   //NTT token
 
+static constexpr name   SYS_ACCT                { "amax"_n };   //NTT token
+
 namespace wasm { namespace db {
 
 using namespace std;

@@ -1,11 +1,11 @@
-#include "aplink.farm.hpp"
+#include <aplink.farm/aplink.farm.hpp>
 #include <string>
 #include "utils.hpp"
 #include "aplink.token/aplink.token.hpp"
 
 static constexpr uint32_t max_text_size     = 64;
-using namespace wasm;
 using namespace aplink;
+using namespace wasm;
 
 #ifndef MONTH_SECONDS_FOR_TEST
 static constexpr uint32_t MONTH_SECONDS        = 30 * 24 * 3600;
@@ -21,34 +21,41 @@ static constexpr eosio::name active_permission{"active"_n};
 
 void farm::setlord(const name& lord, const name& jamfactory) {
     require_auth( get_self() );
-    CHECKC(is_account(lord), err::ACCOUNT_INVALID, "Invalid account of lord");
+
+    CHECKC(is_account(lord), err::ACCOUNT_INVALID, "Invalid account of lord")
+    CHECKC(is_account(jamfactory), err::ACCOUNT_INVALID, "Invalid account of jamfactory")
     _gstate.lord = lord;
     _gstate.jamfactory = jamfactory;
     _global.set(_gstate, get_self());
 }
 
-void farm::lease(const name& farmer, 
+void farm::lease(   const name& farmer, 
                     const string& title, 
                     const string& uri, 
                     const time_point& opened_at, 
-                    const time_point& closed_at){
+                    const time_point& closed_at) {
     require_auth( _gstate.lord );
-    CHECKC(is_account(farmer), err::ACCOUNT_INVALID, "Invalid account of farmer");
-    CHECKC(title.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "title size too large, respect " + to_string(max_text_size));
-    CHECKC(uri.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "url size too large, respect " + to_string(max_text_size));
-    CHECKC(opened_at > current_time_point(), err::TIME_INVALID, "start time cannot earlier than now");
-    CHECKC(closed_at > opened_at, err::TIME_INVALID, "end time cannot earlier than start time");
 
-    auto current_time = time_point_sec(current_time_point());
+    CHECKC( is_account(farmer), err::ACCOUNT_INVALID, "Invalid account of farmer")
+    CHECKC( title.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "title size too large, respect " + to_string(max_text_size))
+    CHECKC( land_uri.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "url size too large, respect " + to_string(max_text_size))
+    CHECKC( banner_uri.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "banner size too large, respect " + to_string(max_text_size))
+    CHECKC( opened_at > current_time_point(), err::TIME_INVALID, "start time cannot earlier than now")
+    CHECKC( closed_at > opened_at, err::TIME_INVALID, "end time cannot earlier than start time")
+
+    auto current_time = current_time_point();
     auto lands = land_t::idx_t(_self, _self.value);
-    auto pid = lands.available_primary_key();
+    auto pid = lands.available_primary_key(); if(pid == 0) pid = 1;
+    
     auto land = land_t(pid);
     land.farmer = farmer;
     land.title = title;
     land.uri = uri;
-    land.apples = asset(0, APLINK_SYMBOL);
-    land.opened_at = time_point_sec(opened_at);
-    land.closed_at = time_point_sec(closed_at);
+    land.banner = banner;
+    land.avaliable_apples = asset(0, APLINK_SYMBOL);
+    land.alloted_apples = asset(0, APLINK_SYMBOL);
+    land.opened_at = opened_at;
+    land.closed_at = closed_at;
     land.created_at = current_time;
     land.updated_at = current_time;
 
@@ -56,8 +63,8 @@ void farm::lease(const name& farmer,
 }
 
 
-void farm::grow(const uint64_t& land_id, const name& farmer, const asset& quantity, const string& memo){
-    CHECKC( is_account(farmer), err::ACCOUNT_INVALID, "Invalid account of farmer" );
+void farm::allot(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo){
+    CHECKC( is_account(customer), err::ACCOUNT_INVALID, "Invalid account of farmer" );
     CHECKC( quantity.amount > 0, err::PARAM_ERROR, "non-positive quantity not allowed" );
     CHECKC( quantity.symbol == APLINK_SYMBOL, err::SYMBOL_MISMATCH, "symbol not allowed" );
     CHECKC( memo.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "title size too large, respect " + to_string(max_text_size));
@@ -66,19 +73,20 @@ void farm::grow(const uint64_t& land_id, const name& farmer, const asset& quanti
     CHECKC( _db.get( land ), err::RECORD_NOT_FOUND, "land not found: " + to_string(land_id) )
     CHECKC( farmer != land.farmer, err::ACCOUNT_INVALID, "land's farmer: " + land.farmer.to_string() )
     require_auth(land.farmer);
-
     auto now = time_point_sec(current_time_point());
-    if (land.status != land_status_t::LAND_ENABLED ||
-        land.apples.amount < quantity.amount ||
-        now < land.opened_at ||
-        now > land.closed_at) return;
+    //TODO CHECK
+    CHECKC(quantity <= land.avaliable_apples, err::OVERSIZED, "land's apples less than respect")
+    CHECKC(now >= land.opened_at && now <= land.closed_at, err::TIME_INVALID, "land is not in openning time")
+    CHECKC(land.status == land_status_t::LAND_ENABLED, err::NOT_STARTED, "land is not in openning")
 
-    land.apples -= quantity;
+    land.avaliable_apples -= quantity;
+    land.alloted_apples += quantity;
     _db.set( land );
 
     auto apples = apple_t::idx_t(_self, _self.value);
-    auto apple = apple_t( apples.available_primary_key() );
-    apple.farmer = farmer;
+    auto pid = apples.available_primary_key();
+    auto apple = apple_t(pid);
+    apple.picker = customer;
     apple.quantity = quantity;
     apple.memo = memo;
     apple.expired_at = now + MONTH_SECONDS;
@@ -94,24 +102,25 @@ void farm::pick(const name& farmer, vector<uint64_t> appleids) {
 
     auto farmer_quantity = asset(0, APLINK_SYMBOL);
     auto factory_quantity = asset(0, APLINK_SYMBOL);
-    auto current = time_point_sec(current_time_point());
+    auto now = time_point_sec(current_time_point());
 
     CHECKC( appleids.size() <= 20, err::CONTENT_LENGTH_INVALID, "appleids too long, expect length 20" );
 
     string memo = "";
     for (auto& apple_id : appleids) {
         auto apple = apple_t(apple_id);
-        CHECKC( _db.get( apple ), err::RECORD_NOT_FOUND, "apple not found: " + to_string(apple_id) )
-        CHECKC( apple.farmer == farmer || _gstate.jamfactory == farmer, err::ACCOUNT_INVALID, "account invalid" )
+        CHECKC( _db.get( apple ), err::RECORD_NOT_FOUND, "apple not found: " + to_string(apple_id));
+        CHECKC( picker == apple.picker || picker == _gstate.jamfactory, err::ACCOUNT_INVALID, "account invalid");
         
-        if (current > apple.expired_at) {
+        if( now > apple.expired_at) {
             factory_quantity += apple.quantity;
-
-        } else {
-            if(appleids.size() == 1 && memo.size() == 0) memo = apple.memo;
-            farmer_quantity += apple.quantity;
+            _db.del(apple);
         }
-        _db.del(apple);
+        else if( picker != _gstate.jamfactory ){
+            if(appleids.size() == 1 && memo.size() == 0) memo = apple.memo;
+            picker_quantity += apple.quantity;
+            _db.del(apple);
+        }
 	}
 
     if (farmer_quantity.amount > 0) 
@@ -145,13 +154,13 @@ void farm::reclaim(const uint64_t& land_id, const name& recipient, const string&
     CHECKC( is_account(recipient), err::ACCOUNT_INVALID, "Invalid account of recipient" )
 
     auto land = land_t(land_id);
-    CHECKC( _db.get( land ), err::RECORD_NOT_FOUND, "land not found: " + to_string(land_id) );
-    CHECKC( land.status == land_status_t::LAND_DISABLED, err::NOT_DISABLED, "land still enabled: " + to_string(land_id) );
-    CHECKC( land.apples.amount > 0, err::NOT_POSITIVE, "non-positive quantity not allowed");
+    CHECKC( _db.get( land ), err::RECORD_NOT_FOUND, "land not found: " + to_string(land_id) )
+    CHECKC( land.status == land_status_t::LAND_DISABLED, err::NOT_DISABLED, "land not found: " + to_string(land_id) )
+    CHECKC( land.avaliable_apples.amount > 0, err::NOT_POSITIVE, "non-positive quantity not allowed")
     
-    TRANSFER( APLINK_BANK, recipient, land.apples, memo);
+    TRANSFER( APLINK_BANK, _gstate.jamfactory, land.avaliable_apples, memo);
 
-    land.apples -= land.apples;
+    land.avaliable_apples -= land.avaliable_apples;
     _db.set( land );
 }
 

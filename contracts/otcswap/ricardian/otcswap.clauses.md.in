@@ -1,0 +1,10 @@
+<h1 class="clause">UserAgreement</h1>
+
+User agreement for the decentralized OTC (over-the-counter) can go here.
+
+<h1 class="clause">DeOTC_Agreement</h1>
+
+This is a decentralized OTC (over-the-counter) contract.
+
+<h1 class="clause">ContractVersion</h1>
+@CONTRACT_VERSION@

@@ -37,6 +37,10 @@ using std::vector;
 using namespace eosio;
 
 class [[eosio::contract("aplink.farm")]] farm: public eosio::contract {
+private:
+    global_singleton    _global;
+    global_t            _gstate;
+    dbc                 _db;
 
 public:
     using contract::contract;
@@ -58,7 +62,7 @@ public:
     /**
      * @brief lease a land to a farmer
      * 
-     * @param farmer account who can crop the land, always be a contract
+     * @param farmer account who can pick the land, always be a contract
      * @param title the land's name
      * @param uri  the details info of the farmer
      * @param opened_at  farmer can crop after opened_at
@@ -71,11 +75,10 @@ public:
      * @brief reclaim a land, only for disabled land
      * 
      * @param land_id 
-     * @param recipient all apples on this land will send to 
      * @param memo 
      */
     [[eosio::action]]
-    void reclaim(const uint64_t& land_id, const name& recipient, const string& memo);
+    void reclaim(const uint64_t& land_id, const string& memo);
 
     /**
      * @brief 
@@ -95,7 +98,7 @@ public:
      * @param memo 
      */
     [[eosio::action]]
-    void grow(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo);
+    void allot(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo);
 
     /**
      * @brief pick apples
@@ -115,12 +118,23 @@ public:
      */
     [[eosio::on_notify("aplink.token::transfer")]]
     void ontransfer(const name& from, const name& to, const asset& quantity, const string& memo);
-    
-    using grow_action = eosio::action_wrapper<"grow"_n, &farm::grow>;
-private:
-    global_singleton    _global;
-    global_t            _gstate;
-    dbc                 _db;
+
+    using allot_action = eosio::action_wrapper<"allot"_n, &farm::allot>;
+
+    static asset get_avaliable_apples( const name& token_contract_account, const uint64_t& land_id )
+    {
+        auto db = dbc(token_contract_account);
+        auto land = land_t(land_id);
+        auto now = time_point_sec(current_time_point());
+
+        if (!db.get(land) ||
+            now < land.opened_at || 
+            now > land.closed_at ||
+            land.status != 1) 
+            return asset(0, APLINK_SYMBOL);
+        
+        return land.avaliable_apples;
+    }
 };
 
 }

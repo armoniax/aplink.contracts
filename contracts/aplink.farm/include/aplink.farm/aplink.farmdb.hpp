@@ -90,5 +90,4 @@ struct FARM_TBL apple_t {
 
     EOSLIB_SERIALIZE( apple_t, (id)(land_id)(farmer)(quantity)(memo)(expired_at) )
 };
-
 } }

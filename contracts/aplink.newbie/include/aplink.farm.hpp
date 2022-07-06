@@ -14,8 +14,8 @@ class [[eosio::contract("aplink.farm")]] farm : public contract {
     public:
     using contract::contract;
 
-    ACTION grow(const name& to, const uint64_t& land_id, const asset& quantity);
-    using grow_action = eosio::action_wrapper<"grow"_n, &farm::grow>;
+    void allot(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo);
+    using allot_action = eosio::action_wrapper<"allot"_n, &farm::allot>;
 };
 
 };
