@@ -24,7 +24,7 @@ enum class err: uint8_t {
    NOTIFY_UNRELATED     = 12,
    ACTION_REDUNDANT     = 13,
    ACCOUNT_INVALID      = 14,
-   CONTENT_LENGTH_INVALID      = 15,
+   CONTENT_LENGTH_INVALID = 15,
    NOT_DISABLED          = 16,
 
 };
@@ -68,20 +68,22 @@ public:
                 const time_point& opened_at, const time_point& closed_at);
 
     /**
-     * @brief reclaim a land, only for disabled land
+     * @brief reclaim a lease, only for inactive ones
      * 
-     * @param land_id 
+     * @param issuer - who reclaims, only landlord allows to issue
+     * @param lease_id 
      * @param memo 
      */
-    ACTION reclaimland(const uint64_t& land_id, const string& memo);
+    ACTION reclaimlease(const name& issuer, const uint64_t& lease_id, const string& memo);
 
     /**
      * @brief reclaim a land, only for disabled land
      * 
+     * @param issuer - who reclaims
      * @param allot_id 
      * @param memo 
      */
-    ACTION reclaimallot(const uint64_t& allot_id, const string& memo);
+    ACTION reclaimallot(const name& issuer, const uint64_t& allot_id, const string& memo);
 
     /**
      * @brief 

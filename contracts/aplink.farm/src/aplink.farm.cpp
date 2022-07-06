@@ -148,8 +148,9 @@ void farm::ontransfer(const name& from, const name& to, const asset& quantity, c
     }
 }
 
-void farm::reclaimland(const uint64_t& lease_id, const string& memo) {
-    require_auth(_gstate.landlord);
+void farm::reclaimlease(const name& issuer, const uint64_t& lease_id, const string& memo) {
+    require_auth( issuer );
+    CHECKC( _gstate.landlord == issuer, err::NO_AUTH, "issuer not landlord" )
 
     auto lease = lease_t(lease_id);
     CHECKC( _db.get( lease ), err::RECORD_NOT_FOUND, "land not found: " + to_string(lease_id) )
@@ -163,15 +164,29 @@ void farm::reclaimland(const uint64_t& lease_id, const string& memo) {
 
 }
 
-void farm::reclaimallot(const uint64_t& allot_id, const string& memo) {
-    require_auth(_gstate.landlord);
+void farm::reclaimallot(const name& issuer, const uint64_t& allot_id, const string& memo) {
+    require_auth( issuer );
 
     auto allot = allot_t(allot_id);
     CHECKC( _db.get( allot ), err::RECORD_NOT_FOUND, "allot not found: " + to_string(allot_id) )
-    
-    TRANSFER( APLINK_BANK, _gstate.jamfactory, allot.apples, memo )
 
-    _db.del( allot );
+    auto lease = lease_t(allot.lease_id);
+    CHECKC( _db.get( lease ), err::RECORD_NOT_FOUND, "lease not found: " + to_string(allot.lease_id) )
+
+    if (_gstate.landlord == issuer) {
+        TRANSFER( APLINK_BANK, _gstate.jamfactory, allot.apples, memo )
+        _db.del( allot );
+
+    } else if (lease.tenant == issuer) {
+        CHECKC( lease.alloted_apples >= allot.apples, err::OVERSIZED, "lease has insufficient total alloted apples" )
+        lease.available_apples  += allot.apples;
+        lease.alloted_apples    -= allot.apples;
+
+        _db.set( lease );
+
+    } else {
+        CHECKC( false, err::NO_AUTH, "neither landlord nor lease tenant" )
+    } 
 }
 
 void farm::setstatus(const uint64_t& lease_id, const name& status){
