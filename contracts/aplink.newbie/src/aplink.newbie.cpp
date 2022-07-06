@@ -10,9 +10,9 @@
 
 
 using allot_action = aplink::farm::allot_action;
-#define ALLOT_APPLE(farm, land_id, to, quantity, memo) \
+#define ALLOT_APPLE(farm, lease_id, to, quantity, memo) \
     {   allot_action(farm, { {_self, active_perm} }).send( \
-            land_id, to, quantity, memo);}
+            lease_id, to, quantity, memo);}
 
 
 void newbie::setbatchsize(const uint8_t batch_issue_size) {
@@ -40,13 +40,13 @@ void newbie::rewardinvite(const name& to)
 
     auto parent_inviter = get_account_creator( to );
     if (parent_inviter != "amax"_n)
-        ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, parent_inviter, _gstate.apl_farm.parent_inviter_reward,  "inviter reward" )
+        ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.lease_id, parent_inviter, _gstate.apl_farm.parent_inviter_reward,  "inviter reward" )
     else 
         return;
 
     auto grand_parent_inviter = get_account_creator( parent_inviter );
     if (grand_parent_inviter != "amax"_n)
-        ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.land_id, grand_parent_inviter, _gstate.apl_farm.grandparent_inviter_reward, "grand inviter reward" )
+        ALLOT_APPLE( _gstate.apl_farm.contract, _gstate.apl_farm.lease_id, grand_parent_inviter, _gstate.apl_farm.grandparent_inviter_reward, "grand inviter reward" )
 }
 
 void newbie::setstate(const asset& newbie_reward, const name& aplink_token_contract, const name& aplink_admin)

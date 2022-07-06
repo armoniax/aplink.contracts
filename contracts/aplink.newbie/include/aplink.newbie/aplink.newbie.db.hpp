@@ -28,7 +28,7 @@ using namespace wasm;
 
 struct aplink_farm {
     name contract                               = "aplink.farm"_n;
-    uint64_t land_id                            = 0;
+    uint64_t lease_id                           = 0;
     asset parent_inviter_reward                 = asset_from_string("100.0000 APL");
     asset grandparent_inviter_reward            = asset_from_string("100.0000 APL");
 };
