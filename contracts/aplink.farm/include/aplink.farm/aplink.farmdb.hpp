@@ -16,7 +16,9 @@ using std::string;
 using namespace wasm;
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
 
-static constexpr uint32_t MAX_CONTENT_SIZE        = 64;
+static constexpr name APLINK_BANK                  { "aplink.token"_n };
+static constexpr symbol APLINK_SYMBOL              = SYMBOL("APL", 4);
+static constexpr uint32_t MAX_CONTENT_SIZE         = 64;
 
 namespace wasm { namespace db {
 
@@ -24,70 +26,71 @@ namespace wasm { namespace db {
 #define FARM_TBL_NAME(name) [[eosio::table(name), eosio::contract("aplink.farm")]]
 
 struct FARM_TBL_NAME("global") global_t {
-    name lord;
+    name landlord;
     name jamfactory;
-    EOSLIB_SERIALIZE( global_t, (lord)(jamfactory) )
+    
+    EOSLIB_SERIALIZE( global_t, (landlord)(jamfactory) )
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
 
-enum land_status_t {
-    LAND_NONE          = 0,
-    LAND_ENABLED       = 1,
-    LAND_DISABLED      = 2
+namespace lease_status {
+    static constexpr eosio::name none           = "none"_n;
+    static constexpr eosio::name active         = "active"_n;
+    static constexpr eosio::name inactive       = "inactive"_n;
 };
-
-struct FARM_TBL land_t {
+struct FARM_TBL lease_t {
     uint64_t            id;
-    name                landlord;                   //landlord (contract)
-    string              title;                      //land title: <=64 chars
+    name                tenant;                     //tenant (contract account)
+    string              land_title;                 //land title: <=64 chars
     string              land_uri;                   //land uri: <=64 chars
     string              banner_uri;                 //banner uri: <=64 chars
-    // asset               total_apples;
-    asset               available_apples;
-    asset               alloted_apples;
-    uint8_t             status = LAND_ENABLED;      //status of land, see land_status_t
+    asset               alloted_apples =  asset(0, APLINK_SYMBOL);
+    asset               available_apples = asset(0, APLINK_SYMBOL); //total = alloted + available
+    name                status = lease_status::active;
     time_point_sec      opened_at;                  //customer can crop at
     time_point_sec      closed_at;                  //customer stop crop at
     time_point_sec      created_at;                 //creation time (UTC time)
     time_point_sec      updated_at;                 //update time: last updated atuint8_t  
     
-    land_t() {}
-    land_t(const uint64_t& pid): id(pid) {}
+    lease_t() {}
+    lease_t(const uint64_t& pid): id(pid) {}
 
     uint64_t primary_key() const { return id; }
 
-    uint128_t by_landlord() const { return (uint128_t)landlord.value << 64 | (uint128_t)id; }
+    uint128_t by_tenant() const { return (uint128_t)tenant.value << 64 | (uint128_t)id; }
     uint64_t by_updatedid() const { return ((uint64_t)updated_at.sec_since_epoch() << 32) | (id & 0x00000000FFFFFFFF); }
-    typedef eosio::multi_index<"lands"_n, land_t,
-        indexed_by<"landlordidx"_n,  const_mem_fun<land_t, uint128_t, &land_t::by_landlord> >,
-        indexed_by<"updatedid"_n,  const_mem_fun<land_t, uint64_t, &land_t::by_updatedid> >
+    typedef eosio::multi_index<"lands"_n, lease_t,
+        indexed_by<"tenantidx"_n,  const_mem_fun<lease_t, uint128_t, &lease_t::by_tenant> >,
+        indexed_by<"updatedid"_n,  const_mem_fun<lease_t, uint64_t, &lease_t::by_updatedid> >
     > idx_t;
 
-    EOSLIB_SERIALIZE( land_t, (id)(landlord)(title)(uri)(apples)(status)(opened_at)(closed_at)(created_at)(updated_at) )
+    EOSLIB_SERIALIZE( lease_t,  (id)(tenant)(land_title)(land_uri)(banner_uri)(alloted_apples)(available_apples)
+                                (status)(opened_at)(closed_at)(created_at)(updated_at) )
 
 };
 
-struct FARM_TBL apple_t {
+struct FARM_TBL allot_t {
     uint64_t        id;
-    uint4_t         land_id;
+    uint64_t        lease_id;                   //land lease id
     name            farmer;                     //land farmer who picks apples
-    asset           quantity;
-    string          memo;
+    asset           apples;                     //can only be picked or reclaimed all at once
+    time_point_sec  alloted_at;
     time_point_sec  expired_at;                 //expire time (UTC time)
 
-    apple_t() {}
-    apple_t(const uint64_t& pid): id(pid) {}
+    allot_t() {}
+    allot_t(const uint64_t& pid): id(pid) {}
     uint64_t primary_key() const { return id; }
 
-    uint64_t by_expireid() const { return ((uint64_t)expired_at.sec_since_epoch() << 32) | (id & 0x00000000FFFFFFFF); }
     uint128_t by_farmer() const { return (uint128_t)farmer.value << 64 | (uint128_t)id; }
+    uint64_t by_expiry() const { return ((uint64_t)expired_at.sec_since_epoch() << 32) | (id & 0x00000000FFFFFFFF); }
 
-    typedef eosio::multi_index<"apples"_n, apple_t,
-        indexed_by<"expireid"_n,  const_mem_fun<apple_t, uint64_t, &apple_t::by_expireid> >,
-        indexed_by<"farmeridx"_n,  const_mem_fun<apple_t, uint128_t, &apple_t::by_farmer> >
+    typedef eosio::multi_index<"allots"_n, allot_t,
+        indexed_by<"farmeridx"_n,  const_mem_fun<allot_t, uint128_t, &allot_t::by_farmer> >,
+        indexed_by<"expireidx"_n,  const_mem_fun<allot_t, uint64_t, &allot_t::by_expiry> >
     > idx_t;
 
-    EOSLIB_SERIALIZE( apple_t, (id)(land_id)(farmer)(quantity)(memo)(expired_at) )
+    EOSLIB_SERIALIZE( allot_t, (id)(lease_id)(farmer)(apples)(alloted_at)(expired_at) )
 };
+
 } }

@@ -5,9 +5,6 @@ using namespace wasm::db;
 
 namespace aplink {
 
-static constexpr symbol APLINK_SYMBOL              = SYMBOL("APL", 4);
-static constexpr name APLINK_BANK                  { "aplink.token"_n };
-
 #define CHECKC(exp, code, msg) \
    { if (!(exp)) eosio::check(false, string("$$$") + to_string((int)code) + string("$$$ ") + msg); }
    
@@ -53,23 +50,22 @@ public:
     }
 
     /**
-    * @param lord lord can lend out land
-    * @param jamfactory expired apples will send to jamfactory
+    * @param landlord - who can lend out land
+    * @param jamfactory - to which expired/rotten apples will be send to
     */
-    [[eosio::action]]
-    void setlord(const name& lord, const name& jamfactory);
+    ACTION init(const name& landlord, const name& jamfactory);
 
     /**
      * @brief lease a land to a farmer
      * 
-     * @param farmer account who can pick the land, always be a contract
+     * @param tenant a contract account who applies for a land and certain amount of apples for his or her farmers to pick
      * @param title the land's name
-     * @param uri  the details info of the farmer
+     * @param land_uri  the details info of the farmer
      * @param opened_at  farmer can crop after opened_at
      * @param closed_at farmer can crop before closed_at
      */
-    [[eosio::action]]
-    void lease(const name& farmer, const string& title, const string& uri, const time_point& opened_at, const time_point& closed_at);
+    ACTION lease(const name& tenant, const string& land_title, const string& land_uri, const string& banner_uri, 
+                const time_point& opened_at, const time_point& closed_at);
 
     /**
      * @brief reclaim a land, only for disabled land
@@ -77,37 +73,41 @@ public:
      * @param land_id 
      * @param memo 
      */
-    [[eosio::action]]
-    void reclaim(const uint64_t& land_id, const string& memo);
+    ACTION reclaimland(const uint64_t& land_id, const string& memo);
+
+    /**
+     * @brief reclaim a land, only for disabled land
+     * 
+     * @param allot_id 
+     * @param memo 
+     */
+    ACTION reclaimallot(const uint64_t& allot_id, const string& memo);
 
     /**
      * @brief 
      * 
-     * @param land_id 
-     * @param status  0:NONE 1:Enable 2:Disable
+     * @param lease_id 
+     * @param status - active | inactive | none
      */
-    [[eosio::action]]
-    void setstatus(const uint64_t& land_id, const uint8_t& status);
+    ACTION setstatus(const uint64_t& lease_id, const name& status);
 
     /**
      * @brief farmer can plant apples to customer
      * 
-     * @param land_id 
-     * @param customer  send apples to account
+     * @param lease_id 
+     * @param farmer  send apples to account
      * @param quantity
      * @param memo 
      */
-    [[eosio::action]]
-    void allot(const uint64_t& land_id, const name& customer, const asset& quantity, const string& memo);
+    ACTION allot(const uint64_t& lease_id, const name& farmer, const asset& quantity, const string& memo);
 
     /**
      * @brief pick apples
      * 
      * @param farmer 
-     * @param appleids apple_id array, support lessthan 20 apples
+     * @param allot_ids array of allot ids, support no more than 20 allots
      */
-    [[eosio::action]]
-    void pick(const name& farmer, vector<uint64_t> appleids);
+    ACTION pick(const name& farmer, const vector<uint64_t>& allot_ids);
 
     /**
      * @brief topup apples for a land
@@ -121,19 +121,26 @@ public:
 
     using allot_action = eosio::action_wrapper<"allot"_n, &farm::allot>;
 
-    static asset get_avaliable_apples( const name& token_contract_account, const uint64_t& land_id )
+    /**
+     * @brief 
+     * 
+     * @param apl_farm_contract 
+     * @param land_id 
+     * @param apples - available apples
+     */
+    static void available_apples( const name& apl_farm_contract, const uint64_t& land_id, asset& apples )
     {
-        auto db = dbc(token_contract_account);
-        auto land = land_t(land_id);
-        auto now = time_point_sec(current_time_point());
+        auto db         = dbc( apl_farm_contract );
+        auto lease      = lease_t(land_id);
+        auto now        = time_point_sec(current_time_point());
 
-        if (!db.get(land) ||
-            now < land.opened_at || 
-            now > land.closed_at ||
-            land.status != 1) 
-            return asset(0, APLINK_SYMBOL);
+        if (!db.get(lease) ||
+            now < lease.opened_at || 
+            now > lease.closed_at ||
+            lease.status != lease_status::active) 
+            apples = asset(0, APLINK_SYMBOL);
         
-        return land.avaliable_apples;
+        apples = lease.available_apples;
     }
 };
 
