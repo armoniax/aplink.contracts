@@ -593,7 +593,6 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
     DEAL_ACTION_CASE(MAKER_ACCEPT,          MERCHANT,     UNARBITTED,   CREATED,         MAKER_ACCEPTED)
     DEAL_ACTION_CASE(TAKER_SEND,            USER,         UNARBITTED,   MAKER_ACCEPTED,  TAKER_SENT)
     DEAL_ACTION_CASE(MAKER_RECV_AND_SENT,   MERCHANT,     UNARBITTED,   TAKER_SENT,      MAKER_RECV_AND_SENT)
-    DEAL_ACTION_CASE(ADD_SESSION_MSG,       NONE,         NONE,         NONE,            NONE)
     default:
         check(false, "unsupported process deal action:" + to_string((uint8_t)action_type));
         break;
@@ -623,8 +622,6 @@ void otcbook::processdeal(const name& account, const uint8_t& account_type, cons
         if((uint8_t)deal_action_t::MAKER_RECV_AND_SENT == action_type ) {
             row.merchant_paid_at = time_point_sec(current_time_point());
         }
-
-        row.session.push_back({account_type, account, (uint8_t)status, action_type, session_msg, now});
     });
 }
 
