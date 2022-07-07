@@ -123,7 +123,9 @@ void farm::pick(const name& farmer, const vector<uint64_t>& allot_ids) {
             _db.set( lease );       //lease will be only deleted by admin
             _db.del( allot );
 
-        } else if (farmer != _gstate.jamfactory) {
+        } else {
+            CHECKC( farmer !=  _gstate.jamfactory, err::NO_AUTH, "jamfactory pick not allowed" )
+
             farmer_quantity         += allot.apples;
             lease.alloted_apples    += allot.apples;
             lease.available_apples  -= allot.apples;
@@ -133,10 +135,10 @@ void farm::pick(const name& farmer, const vector<uint64_t>& allot_ids) {
 	}
 
     if (farmer_quantity.amount > 0) 
-        TRANSFER( APLINK_BANK, farmer, farmer_quantity, "farm crop" )
+        TRANSFER( APLINK_BANK, farmer, farmer_quantity, "pick" )
 
     if (factory_quantity.amount > 0) 
-        TRANSFER( APLINK_BANK, _gstate.jamfactory, factory_quantity, "farm jam");
+        TRANSFER( APLINK_BANK, _gstate.jamfactory, factory_quantity, "jam");
 }
 
 void farm::ontransfer(const name& from, const name& to, const asset& quantity, const string& memo) {
