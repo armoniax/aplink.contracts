@@ -83,7 +83,7 @@ void farm::allot(const uint64_t& lease_id, const name& farmer, const asset& quan
     _db.set( lease );
 
     auto allots                 = allot_t::idx_t(_self, _self.value);
-    auto pid                    =  allots.available_primary_key(); if (pid == 0) pid = 1;
+    auto pid                    = allots.available_primary_key(); if (pid == 0) pid = 1;
 
     auto allot                  = allot_t(pid);
     allot.farmer                = farmer;
@@ -104,22 +104,31 @@ void farm::pick(const name& farmer, const vector<uint64_t>& allot_ids) {
     auto factory_quantity       = asset(0, APLINK_SYMBOL);
     auto now                    = time_point_sec(current_time_point());
 
-    CHECKC( allot_ids.size() <= 20, err::CONTENT_LENGTH_INVALID, "appleids too long, expect length 20" );
-
+    CHECKC( allot_ids.size() <= 20, err::CONTENT_LENGTH_INVALID, "allot_ids too long, expect length 20" );
+    
     string memo = "";
     for (auto& allot_id : allot_ids) {
         auto allot = allot_t(allot_id);
-        CHECKC( _db.get( allot ), err::RECORD_NOT_FOUND, "allot not found: " + to_string(allot_id));
-        CHECKC( farmer == allot.farmer || farmer == _gstate.jamfactory, err::ACCOUNT_INVALID, "farmer account not authorized" );
+        CHECKC( _db.get( allot ), err::RECORD_NOT_FOUND, "allot not found: " + to_string(allot_id) )
+        CHECKC( farmer == allot.farmer || farmer == _gstate.jamfactory, err::ACCOUNT_INVALID, "farmer account not authorized" )
         
+        auto lease = lease_t( allot.lease_id );
+        CHECKC( _db.get( lease ), err::RECORD_NOT_FOUND, "lease not found: " + to_string(allot.lease_id))
+        CHECKC( lease.available_apples >= allot.apples, err::OVERSIZED, "insufficient lease available apples to allot" )
+
         if (now > allot.expired_at) { //already expired
-            factory_quantity    += allot.apples;
-            _db.del(allot);
+            factory_quantity        += allot.apples;
+            lease.alloted_apples    += allot.apples;
+            lease.available_apples  -= allot.apples;
+            _db.set( lease );       //lease will be only deleted by admin
+            _db.del( allot );
 
         } else if (farmer != _gstate.jamfactory) {
-            // if (allot_ids.size() == 1 && memo.size() == 0) memo = apple.memo;
-            farmer_quantity += allot.apples;
-            _db.del(allot);
+            farmer_quantity         += allot.apples;
+            lease.alloted_apples    += allot.apples;
+            lease.available_apples  -= allot.apples;
+            _db.set( lease );       //lease will be only deleted by admin
+            _db.del( allot );
         }
 	}
 
