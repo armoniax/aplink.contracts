@@ -14,6 +14,18 @@ using allot_action = aplink::farm::allot_action;
     {   allot_action(farm, { {_self, active_perm} }).send( \
             land_id, to, quantity , memo);}
 
+
+void newbie::setfarm(const aplink_farm& farm){
+    require_auth( _self );
+
+    CHECK(farm.parent_inviter_reward.symbol == APL_SYMBOL, "invalid farm symbol")
+    CHECK(farm.grandparent_inviter_reward.symbol == APL_SYMBOL, "invalid farm symbol")
+    CHECK(farm.land_id >= 0, "invalide farm's land id")
+    CHECK(is_account(farm.contract), "invalid contract name for farm")
+
+    _gstate.apl_farm = farm;
+}
+
 void newbie::claimreward(const name& newbie)
 {
     require_auth( newbie );

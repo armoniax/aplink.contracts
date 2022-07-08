@@ -36,6 +36,8 @@ public:
         _global.set( _gstate, get_self() );
     }
 
+    ACTION setfarm(const aplink_farm& farm);
+
     ACTION claimreward(const name& newbie);
 
     ACTION rewardinvite(const name& to);

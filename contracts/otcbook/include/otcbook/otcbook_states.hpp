@@ -313,7 +313,7 @@ struct OTCBOOK_TBL deal_t {
     time_point_sec updated_at;
     uint64_t order_sn = 0;          // order sn, created by external app
 
-    vector<deal_session_msg_t> session; // session
+    // vector<deal_session_msg_t> session; // session
 
     time_point_sec merchant_accepted_at;  // merchant accepted time
     time_point_sec merchant_paid_at;      // merchant paid time
