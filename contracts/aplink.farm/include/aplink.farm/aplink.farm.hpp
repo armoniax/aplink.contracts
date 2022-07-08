@@ -49,6 +49,8 @@ public:
         _gstate = _global.exists() ? _global.get() : global_t{};
     }
 
+    ~farm() { _global.set( _gstate, get_self() ); }
+    
     /**
     * @param landlord - who can lend out land
     * @param jamfactory - to which expired/rotten apples will be send to

@@ -60,7 +60,7 @@ struct FARM_TBL lease_t {
 
     uint128_t by_tenant() const { return (uint128_t)tenant.value << 64 | (uint128_t)id; }
     uint64_t by_updatedid() const { return ((uint64_t)updated_at.sec_since_epoch() << 32) | (id & 0x00000000FFFFFFFF); }
-    typedef eosio::multi_index<"lands"_n, lease_t,
+    typedef eosio::multi_index<"leases"_n, lease_t,
         indexed_by<"tenantidx"_n,  const_mem_fun<lease_t, uint128_t, &lease_t::by_tenant> >,
         indexed_by<"updatedid"_n,  const_mem_fun<lease_t, uint64_t, &lease_t::by_updatedid> >
     > idx_t;
