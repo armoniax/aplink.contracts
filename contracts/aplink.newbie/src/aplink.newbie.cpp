@@ -26,12 +26,16 @@ void newbie::claimreward(const set<name> newbies)
     CHECK( newbies.size() > 0, "none newbie" )
     CHECK( newbies.size() <= _gstate.batch_issue_size, "batch oversized" )
 
+    auto processed = false;
     for( auto newbie : newbies ){
-        CHECK( !aplink::token::account_exist(_gstate.aplink_token_contract, newbie, _gstate.newbie_reward.symbol.code()),
-           "newbie reward already claimed by: " + newbie.to_string() )
+        if (aplink::token::account_exist(_gstate.aplink_token_contract, newbie, _gstate.newbie_reward.symbol.code())) continue;
 
         TRANSFER( _gstate.aplink_token_contract, newbie, _gstate.newbie_reward, "newbie reward" )
+        if (!processed) 
+            processed = true;
     }
+
+    CHECK( processed, "none-processed" )
 }
 
 void newbie::rewardinvite(const name& to)
