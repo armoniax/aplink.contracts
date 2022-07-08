@@ -47,7 +47,7 @@ void farm::lease(   const name& tenant,
 
     auto now                    = current_time_point();
     auto lands                  = lease_t::idx_t(_self, _self.value);
-    auto pid                    = lands.available_primary_key();
+    auto pid                    = lands.available_primary_key(); if(pid == 0) pid = 1;
     
     auto lease                  = lease_t(pid);
     lease.tenant                = tenant;
@@ -73,13 +73,16 @@ void farm::allot(const uint64_t& lease_id, const name& farmer, const asset& quan
     auto now                    = time_point_sec(current_time_point());
     CHECKC( _db.get( lease ), err::RECORD_NOT_FOUND, "land not found: " + to_string(lease_id) )
     CHECKC( farmer != lease.tenant, err::ACCOUNT_INVALID, "cannot allot to land's tenant: " + lease.tenant.to_string() )
-    CHECKC( quantity <= lease.available_apples, err::OVERSIZED, "land's apples insufficient to be alloted" )
-    CHECKC( now >= lease.opened_at && now <= lease.closed_at, err::TIME_INVALID, "land is not in openning time")
-    CHECKC( lease.status == lease_status::active, err::NOT_STARTED, "land is not in openning")
+    CHECKC( now >= lease.opened_at && now <= lease.closed_at, err::TIME_INVALID, "lease is not open")
+    CHECKC( lease.status == lease_status::active, err::NOT_STARTED, "lease is not active")
     require_auth(lease.tenant);
 
-    lease.available_apples       -= quantity;
-    lease.alloted_apples         += quantity;
+    auto quant                  = quantity;
+    if (quant > lease.available_apples)
+        quant = lease.available_apples;
+
+    lease.available_apples       -= quant;
+    lease.alloted_apples         += quant;
     _db.set( lease );
 
     auto allots                 = allot_t::idx_t(_self, _self.value);
@@ -87,7 +90,7 @@ void farm::allot(const uint64_t& lease_id, const name& farmer, const asset& quan
 
     auto allot                  = allot_t(pid);
     allot.farmer                = farmer;
-    allot.apples                = quantity;
+    allot.apples                = quant;
     allot.alloted_at            = now;
     allot.expired_at            = now + MONTH_SECONDS;
 
