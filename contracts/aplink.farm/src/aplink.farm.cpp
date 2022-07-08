@@ -47,7 +47,7 @@ void farm::lease(   const name& tenant,
 
     auto now                    = current_time_point();
     auto lands                  = lease_t::idx_t(_self, _self.value);
-    auto pid                    = lands.available_primary_key(); if(pid == 0) pid = 1;
+    auto pid                    = lands.available_primary_key();
     
     auto lease                  = lease_t(pid);
     lease.tenant                = tenant;

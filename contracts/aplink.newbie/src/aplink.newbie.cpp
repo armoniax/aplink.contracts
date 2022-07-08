@@ -20,7 +20,8 @@ void newbie::setbatchsize(const uint8_t batch_issue_size) {
 }
 
 void newbie::init() {
-    _gstate.apl_farm.parent_inviter_reward.amount = 50'0000;
+    // _gstate.apl_farm.parent_inviter_reward.amount = 50'0000;
+    _gstate.apl_farm.lease_id = 1;
 }
 
 void newbie::claimreward(const set<name> newbies)
