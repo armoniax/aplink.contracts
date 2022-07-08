@@ -337,8 +337,9 @@ void otcbook::opendeal(const name& taker, const name& order_side, const uint64_t
         row.updated_at          = time_point_sec(current_time_point());
     });
 
-    NOTIFICATION(order_maker, conf.app_info, 
-        "deal.new, meta.taker "+ taker.to_string() + ", meta.quantity " + deal_quantity.to_string());
+    NOTIFICATION(order_maker, conf.app_info,
+    "deal.new, meta.taker " + taker.to_string() + ", meta.quantity " 
+    + deal_quantity.to_string() + ", deal.id " + to_string(deal_id))
 }
 
 /**
