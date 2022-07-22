@@ -39,7 +39,7 @@ public:
         _global.set( _gstate, get_self() );
     }
 
-    ACTION init();
+    ACTION init(const uint64_t&lease_id,const name&farm_contract );
 
     ACTION claimreward(const set<name> newbies);
     ACTION rewardinvite(const name& to);

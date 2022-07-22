@@ -19,9 +19,12 @@ void newbie::setbatchsize(const uint8_t batch_issue_size) {
     _gstate.batch_issue_size = batch_issue_size;
 }
 
-void newbie::init() {
-    // _gstate.apl_farm.parent_inviter_reward.amount = 50'0000;
-    _gstate.apl_farm.lease_id = 1;
+void newbie::init(const uint64_t&lease_id,const name&farm_contract) {
+    require_auth( _self );
+    _gstate.apl_farm.lease_id = lease_id;
+    _gstate.apl_farm.contract = farm_contract;
+    _gstate.apl_farm.parent_inviter_reward      = asset_from_string("100.0000 APL");
+    _gstate.apl_farm.grandparent_inviter_reward = asset_from_string("50.0000 APL");
 }
 
 void newbie::claimreward(const set<name> newbies)
