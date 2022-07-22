@@ -16,6 +16,8 @@ using allot_action = aplink::farm::allot_action;
 
 
 void newbie::setbatchsize(const uint8_t batch_issue_size) {
+    require_auth( _self );
+    
     _gstate.batch_issue_size = batch_issue_size;
 }
 
