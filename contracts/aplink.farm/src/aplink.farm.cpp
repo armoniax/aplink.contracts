@@ -139,12 +139,12 @@ void farm::ontransfer(const name& from, const name& to, const asset& quantity, c
         CHECKC( memo != "", err::PARAM_ERROR, "empty memo!" )  
 
         // memo: lease_id
-        uint64_t lease_id = stoi(string(memo));
-        auto lease = lease_t(lease_id);
+        uint64_t lease_id           = stoi(string(memo));
+        auto lease                  = lease_t(lease_id);
         CHECKC( _db.get( lease ), err::RECORD_NOT_FOUND, "lease not found: " + to_string(lease_id) );
         CHECKC( lease.status == lease_status::active, err::NOT_DISABLED, "lease not enabled");
 
-        lease.available_apples += quantity;
+        lease.available_apples      += quantity;
         _db.set( lease ); 
     }
 }
