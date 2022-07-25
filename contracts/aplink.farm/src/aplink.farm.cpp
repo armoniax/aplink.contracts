@@ -33,17 +33,15 @@ void farm::init(const name& lord, const name& jamfactory) {
 void farm::lease(   const name& tenant, 
                     const string& land_title, 
                     const string& land_uri, 
-                    const string& banner_uri,
-                    const time_point& opened_at, 
-                    const time_point& closed_at) {
+                    const string& banner_uri) {
     require_auth( _gstate.landlord );
 
     CHECKC( is_account(tenant), err::ACCOUNT_INVALID, "Tenant account invalid")
     CHECKC( land_title.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "title size too large, respect " + to_string(max_text_size))
     CHECKC( land_uri.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "url size too large, respect " + to_string(max_text_size))
     CHECKC( banner_uri.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "banner size too large, respect " + to_string(max_text_size))
-    CHECKC( opened_at > current_time_point(), err::TIME_INVALID, "start time cannot earlier than now")
-    CHECKC( closed_at > opened_at, err::TIME_INVALID, "end time cannot earlier than start time")
+    // CHECKC( opened_at > current_time_point(), err::TIME_INVALID, "start time cannot earlier than now")
+    // CHECKC( closed_at > opened_at, err::TIME_INVALID, "end time cannot earlier than start time")
 
     auto now                    = current_time_point();
     auto lands                  = lease_t::idx_t(_self, _self.value);
@@ -54,8 +52,7 @@ void farm::lease(   const name& tenant,
     lease.land_title            = land_title;
     lease.land_uri              = land_uri;
     lease.banner_uri            = banner_uri;
-    lease.opened_at             = opened_at;
-    lease.closed_at             = closed_at;
+    lease.opened_at             = now;
     lease.created_at            = now;
     lease.updated_at            = now;
 
@@ -75,7 +72,7 @@ void farm::allot(const uint64_t& lease_id, const name& farmer, const asset& quan
     
     CHECKC( _db.get( lease ), err::RECORD_NOT_FOUND, "land not found: " + to_string(lease_id) )
     CHECKC( farmer != lease.tenant, err::ACCOUNT_INVALID, "cannot allot to land's tenant: " + lease.tenant.to_string() )
-    CHECKC( now >= lease.opened_at && now <= lease.closed_at, err::TIME_INVALID, "lease is not open")
+    // CHECKC( now >= lease.opened_at && now <= lease.closed_at, err::TIME_INVALID, "lease is not open")
     CHECKC( lease.status == lease_status::active, err::NOT_STARTED, "lease is not active")
     CHECKC( lease.available_apples >= quantity, err::OVERSIZED, "allot quantity is oversized, balance: " + lease.available_apples.to_string() )
     require_auth(lease.tenant);
