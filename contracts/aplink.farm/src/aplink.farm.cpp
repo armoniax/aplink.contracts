@@ -76,7 +76,7 @@ void farm::allot(const uint64_t& lease_id, const name& farmer, const asset& quan
     CHECKC( farmer != lease.tenant, err::ACCOUNT_INVALID, "cannot allot to land's tenant: " + lease.tenant.to_string() )
     CHECKC( now >= lease.opened_at && now <= lease.closed_at, err::TIME_INVALID, "lease is not open")
     CHECKC( lease.status == lease_status::active, err::NOT_STARTED, "lease is not active")
-    CHECKC( quantity <= lease.alloted_apples, err::OVERSIZED, "allot quantity is oversize, balance: " + lease.available_apples.to_string() )
+    CHECKC( lease.available_apples >= quantity, err::OVERSIZED, "allot quantity is oversized, balance: " + lease.available_apples.to_string() )
     require_auth(lease.tenant);
 
     lease.available_apples       -= quantity;
