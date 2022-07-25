@@ -57,6 +57,7 @@ void farm::lease(   const name& tenant,
     lease.opened_at             = opened_at;
     lease.closed_at             = closed_at;
     lease.created_at            = now;
+    lease.updated_at            = now;
 
     _db.set(lease, _gstate.landlord);
 }
@@ -75,14 +76,11 @@ void farm::allot(const uint64_t& lease_id, const name& farmer, const asset& quan
     CHECKC( farmer != lease.tenant, err::ACCOUNT_INVALID, "cannot allot to land's tenant: " + lease.tenant.to_string() )
     CHECKC( now >= lease.opened_at && now <= lease.closed_at, err::TIME_INVALID, "lease is not open")
     CHECKC( lease.status == lease_status::active, err::NOT_STARTED, "lease is not active")
+    CHECKC( quantity <= lease.alloted_apples, err::OVERSIZED, "allot quantity is oversize, balance: " + lease.available_apples.to_string() )
     require_auth(lease.tenant);
 
-    auto quant                  = quantity;
-    if (quant > lease.available_apples)
-        quant = lease.available_apples;
-
-    lease.available_apples       -= quant;
-    lease.alloted_apples         += quant;
+    lease.available_apples       -= quantity;
+    lease.alloted_apples         += quantity;
     _db.set( lease );
 
     auto allots                 = allot_t::idx_t(_self, _self.value);
@@ -91,7 +89,7 @@ void farm::allot(const uint64_t& lease_id, const name& farmer, const asset& quan
     auto allot                  = allot_t(pid);
     allot.lease_id              = lease_id;
     allot.farmer                = farmer;
-    allot.apples                = quant;
+    allot.apples                = quantity;
     allot.alloted_at            = now;
     allot.expired_at            = now + MONTH_SECONDS;
 
@@ -116,24 +114,14 @@ void farm::pick(const name& farmer, const vector<uint64_t>& allot_ids) {
         CHECKC( _db.get( allot ), err::RECORD_NOT_FOUND, "allot not found: " + to_string(allot_id) )
         CHECKC( farmer == allot.farmer || farmer == _gstate.jamfactory, err::ACCOUNT_INVALID, "farmer account not authorized" )
         
-        auto lease = lease_t( allot.lease_id );
-        CHECKC( _db.get( lease ), err::RECORD_NOT_FOUND, "lease not found: " + to_string(allot.lease_id))
-        CHECKC( lease.available_apples >= allot.apples, err::OVERSIZED, "insufficient lease available apples to allot" )
-
         if (now > allot.expired_at) { //already expired
             factory_quantity        += allot.apples;
-            lease.alloted_apples    += allot.apples;
-            lease.available_apples  -= allot.apples;
-            _db.set( lease );       //lease will be only deleted by admin
             _db.del( allot );
 
         } else {
             CHECKC( farmer !=  _gstate.jamfactory, err::NO_AUTH, "jamfactory pick not allowed" )
 
             farmer_quantity         += allot.apples;
-            lease.alloted_apples    += allot.apples;
-            lease.available_apples  -= allot.apples;
-            _db.set( lease );       //lease will be only deleted by admin
             _db.del( allot );
         }
 	}
@@ -175,6 +163,7 @@ void farm::reclaimlease(const name& issuer, const uint64_t& lease_id, const stri
     TRANSFER( APLINK_BANK, _gstate.jamfactory, lease.available_apples, memo )
 
     lease.available_apples.amount = 0;
+    lease.updated_at = current_time_point();
     _db.set( lease );
 
 }
