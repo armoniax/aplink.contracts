@@ -156,8 +156,8 @@ void farm::reclaimlease(const name& issuer, const uint64_t& lease_id, const stri
     CHECKC( _gstate.landlord == issuer, err::NO_AUTH, "issuer not landlord" )
 
     auto lease = lease_t(lease_id);
-    CHECKC( _db.get( lease ), err::RECORD_NOT_FOUND, "land not found: " + to_string(lease_id) )
-    CHECKC( lease.status == lease_status::active, err::NOT_DISABLED, "land not found: " + to_string(lease_id) )
+    CHECKC( _db.get( lease ), err::RECORD_NOT_FOUND, "lease not found: " + to_string(lease_id) )
+    CHECKC( lease.status == lease_status::active, err::NOT_DISABLED, "lease not active: " + to_string(lease_id) )
     CHECKC( lease.available_apples.amount > 0, err::NOT_POSITIVE, "reclaim non-positive quantity not allowed")
     
     TRANSFER( APLINK_BANK, _gstate.jamfactory, lease.available_apples, memo )
