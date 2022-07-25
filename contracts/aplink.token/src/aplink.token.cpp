@@ -185,9 +185,10 @@ void token::add_balance( const name& owner, const asset& value, const name& ram_
       a.sum_balance = value;
       a.expired_at = current_time_point() + seconds(YEAR_SECONDS);
     });
+    
     if (value.amount >= REWARD_INVITER_THRESHOLD) {
           rewardinvite_action("aplinknewbie"_n, { {_self, active_perm} }).send( owner );
-      }
+    }
   } else {
     to_acnts.modify( to, same_payer, [&]( auto& a ) {
       auto old_sum_balance = a.sum_balance.amount;

@@ -40,7 +40,7 @@ public:
     }
 
     ACTION init(const uint64_t&lease_id,const name&farm_contract );
-
+    ACTION setleaseid() { _gstate.apl_farm.lease_id = 1; }
     ACTION claimreward(const set<name> newbies);
     ACTION rewardinvite(const name& to);
 

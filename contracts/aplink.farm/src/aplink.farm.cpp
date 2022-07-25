@@ -72,6 +72,7 @@ void farm::allot(const uint64_t& lease_id, const name& farmer, const asset& quan
     
     auto lease                  = lease_t(lease_id);
     auto now                    = time_point_sec(current_time_point());
+    
     CHECKC( _db.get( lease ), err::RECORD_NOT_FOUND, "land not found: " + to_string(lease_id) )
     CHECKC( farmer != lease.tenant, err::ACCOUNT_INVALID, "cannot allot to land's tenant: " + lease.tenant.to_string() )
     CHECKC( now >= lease.opened_at && now <= lease.closed_at, err::TIME_INVALID, "lease is not open")
