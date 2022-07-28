@@ -66,9 +66,11 @@ public:
      * @param opened_at  farmer can crop after opened_at
      * @param closed_at farmer can crop before closed_at
      */
-    ACTION lease(const name& tenant, const string& land_title, const string& land_uri, const string& banner_uri 
+    ACTION lease(const name& tenant, const string& lese_title, const string& land_uri, const string& banner_uri 
                 /*const time_point& opened_at, const time_point& closed_at*/);
 
+    ACTION setlease( const uint64_t& lease_id, const string& land_uri, const string& banner_uri );
+    ACTION settenant( const uint64_t& lease_id, const name& tenant );
     /**
      * @brief reclaim a lease, only for inactive ones
      * 

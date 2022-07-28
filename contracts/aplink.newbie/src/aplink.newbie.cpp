@@ -4,6 +4,8 @@
 #include <aplink.token/aplink.token.hpp>
 #include <aplink.farm.hpp>
 
+#include <amax.token/amax.token.hpp>
+
 #define TRANSFER(bank, to, quantity, memo) \
     {	aplink::token::transfer_action act{ bank, { {_self, active_perm} } };\
 			act.send( _self, to, quantity, memo );}
@@ -38,7 +40,8 @@ void newbie::claimreward(const set<name> newbies)
 
     auto processed = false;
     for( auto newbie : newbies ){
-        if (aplink::token::account_exist(_gstate.aplink_token_contract, newbie, _gstate.newbie_reward.symbol.code())) continue;
+        if (amax::token::is_blacklisted("amax.token"_n, newbie) || 
+            aplink::token::account_exist(_gstate.aplink_token_contract, newbie, _gstate.newbie_reward.symbol.code()) ) continue;
 
         TRANSFER( _gstate.aplink_token_contract, newbie, _gstate.newbie_reward, "newbie reward" )
         if (!processed) 
@@ -51,6 +54,9 @@ void newbie::claimreward(const set<name> newbies)
 void newbie::rewardinvite(const name& to)
 {
     require_auth( _gstate.aplink_token_contract );
+
+    if ( amax::token::is_blacklisted("amax.token"_n, to) )
+        return;
 
     auto parent_inviter = get_account_creator( to );
     if (parent_inviter != "amax"_n)

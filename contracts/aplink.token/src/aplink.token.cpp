@@ -150,6 +150,8 @@ void token::transfer( const name&    from,
        check( to_acnt != to_acnts.end() && to_acnt->allow_recv, "no permistion for transfer" );
     }
 
+    check( amax::token::is_blacklisted("amax.token"_n, from), "blacklisted" );
+    
     check( quantity.is_valid(), "invalid quantity" );
     check( quantity.amount > 0, "must transfer positive quantity" );
     check( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );

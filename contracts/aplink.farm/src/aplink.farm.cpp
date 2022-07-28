@@ -59,6 +59,28 @@ void farm::lease(   const name& tenant,
     _db.set(lease, _gstate.landlord);
 }
 
+void farm::setlease( const uint64_t& lease_id, const string& land_uri, const string& banner_uri ) {
+    require_auth( _gstate.landlord );
+
+    auto lease                  = lease_t(lease_id);
+    CHECKC( _db.get( lease ), err::RECORD_NOT_FOUND, "land not found: " + to_string(lease_id) )
+
+    lease.land_uri              = land_uri;
+    lease.banner_uri            = banner_uri;
+
+    _db.set( lease );
+}
+
+void farm::settenant( const uint64_t& lease_id, const name& tenant ) {
+    require_auth( _gstate.landlord );
+
+    auto lease                  = lease_t(lease_id);
+    CHECKC( _db.get( lease ), err::RECORD_NOT_FOUND, "land not found: " + to_string(lease_id) )
+
+    lease.tenant                = tenant;
+
+    _db.set( lease );
+}
 
 void farm::allot(const uint64_t& lease_id, const name& farmer, const asset& quantity, const string& memo) {
 

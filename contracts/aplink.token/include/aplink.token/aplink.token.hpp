@@ -4,6 +4,7 @@
 #include <eosio/eosio.hpp>
 
 #include "aplink.newbie.hpp"
+#include <amax.token/amax.token.hpp>
 
 #include <string>
 
