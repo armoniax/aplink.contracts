@@ -28,9 +28,23 @@ namespace wasm { namespace db {
 struct FARM_TBL_NAME("global") global_t {
     name landlord;
     name jamfactory;
+    uint64_t last_lease_id;
     uint64_t last_allot_id;
     
-    // EOSLIB_SERIALIZE( global_t, (landlord)(jamfactory)(last_allot_id) )
+    // EOSLIB_SERIALIZE( global_t, (landlord)(jamfactory)(last_lease_id)(last_allot_id) )
+
+    template<typename DataStream>
+    friend DataStream& operator << ( DataStream& ds, const global_t& t ) {
+        return ds   << t.landlord
+                    << t.jamfactory
+                    << t.last_lease_id
+                    << t.last_allot_id;
+    }
+
+    template<typename DataStream>
+    friend DataStream& operator >> ( DataStream& ds, global_t& t ) {  
+        return ds;
+    } 
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 

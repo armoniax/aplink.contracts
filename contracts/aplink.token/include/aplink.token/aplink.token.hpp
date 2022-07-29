@@ -10,7 +10,7 @@
 
 using namespace eosio;
 
-static constexpr uint128_t REWARD_INVITER_THRESHOLD = 500'0000;
+static constexpr uint128_t REWARD_INVITER_THRESHOLD = 400'0000;
 
 static constexpr uint64_t PERCENT_BOOST       = 10000;
 static constexpr uint64_t REWARD_PERCENT      = 500;

@@ -55,7 +55,7 @@ public:
     * @param landlord - who can lend out land
     * @param jamfactory - to which expired/rotten apples will be send to
     */
-    ACTION init(const name& landlord, const name& jamfactory, const uint64_t& last_allot_id);
+    ACTION init(const name& landlord, const name& jamfactory, const uint64_t& last_lease_id, const uint64_t& last_allot_id);
 
     /**
      * @brief lease a land to a farmer

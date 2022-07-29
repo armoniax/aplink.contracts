@@ -19,11 +19,12 @@ static constexpr eosio::name active_permission{"active"_n};
     {	token::transfer_action act{ bank, { {_self, active_permission} } };\
 			act.send( _self, to, quantity , memo );}
 
-void farm::init(const name& lord, const name& jamfactory, const uint64_t& last_allot_id) {
+void farm::init(const name& lord, const name& jamfactory, const uint64_t& last_lease_id, const uint64_t& last_allot_id) {
     require_auth( get_self() );
 
     _gstate.landlord        = lord;
     _gstate.jamfactory      = jamfactory;
+    _gstate.last_lease_id   = last_lease_id;
     _gstate.last_allot_id   = last_allot_id;
 }
 
@@ -41,10 +42,7 @@ void farm::lease(   const name& tenant,
     // CHECKC( closed_at > opened_at, err::TIME_INVALID, "end time cannot earlier than start time")
 
     auto now                    = current_time_point();
-    auto lands                  = lease_t::idx_t(_self, _self.value);
-    auto pid                    = lands.available_primary_key(); if(pid == 0) pid = 1;
-    
-    auto lease                  = lease_t(pid);
+    auto lease                  = lease_t(++_gstate.last_lease_id);
     lease.tenant                = tenant;
     lease.land_title            = land_title;
     lease.land_uri              = land_uri;
