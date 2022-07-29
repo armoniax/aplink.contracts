@@ -103,10 +103,7 @@ void farm::allot(const uint64_t& lease_id, const name& farmer, const asset& quan
     lease.alloted_apples         += quantity;
     _db.set( lease );
 
-    auto allots                 = allot_t::idx_t(_self, _self.value);
-    auto pid                    = allots.available_primary_key(); if (pid == 0) pid = 1;
-
-    auto allot                  = allot_t(pid);
+    auto allot                  = allot_t(++_gstate.last_allot_id);
     allot.lease_id              = lease_id;
     allot.farmer                = farmer;
     allot.apples                = quantity;
