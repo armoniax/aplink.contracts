@@ -19,15 +19,12 @@ static constexpr eosio::name active_permission{"active"_n};
     {	token::transfer_action act{ bank, { {_self, active_permission} } };\
 			act.send( _self, to, quantity , memo );}
 
-void farm::init(const name& lord, const name& jamfactory) {
+void farm::init(const name& lord, const name& jamfactory, const uint64_t& last_allot_id) {
     require_auth( get_self() );
-
-    CHECKC(is_account(lord), err::ACCOUNT_INVALID, "Invalid account of lord")
-    CHECKC(is_account(jamfactory), err::ACCOUNT_INVALID, "Invalid account of jamfactory")
 
     _gstate.landlord        = lord;
     _gstate.jamfactory      = jamfactory;
-    
+    _gstate.last_allot_id   = last_allot_id;
 }
 
 void farm::lease(   const name& tenant, 
