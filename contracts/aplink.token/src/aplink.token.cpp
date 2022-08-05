@@ -189,7 +189,7 @@ void token::add_balance( const name& owner, const asset& value, const name& ram_
     });
     
     if (value.amount >= REWARD_INVITER_THRESHOLD) {
-          rewardinvite_action("aplinknewbie"_n, { {_self, active_perm} }).send( owner );
+        rewardinvite_action("aplinknewbie"_n, { {_self, active_perm} }).send( owner );
     }
   } else {
     to_acnts.modify( to, same_payer, [&]( auto& a ) {
