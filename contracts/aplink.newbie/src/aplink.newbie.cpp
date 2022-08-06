@@ -55,8 +55,8 @@ void newbie::rewardinvite(const name& to)
 {
     require_auth( _gstate.aplink_token_contract );
 
-    if ( amax::token::is_blacklisted("amax.token"_n, to) )
-        return;
+    // if ( amax::token::is_blacklisted("amax.token"_n, to) )
+    //     return;
 
     auto parent_inviter = get_account_creator( to );
     if (parent_inviter != "amax"_n)
