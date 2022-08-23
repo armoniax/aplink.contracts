@@ -64,10 +64,11 @@ public:
         _global.set( _gstate, get_self() );
     }
 
-    ACTION init();
+    ACTION init(const bool is_active);
     ACTION seteventcpm(const asset& event_cpm);
     ACTION registerdapp(const name& dapp_contract);
     ACTION emitevent(const dapp_info_t& dapp_info, const name& recipient, const string& message);
+    ACTION activatedapp(const name& dapp_contract, const bool is_active);
 
     /**
      * @brief topup apples for a land

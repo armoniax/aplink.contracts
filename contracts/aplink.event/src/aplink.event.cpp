@@ -6,9 +6,10 @@
 #include <amax.token/amax.token.hpp>
 
 
-void event_center::init() {
+void event_center::init(const bool is_active) {
     require_auth( _self );
   
+    _gstate.status = is_active ? status::ACTIVE : status::INACTIVE;
 }
 
 void event_center::seteventcpm(const asset& event_cpm) {
@@ -72,4 +73,14 @@ void event_center::ontransfer(const name& from, const name& to, const asset& qua
         dapp.available_notify_times += quantity.amount / _gstate.event_cpm.amount;
         _db.set( dapp );
     }
+}
+
+void event_center::activatedapp(const name& dapp_contract, const bool is_active) {
+    require_auth( _gstate.admin );
+
+    auto dapp           = dapp_t( dapp_contract );
+    CHECKC( _db.get( dapp ), err::RECORD_NOT_FOUND, "dapp not registered" )
+
+    dapp.status         = is_active ? status::ACTIVE : status::INACTIVE;
+    _db.set( dapp );
 }
