@@ -1,0 +1,67 @@
+
+#pragma once
+
+#include <eosio/asset.hpp>
+#include <eosio/singleton.hpp>
+#include <eosio/time.hpp>
+#include <eosio/name.hpp>
+
+#include "utils.hpp"
+
+using namespace eosio;
+
+#define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
+
+// static constexpr name active_perm               {"active"_n};
+// static constexpr symbol APL_SYMBOL              = SYMBOL("APL", 4);
+// static constexpr name   APL_BANK                { "aplink.token"_n };   //NTT token
+
+static constexpr name   SYS_ACCT                { "amax"_n };   //NTT token
+
+namespace wasm { namespace db {
+
+using namespace std;
+using namespace eosio;
+using namespace wasm;
+
+#define CUSTODY_TBL [[eosio::table, eosio::contract("aplink.event")]]
+
+struct [[eosio::table("global"), eosio::contract("aplink.event")]] global_t {
+    name                admin                   = "aplink.admin"_n;
+    name                fee_collector           = "amax.daodev"_n;
+    asset               event_cpm               = asset_from_string("0.10000000 AMAX");    //cost per mille/thousand
+    name                status                  = "active"_n;           // active | inactive
+
+    global_t() {}
+
+    EOSLIB_SERIALIZE( global_t, (admin)(fee_collector)(event_cpm)(status) )
+};
+typedef eosio::singleton< "global"_n, global_t > global_singleton;
+
+struct dapp_info_t {
+    name    dapp_contract;
+    string  dapp_title;
+    string  logo_url;
+    string  invoke_url;
+};
+
+struct CUSTODY_TBL dapp_t {
+    name            dapp_contract;
+    uint64_t        available_notify_times      = 0;
+    uint64_t        used_notify_times           = 0;
+    name            status                      = "active"_n;
+    time_point_sec  registered_at;
+
+    uint64_t        primary_key()const { return dapp_contract.value; }
+    uint64_t        scope() const { return 0; }
+
+    dapp_t() {}
+    dapp_t(const name& c): dapp_contract(c) {}
+
+    EOSLIB_SERIALIZE( dapp_t, (dapp_contract)(available_notify_times)(used_notify_times)(status)(registered_at) )
+
+
+    typedef eosio::multi_index<"dapps"_n, dapp_t > idx_t;
+};
+
+} } //wasm
