@@ -13,13 +13,7 @@
 using namespace eosio;
 using namespace wasm::db;
 
-static constexpr name APL_BANK   = "aplink.token"_n;
-static constexpr symbol   APL    = symbol(symbol_code("APL"), 4);
-
-static constexpr symbol   SYS_SYMBOL            = symbol(symbol_code("AMAX"), 8);
-
-// static constexpr aplink_token_contract = "aplink.token"_n;
-
+static constexpr symbol     SYS_SYMBOL      = symbol(symbol_code("AMAX"), 8);
 
 #define CHECKC(exp, code, msg) \
    { if (!(exp)) eosio::check(false, string("[[") + to_string((int)code) + string("]] ") + msg); }
@@ -42,6 +36,7 @@ enum class err: uint8_t {
    ACCOUNT_INVALID      = 14,
    CONTENT_LENGTH_INVALID = 15,
    NOT_DISABLED          = 16,
+   INACTIVE              = 17
 
 };
 

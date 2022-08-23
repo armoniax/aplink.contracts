@@ -25,12 +25,16 @@ using namespace eosio;
 using namespace wasm;
 
 #define CUSTODY_TBL [[eosio::table, eosio::contract("aplink.event")]]
+namespace status {
+    static constexpr eosio::name ACTIVE     = "active"_n;
+    static constexpr eosio::name INACTIVE   = "inactive"_n;
+};
 
 struct [[eosio::table("global"), eosio::contract("aplink.event")]] global_t {
-    name                admin                   = "aplink.admin"_n;
-    name                fee_collector           = "amax.daodev"_n;
-    asset               event_cpm               = asset_from_string("0.10000000 AMAX");    //cost per mille/thousand
-    name                status                  = "active"_n;           // active | inactive
+    name            admin                       = "aplink.admin"_n;
+    name            fee_collector               = "amax.daodev"_n;
+    asset           event_cpm                   = asset_from_string("0.10000000 AMAX");    //cost per mille/thousand
+    name            status                      = status::ACTIVE;           // active | inactive
 
     global_t() {}
 
@@ -39,17 +43,17 @@ struct [[eosio::table("global"), eosio::contract("aplink.event")]] global_t {
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
 struct dapp_info_t {
-    name    dapp_contract;
-    string  dapp_title;
-    string  logo_url;
-    string  invoke_url;
+    name            dapp_contract;
+    string          dapp_title;
+    string          logo_url;
+    string          invoke_url;
 };
 
 struct CUSTODY_TBL dapp_t {
     name            dapp_contract;
     uint64_t        available_notify_times      = 0;
     uint64_t        used_notify_times           = 0;
-    name            status                      = "active"_n;
+    name            status                      = status::ACTIVE;
     time_point_sec  registered_at;
 
     uint64_t        primary_key()const { return dapp_contract.value; }

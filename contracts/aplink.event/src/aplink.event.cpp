@@ -14,21 +14,24 @@ void event_center::init() {
 void event_center::seteventcpm(const asset& event_cpm) {
     require_auth( _gstate.admin );
 
-    CHECK( event_cpm.symbol == SYS_SYMBOL, "not AMAX symbol" )
-    CHECK( event_cpm.amount > 0, "not positive amount" )
+    CHECKC( event_cpm.symbol == SYS_SYMBOL,     err::SYMBOL_MISMATCH, "not AMAX symbol" )
+    CHECKC( event_cpm.amount > 0,               err::NOT_POSITIVE, "not positive amount" )
 
-    _gstate.event_cpm = event_cpm;
+    _gstate.event_cpm               = event_cpm;
 }
 
 void event_center::emitevent(const dapp_info_t& dapp_info, const name& recipient, const string& message)
 {
+    require_auth( dapp_info.dapp_contract );
     CHECKC( is_account( dapp_info.dapp_contract ), err::PARAM_ERROR, "invalid dapp contract" )
     CHECKC( is_account( recipient ), err::ACCOUNT_INVALID, "invalid recipient account" )
-    require_auth( dapp_info.dapp_contract );
     
     auto dapp = dapp_t( dapp_info.dapp_contract );
-    CHECKC( _db.get( dapp ), err::RECORD_NOT_FOUND, "dapp not registered" )
-    CHECKC( dapp.available_notify_times > 0, err::ZERO_NOTIFY_TIMES, "running out of notify times" )
+    CHECKC( _db.get( dapp ),                    err::RECORD_NOT_FOUND, "dapp not registered" )
+    CHECKC( dapp.available_notify_times > 0,    err::ZERO_NOTIFY_TIMES, "running out of notify times" )
+    CHECKC( _gstate.status == status::ACTIVE,   err::INACTIVE, "event center not active" )
+    CHECKC( dapp.status == status::ACTIVE,      err::INACTIVE, "dapp not active" )
+
     dapp.available_notify_times     -= 1;
     dapp.used_notify_times          += 1;
     _db.set( dapp );
