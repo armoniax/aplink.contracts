@@ -12,12 +12,6 @@ using namespace eosio;
 
 #define SYMBOL(sym_code, precision) symbol(symbol_code(sym_code), precision)
 
-// static constexpr name active_perm               {"active"_n};
-// static constexpr symbol APL_SYMBOL              = SYMBOL("APL", 4);
-// static constexpr name   APL_BANK                { "aplink.token"_n };   //NTT token
-
-static constexpr name   SYS_ACCT                { "amax"_n };   //NTT token
-
 namespace wasm { namespace db {
 
 using namespace std;
@@ -26,8 +20,8 @@ using namespace wasm;
 
 #define CUSTODY_TBL [[eosio::table, eosio::contract("aplink.event")]]
 namespace status {
-    static constexpr eosio::name ACTIVE     = "active"_n;
-    static constexpr eosio::name INACTIVE   = "inactive"_n;
+    static constexpr eosio::name ACTIVE         = "active"_n;
+    static constexpr eosio::name INACTIVE       = "inactive"_n;
 };
 
 struct [[eosio::table("global"), eosio::contract("aplink.event")]] global_t {
