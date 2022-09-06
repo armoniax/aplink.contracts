@@ -105,7 +105,7 @@ struct BLINDBOX nft_t {
 
     uint64_t        id = 0;                       //PK, unique within the contract
     name            asset_contract;
-    nsymbol         asset_symbol;                 //originally issued amount
+    nsymbol         asset_symbol;                 
 
     uint64_t primary_key() const { return id; }
 

@@ -12,14 +12,18 @@ using namespace wasm;
 using namespace amax;
 using namespace std;
 
+#define TRANSFER(bank, to, quantity, memo) \
+{ action(permission_level{get_self(), "active"_n }, bank, "transfer"_n, std::make_tuple( _self, to, quantity, memo )).send(); }
+
+
 void blindbox::init(){
 
-    get_nft_t::tbl_t deals(_self,_self.value);
-	auto itr1 = deals.begin();
-	while(itr1 != deals.end()){
-		itr1 = deals.erase(itr1);
-	}
-    // CHECKC( false, err::MISC ,"error");
+    // get_nft_t::tbl_t deals(_self,_self.value);
+	// auto itr1 = deals.begin();
+	// while(itr1 != deals.end()){
+	// 	itr1 = deals.erase(itr1);
+	// }
+    CHECKC( false, err::MISC ,"error");
 }
 
 void blindbox::createpool( const name& owner,const string& title,const name& asset_contract, const nsymbol& asset_symbol,const time_point_sec& opended_at){
@@ -133,46 +137,46 @@ void blindbox::onnfttrans( const name& from, const name& to, const vector<nasset
     }
 }
 
-void blindbox::test(){
+// void blindbox::test(){
 
-    // auto rand = _rand(10, 1, get_self(),1 );
-    // nft_t::tbl_t nft( get_self(), 1);
-    // auto itr = nft.begin();
-    // advance(itr ,rand - 1 );  
-    // CHECK( false, "nft :" + to_string( itr->id ));
+//     // auto rand = _rand(10, 1, get_self(),1 );
+//     // nft_t::tbl_t nft( get_self(), 1);
+//     // auto itr = nft.begin();
+//     // advance(itr ,rand - 1 );  
+//     // CHECK( false, "nft :" + to_string( itr->id ));
 
-    pool_t::tbl_t pool( get_self() ,get_self().value );
-    auto pool_itr           = pool.find( 4 );
-    auto p = pool.get( 4 );
-    _rand_nft( p , get_self());
-    auto now = current_time_point();
-    pool.modify( pool_itr, same_payer, [&]( auto& row ) {
-        row.unsealed_blindboxes     -= 1;
-        row.sealed_blindboxes       += 1;
-        //row.received_blindbox       += 1;
-        row.updated_at              = now;
-    });
+//     pool_t::tbl_t pool( get_self() ,get_self().value );
+//     auto pool_itr           = pool.find( 4 );
+//     auto p = pool.get( 4 );
+//     _rand_nft( p , get_self());
+//     auto now = current_time_point();
+//     pool.modify( pool_itr, same_payer, [&]( auto& row ) {
+//         row.unsealed_blindboxes     -= 1;
+//         row.sealed_blindboxes       += 1;
+//         //row.received_blindbox       += 1;
+//         row.updated_at              = now;
+//     });
 
-    // vector<uint64_t> num = { 1, 2,3,4,5,6,7,8,9,10 };
+//     // vector<uint64_t> num = { 1, 2,3,4,5,6,7,8,9,10 };
 
-    // uint64_t max = 10;
-    // auto itr = num.begin();
+//     // uint64_t max = 10;
+//     // auto itr = num.begin();
 
-    // for ( auto i = 0 ;i < num.size();  i ++){ 
+//     // for ( auto i = 0 ;i < num.size();  i ++){ 
 
-    //     uint64_t rand = _rand( max , 1 , get_self(), i);
-    //     advance(itr ,rand - 1 );
-    //     get_nft_t::tbl_t getnfts( get_self(), get_self().value);
-    //     auto nft_id = getnfts.available_primary_key();
-    //     getnfts.emplace( get_self(), [&]( auto& row){
+//     //     uint64_t rand = _rand( max , 1 , get_self(), i);
+//     //     advance(itr ,rand - 1 );
+//     //     get_nft_t::tbl_t getnfts( get_self(), get_self().value);
+//     //     auto nft_id = getnfts.available_primary_key();
+//     //     getnfts.emplace( get_self(), [&]( auto& row){
 
-    //         row.id = nft_id;
-    //         row.nft_id = *itr;
-    //     });
+//     //         row.id = nft_id;
+//     //         row.nft_id = *itr;
+//     //     });
            
-    //     max --;
-    // }
-}
+//     //     max --;
+//     // }
+// }
 
 void blindbox::_rand_nft( const pool_t& pool , const name& owner){
 
@@ -181,14 +185,15 @@ void blindbox::_rand_nft( const pool_t& pool , const name& owner){
     auto itr = nft.begin();
     advance( itr , rand - 1 );
     //CHECK( false, to_string(rand)); 
-    get_nft_t::tbl_t getnfts( get_self(), get_self().value);
-    auto nft_id = getnfts.available_primary_key();
-    getnfts.emplace( get_self(), [&]( auto& row){
+    // get_nft_t::tbl_t getnfts( get_self(), get_self().value);
+    // auto nft_id = getnfts.available_primary_key();
+    // getnfts.emplace( get_self(), [&]( auto& row){
 
-        row.id = nft_id;
-        row.nft_id = itr->id;
-    });
-
+    //     row.id = nft_id;
+    //     row.nft_id = itr->id;
+    // });
+    vector<nasset> quants = { nasset(1,itr->asset_symbol) };
+    TRANSFER( itr->asset_contract, owner, quants , std::string("get blindbox"));
     nft.erase( itr );
  
 }

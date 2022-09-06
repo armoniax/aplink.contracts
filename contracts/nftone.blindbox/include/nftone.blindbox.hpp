@@ -27,8 +27,8 @@ public:
     [[eosio::action]]
     void createpool( const name& owner,const string& title,const name& asset_contract, const nsymbol& asset_symbol,const time_point_sec& opended_at);
     
-    [[eosio::action]]
-    void test();
+    // [[eosio::action]]
+    // void test();
     [[eosio::on_notify("*::transfer")]] void onnfttrans(const name& from, const name& to, const vector<nasset>& assets, const string& memo);
 private:
     uint64_t _rand(uint64_t max_uint,  uint16_t min_unit, name owner , uint64_t pool_id);
