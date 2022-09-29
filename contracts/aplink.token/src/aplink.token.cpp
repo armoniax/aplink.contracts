@@ -132,7 +132,7 @@ void token::transfer( const name&    from,
 {
     check( from != to, "cannot transfer to self" );
     require_auth( from );
-    check( is_account( to ), "to account does not exist");
+    check( is_account( to ), "to account does not exist: " + to.to_string() );
     auto sym = quantity.symbol.code();
     stats statstable( get_self(), sym.raw() );
     const auto& st = statstable.get( sym.raw() );
@@ -242,7 +242,7 @@ void token::setacctperms(const name& issuer, const name& to, const symbol& symbo
     require_auth( issuer );
     require_issuer(issuer, symbol);
 
-    check( is_account( to ), "to account does not exist");
+    check( is_account( to ), "to account does not exist: " + to.to_string() );
     check(symbol == APL_SYMBOL, "invalid APL symbol");
 
     accounts acnts( get_self(), to.value );
