@@ -40,12 +40,13 @@ void newbie::claimreward(const set<name> newbies)
 
     auto processed = false;
     for( auto newbie : newbies ){
-        if (amax::token::is_blacklisted("amax.token"_n, newbie) || 
+        if (!is_account( newbie ) ||
+            amax::token::is_blacklisted("amax.token"_n, newbie) || 
             aplink::token::account_exist(_gstate.aplink_token_contract, newbie, _gstate.newbie_reward.symbol.code()) ) continue;
 
         TRANSFER( _gstate.aplink_token_contract, newbie, _gstate.newbie_reward, "newbie reward" )
-        if (!processed) 
-            processed = true;
+
+        if (!processed) processed = true;
     }
 
     CHECK( processed, "none-processed" )
