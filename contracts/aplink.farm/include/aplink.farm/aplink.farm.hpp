@@ -1,4 +1,5 @@
 #include "aplink.farmdb.hpp"
+#include "utils.hpp"
 
 using namespace std;
 using namespace wasm::db;
@@ -115,6 +116,11 @@ public:
      */
     ACTION pick(const name& farmer, const vector<uint64_t>& allot_ids);
 
+    ACTION farmerid( const name& farmer, const uint64_t& id) {
+        auto bigid = (uint128_t)farmer.value << 64 | (uint128_t)id;
+        check( false, to_bigstring( bigid ) );
+    }
+
     /**
      * @brief topup apples for a land
      * @param from 
@@ -127,6 +133,7 @@ public:
 
     using allot_action = eosio::action_wrapper<"allot"_n, &farm::allot>;
 
+    
     /**
      * @brief 
      * 

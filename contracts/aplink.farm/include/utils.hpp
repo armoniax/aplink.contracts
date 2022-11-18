@@ -31,6 +31,7 @@ using namespace std;
 
 #define TRACE_L(...) TRACE(__VA_ARGS__, "\n")
 
+static const char* charmap = "0123456789";
 
 template<typename T>
 int128_t multiply(int128_t a, int128_t b) {
@@ -101,6 +102,21 @@ vector<string_view> split(string_view str, string_view delims = " ")
 
 bool starts_with(string_view sv, string_view s) {
     return sv.size() >= s.size() && sv.compare(0, s.size(), s) == 0;
+}
+
+std::string to_bigstring(const uint128_t& value)
+{
+    std::string result;
+    result.reserve( 40 ); // max. 40 digits possible ( uint64_t has 20) 
+    uint128_t helper = value;
+
+    do {
+        result += charmap[ helper % 10 ];
+        helper /= 10;
+    } while ( helper );
+    std::reverse( result.begin(), result.end() );
+
+    return result;
 }
 
 int64_t to_int64(string_view s, const char* err_title) {
