@@ -177,8 +177,10 @@ void token::sub_balance( const name& owner, const asset& value ) {
   });
 }
 
+// owner is the to account
 void token::add_balance( const name& owner, const asset& value, const name& ram_payer )
 {
+  auto to_reward_inviter = false;
   accounts to_acnts( get_self(), owner.value );
   auto to = to_acnts.find( value.symbol.code().raw() );
   if( to == to_acnts.end() ) {
@@ -188,9 +190,8 @@ void token::add_balance( const name& owner, const asset& value, const name& ram_
       a.expired_at = current_time_point() + seconds(YEAR_SECONDS);
     });
     
-    if (value.amount >= REWARD_INVITER_THRESHOLD) {
-        rewardinvite_action("aplinknewbie"_n, { {_self, active_perm} }).send( owner );
-    }
+    to_reward_inviter = (value.amount >= REWARD_INVITER_THRESHOLD);
+    
   } else {
     to_acnts.modify( to, same_payer, [&]( auto& a ) {
       auto old_sum_balance = a.sum_balance.amount;
@@ -200,12 +201,12 @@ void token::add_balance( const name& owner, const asset& value, const name& ram_
       a.expired_at = current_time_point() + seconds(YEAR_SECONDS);
 
       auto new_sum_balance = a.sum_balance.amount;
-      if (old_sum_balance < REWARD_INVITER_THRESHOLD && 
-          new_sum_balance >= REWARD_INVITER_THRESHOLD) {
-        rewardinvite_action("aplinknewbie"_n, { {_self, active_perm} }).send( owner );
-      }
+      to_reward_inviter = (old_sum_balance < REWARD_INVITER_THRESHOLD && new_sum_balance >= REWARD_INVITER_THRESHOLD);
     });
   }
+
+  if( to_reward_inviter )
+    rewardinvite_action("aplinknewbie"_n, { {_self, active_perm} }).send( owner );
 }
 
 void token::open( const name& owner, const symbol& symbol, const name& ram_payer )
