@@ -48,6 +48,15 @@ struct FARM_TBL_NAME("global") global_t {
 };
 typedef eosio::singleton< "global"_n, global_t > global_singleton;
 
+struct FARM_TBL_NAME("globalext") globalext_t {
+    uint64_t friend_rate; // frient pick rate < 100
+    uint64_t friend_start_time; // frient pick start time > alloted_at + friend_start_time
+    uint64_t friend_end_time; // frient pick end time < alloted_at + friend_end_time
+    
+    EOSLIB_SERIALIZE( globalext_t, (friend_rate)(friend_start_time)(friend_end_time) ) 
+};
+typedef eosio::singleton< "globalext"_n, globalext_t > globalext_singleton;
+
 
 namespace lease_status {
     static constexpr eosio::name none           = "none"_n;
@@ -57,7 +66,7 @@ namespace lease_status {
 struct FARM_TBL lease_t {
     uint64_t            id;
     name                tenant;                     //tenant (contract account)
-    string              land_title;                 //land title: <=64 chars
+    string              land_title;                 //land title: <=2000 chars    title_en|title_cn:desc_en|desc_cn
     string              land_uri;                   //land uri: <=64 chars
     string              banner_uri;                 //banner uri: <=64 chars
     asset               alloted_apples =  asset(0, APLINK_SYMBOL);
