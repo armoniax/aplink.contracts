@@ -2,8 +2,10 @@
 #include <string>
 #include "utils.hpp"
 #include "aplink.token/aplink.token.hpp"
+#include <eosio/permission.hpp>
 
 static constexpr uint32_t max_text_size     = 64;
+static constexpr uint32_t max_title_size     = 3000;
 using namespace aplink;
 using namespace wasm;
 
@@ -28,6 +30,18 @@ void farm::init(const name& lord, const name& jamfactory, const uint64_t& last_l
     _gstate.last_allot_id   = last_allot_id;
 }
 
+void farm::setinit(const uint64_t& rate, const uint64_t& start_time, const uint64_t& end_time) {
+    require_auth( get_self() );
+
+    CHECKC( rate > 0 && rate < 100, err::PARAM_ERROR, "friend rate too small" );
+    CHECKC( start_time > 0, err::PARAM_ERROR, "friend pick start time too small" );
+    CHECKC( end_time > start_time, err::PARAM_ERROR, "friend pick end time too small" );
+
+    _gextstate.friend_rate        = rate;
+    _gextstate.friend_start_time  = start_time;
+    _gextstate.friend_end_time    = end_time;
+}
+
 void farm::lease(   const name& tenant, 
                     const string& land_title, 
                     const string& land_uri, 
@@ -35,7 +49,7 @@ void farm::lease(   const name& tenant,
     require_auth( _gstate.landlord );
 
     CHECKC( is_account(tenant), err::ACCOUNT_INVALID, "Tenant account invalid")
-    CHECKC( land_title.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "title size too large, respect " + to_string(max_text_size))
+    CHECKC( land_title.size() < max_title_size, err::CONTENT_LENGTH_INVALID, "title size too large, respect " + to_string(max_text_size))
     CHECKC( land_uri.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "url size too large, respect " + to_string(max_text_size))
     CHECKC( banner_uri.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "banner size too large, respect " + to_string(max_text_size))
     // CHECKC( opened_at > current_time_point(), err::TIME_INVALID, "start time cannot earlier than now")
@@ -116,33 +130,64 @@ void farm::pick(const name& farmer, const vector<uint64_t>& allot_ids) {
 
     auto farmer_quantity        = asset(0, APLINK_SYMBOL);
     auto factory_quantity       = asset(0, APLINK_SYMBOL);
+    auto pick_quantity = asset(0, APLINK_SYMBOL); // friend pick
+    name allot_farmer;
     auto now                    = time_point_sec(current_time_point());
 
     CHECKC( allot_ids.size() <= 20, err::CONTENT_LENGTH_INVALID, "allot_ids too long, expect length 20" );
     
-    string memo = "";
+    uint64_t friend_count = 0;
     for (auto& allot_id : allot_ids) {
         auto allot = allot_t(allot_id);
         CHECKC( _db.get( allot ), err::RECORD_NOT_FOUND, "allot not found: " + to_string(allot_id) )
-        CHECKC( farmer == allot.farmer || farmer == _gstate.jamfactory, err::ACCOUNT_INVALID, "farmer account not authorized" )
-        
-        if (now > allot.expired_at) { //already expired
-            factory_quantity        += allot.apples;
-            _db.del( allot );
 
-        } else {
-            CHECKC( farmer !=  _gstate.jamfactory, err::NO_AUTH, "jamfactory pick not allowed" )
-
-            farmer_quantity         += allot.apples;
-            _db.del( allot );
+        if (now > allot.expired_at) { // already expired
+            factory_quantity += allot.apples;
+            _db.del(allot);
+            continue;
         }
-	}
+        
+        if (farmer == allot.farmer || farmer == _gstate.jamfactory) {
+            CHECKC(farmer == allot.farmer || farmer == _gstate.jamfactory, err::ACCOUNT_INVALID,
+                "farmer account not authorized");
+            CHECKC(farmer != _gstate.jamfactory, err::NO_AUTH, "jamfactory pick not allowed")
 
-    if (farmer_quantity.amount > 0) 
-        TRANSFER( APLINK_BANK, farmer, farmer_quantity, "pick" )
+            farmer_quantity += allot.apples;
+            _db.del(allot);
+        } else {
+            // frient pick
+            if (now > allot.alloted_at + _gextstate.friend_start_time && now < allot.alloted_at + _gextstate.friend_end_time) {
+                friend_count += 1;
+                // parent allot_farmer
+                name parent_allot_farmer = get_account_creator(allot.farmer);
+                allot_farmer = allot.farmer;
+                // child user parent farmer
+                name parent_farmer = get_account_creator(farmer);
 
-    if (factory_quantity.amount > 0) 
-        TRANSFER( APLINK_BANK, _gstate.jamfactory, factory_quantity, "jam");
+                CHECKC(farmer == parent_allot_farmer || parent_farmer == allot.farmer || 
+                    parent_allot_farmer == parent_farmer, err::ACCOUNT_INVALID, "farmer account not authorized");
+                
+                // apples split
+                auto pick_split = allot.apples * _gextstate.friend_rate / 100;
+                pick_quantity += pick_split;
+                farmer_quantity += allot.apples - pick_split;
+
+                _db.del(allot);
+            } else {
+                name parent_allot_farmer = get_account_creator(allot.farmer);
+                name parent_farmer = get_account_creator(farmer);
+                CHECKC(false, err::ACCOUNT_INVALID, "pick account not allowed");
+            }
+        }
+    }
+
+    if (friend_count == 0) {
+        if (farmer_quantity.amount > 0) TRANSFER(APLINK_BANK, farmer, farmer_quantity, "pick:"+farmer.to_string())
+    } else {
+        if (farmer_quantity.amount > 0) TRANSFER(APLINK_BANK, allot_farmer, farmer_quantity, "pick:"+farmer.to_string())
+        if (pick_quantity.amount > 0) TRANSFER(APLINK_BANK, farmer, pick_quantity, "friend:"+allot_farmer.to_string())
+    }
+    if (factory_quantity.amount > 0) TRANSFER(APLINK_BANK, _gstate.jamfactory, factory_quantity, "jam")
 }
 
 void farm::ontransfer(const name& from, const name& to, const asset& quantity, const string& memo) {
@@ -216,4 +261,17 @@ void farm::setstatus(const uint64_t& lease_id, const name& status){
 
     lease.status = status;
     _db.set( lease );
+}
+
+void farm::settitle( const uint64_t& lease_id, const string& title ) {
+    require_auth( _gstate.landlord );
+
+    CHECKC( title.size() < max_title_size, err::CONTENT_LENGTH_INVALID, "title size too large, respect " + to_string(max_text_size))
+
+    auto leases = lease_t::idx_t(_self, _self.value);
+    auto lease = leases.find(lease_id);
+    eosio::check( lease != leases.end(), "lease not found: " + to_string(lease_id) );
+    leases.modify( lease, _self, [&]( auto& row ) {
+        row.land_title = title;
+    });
 }

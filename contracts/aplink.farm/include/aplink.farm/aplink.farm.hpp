@@ -39,24 +39,38 @@ private:
     global_singleton    _global;
     global_t            _gstate;
     dbc                 _db;
+    globalext_singleton _globalext;
+    globalext_t         _gextstate;
 
 public:
     using contract::contract;
 
     farm(eosio::name receiver, eosio::name code, datastream<const char*> ds):
         _db(_self), contract(receiver, code, ds),
-        _global(get_self(), get_self().value)
+        _global(get_self(), get_self().value),
+        _globalext(get_self(), get_self().value)
     {
         _gstate = _global.exists() ? _global.get() : global_t{};
+        _gextstate = _globalext.exists() ? _globalext.get() : globalext_t{};
     }
 
-    ~farm() { _global.set( _gstate, get_self() ); }
+    ~farm() { 
+        _global.set( _gstate, get_self() );
+        _globalext.set( _gextstate, get_self() );
+    }
     
     /**
     * @param landlord - who can lend out land
     * @param jamfactory - to which expired/rotten apples will be send to
     */
     ACTION init(const name& landlord, const name& jamfactory, const uint64_t& last_lease_id, const uint64_t& last_allot_id);
+
+    /**
+    * @param rate - friend pick rate < 100
+    * @param start_time - frient pick start time > alloted_at + friend_start_time
+    * @param end_time - frient pick end time < alloted_at + friend_end_time
+    */
+    ACTION setinit(const uint64_t& rate, const uint64_t& start_time, const uint64_t& end_time);
 
     /**
      * @brief lease a land to a farmer
@@ -71,6 +85,7 @@ public:
                 /*const time_point& opened_at, const time_point& closed_at*/);
 
     ACTION setlease( const uint64_t& lease_id, const string& land_uri, const string& banner_uri );
+
     ACTION settenant( const uint64_t& lease_id, const name& tenant );
     /**
      * @brief reclaim a lease, only for inactive ones
@@ -155,6 +170,15 @@ public:
         
         apples = lease.available_apples;
     }
+
+    /**
+     * @brief update land title  
+     * land title: <=3000 chars    en:xx|cn:xx|en_desc:xx|cn_desc:xx|en_rule:xx|cn_rule:xx
+     * 
+     * @param lease_id - lease_id private key
+     * @param title - lease title
+     */
+    ACTION settitle( const uint64_t& lease_id, const string& title );
 };
 
 }
