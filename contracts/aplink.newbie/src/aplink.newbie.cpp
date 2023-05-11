@@ -31,26 +31,37 @@ void newbie::init(const uint64_t&lease_id,const name&farm_contract) {
     _gstate.apl_farm.grandparent_inviter_reward = asset_from_string("50.0000 APL");
 }
 
-void newbie::claimreward(const set<name> newbies)
+void newbie::claimreward(const name& newbie)
 {
-    require_auth( _gstate.aplink_admin );
+    require_auth( newbie );
 
-    CHECK( newbies.size() > 0, "none newbie" )
-    CHECK( newbies.size() <= _gstate.batch_issue_size, "batch oversized" )
+    CHECK( is_account( newbie ), "account invalid" )
+    CHECK( !amax::token::is_blacklisted("amax.token"_n, newbie), "account blacklisted" )
+    CHECK( !aplink::token::account_exist(_gstate.aplink_token_contract, newbie, _gstate.newbie_reward.symbol.code()), "already claimed" )
 
-    auto processed = false;
-    for( auto newbie : newbies ){
-        if (!is_account( newbie ) ||
-            amax::token::is_blacklisted("amax.token"_n, newbie) || 
-            aplink::token::account_exist(_gstate.aplink_token_contract, newbie, _gstate.newbie_reward.symbol.code()) ) continue;
-
-        TRANSFER( _gstate.aplink_token_contract, newbie, _gstate.newbie_reward, "newbie reward" )
-
-        if (!processed) processed = true;
-    }
-
-    CHECK( processed, "none-processed" )
+    TRANSFER( _gstate.aplink_token_contract, newbie, _gstate.newbie_reward, "newbie reward" )
 }
+
+// void newbie::claimreward(const set<name> newbies)
+// {
+//     require_auth( _gstate.aplink_admin );
+
+//     CHECK( newbies.size() > 0, "none newbie" )
+//     CHECK( newbies.size() <= _gstate.batch_issue_size, "batch oversized" )
+
+//     auto processed = false;
+//     for( auto newbie : newbies ){
+//         if (!is_account( newbie ) ||
+//             amax::token::is_blacklisted("amax.token"_n, newbie) || 
+//             aplink::token::account_exist(_gstate.aplink_token_contract, newbie, _gstate.newbie_reward.symbol.code()) ) continue;
+
+//         TRANSFER( _gstate.aplink_token_contract, newbie, _gstate.newbie_reward, "newbie reward" )
+
+//         if (!processed) processed = true;
+//     }
+
+//     CHECK( processed, "none-processed" )
+// }
 
 void newbie::rewardinvite(const name& to)
 {

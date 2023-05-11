@@ -191,7 +191,7 @@ void token::add_balance( const name& owner, const asset& value, const name& ram_
     });
     
     to_reward_inviter = (value.amount >= REWARD_INVITER_THRESHOLD);
-    
+
   } else {
     to_acnts.modify( to, same_payer, [&]( auto& a ) {
       auto old_sum_balance = a.sum_balance.amount;

@@ -51,7 +51,7 @@ void farm::lease(   const name& tenant,
     CHECKC( is_account(tenant), err::ACCOUNT_INVALID, "Tenant account invalid")
     CHECKC( land_title.size() < max_title_size, err::CONTENT_LENGTH_INVALID, "title size too large, respect " + to_string(max_text_size))
     CHECKC( land_uri.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "url size too large, respect " + to_string(max_text_size))
-    CHECKC( banner_uri.size() < max_text_size, err::CONTENT_LENGTH_INVALID, "banner size too large, respect " + to_string(max_text_size))
+    CHECKC( banner_uri.size() < 128, err::CONTENT_LENGTH_INVALID, "banner size too large, respect " + to_string(max_text_size))
     // CHECKC( opened_at > current_time_point(), err::TIME_INVALID, "start time cannot earlier than now")
     // CHECKC( closed_at > opened_at, err::TIME_INVALID, "end time cannot earlier than start time")
 
