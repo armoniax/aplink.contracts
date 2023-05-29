@@ -147,7 +147,7 @@ void token::transfer( const name&    from,
     auto to_acnt = to_acnts.find( quantity.symbol.code().raw());
 
     if (from_acnt == from_acnts.end() || !from_acnt->allow_send) {
-       check( to_acnt != to_acnts.end() && to_acnt->allow_recv, "no permistion for transfer" );
+       check( to_acnt != to_acnts.end() && to_acnt->allow_recv, "no permission for transfer" );
     }
 
     check( !amax::token::is_blacklisted("amax.token"_n, from), "blacklisted: " + from.to_string() );
